@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joby | TELUS Health</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<!-- Header -->
+<header class="app-header">
+    <div class="header-left">
+        <img src="th_logo_en.png" alt="TELUS Health" class="logo-img" id="logo-img">
+        <div class="logo-divider"></div>
+        <span class="app-name">Joby</span>
+        <span class="app-version">v1.5</span>
+        <span class="app-tagline" id="app-tagline"></span>
+    </div>
+    <div class="header-actions">
+        <div class="streak-badge" id="streak-badge" title=""></div>
+        <div class="save-indicator"><div class="save-dot" id="save-dot"></div><span id="save-label">Saved</span></div>
+        <button id="dark-toggle-btn" class="hdr-btn" onclick="toggleDarkMode()">&#127769; Dark</button>
+        <button class="hdr-btn primary" onclick="openSettings()">&#9881;&#65039; Settings</button>
+    </div>
+</header>
+
+<div id="status-bar" class="status-bar"></div>
+
+<!-- Tabs -->
+<div class="tabs-bar">
+    <button class="tab-btn active" onclick="switchTab('tasks',this)">&#128203; My Tasks</button>
+    <button class="tab-btn" onclick="switchTab('jira',this)">&#127919; Jira</button>
+    <button class="tab-btn" onclick="switchTab('stats',this)">&#128202; Stats</button>
+</div>
+
+<!-- ─── MY TASKS ─────────────────────────────────────────────────────────────── -->
+<div class="main" id="tab-tasks">
+    <div class="stats-bar">
+        <div class="stat-card"><div class="number" id="stat-total">0</div><div class="label">Total</div></div>
+        <div class="stat-card"><div class="number" id="stat-pending">0</div><div class="label">Pending</div></div>
+        <div class="stat-card"><div class="number" id="stat-done">0</div><div class="label">Completed</div></div>
+        <div class="stat-card"><div class="number" id="stat-high">0</div><div class="label">High Priority</div></div>
+        <div class="stat-card"><div class="number" id="stat-overdue">0</div><div class="label">Overdue</div></div>
+    </div>
+    <div class="progress-wrap"><div class="progress-fill" id="progress-bar" style="width:0%"></div></div>
+
+    <div class="panel">
+        <div class="panel-header">&#43; New Task</div>
+        <div class="input-body">
+            <div class="input-row">
+                <div class="input-with-mic">
+                    <input type="text" id="task-input" placeholder="Describe your task — or tap 🎤 to speak..." />
+                    <button id="mic-btn" class="mic-btn" onclick="toggleSpeech()" title="Speak to add task">&#127908;</button>
+                </div>
+                <select id="priority-select">
+                    <option value="high">&#128308; High</option>
+                    <option value="medium" selected>&#128993; Medium</option>
+                    <option value="low">&#128994; Low</option>
+                </select>
+                <select id="category-select">
+                    <option value="Work">&#128188; Work</option>
+                    <option value="Dev">&#128187; Dev</option>
+                    <option value="Meeting">&#128197; Meeting</option>
+                    <option value="Review">&#128269; Review</option>
+                    <option value="Admin">&#128203; Admin</option>
+                    <option value="JIRA">&#127919; JIRA</option>
+                    <option value="Other">&#128204; Other</option>
+                </select>
+            </div>
+            <div class="input-row2">
+                <input type="date" id="due-date" />
+                <div id="add-color-swatches" class="color-swatches"></div>
+                <input type="text" id="task-notes" placeholder="Notes (optional)..." />
+                <button class="btn btn-green" onclick="addTask()">&#43; Add Task</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inbox panel -->
+    <div class="panel inbox-panel" id="inbox-panel" style="display:none">
+        <div class="panel-header inbox-panel-header" onclick="toggleInboxPanel()">
+            <span id="inbox-header-label">&#128450; Inbox (0)</span>
+            <span class="inbox-chevron" id="inbox-chevron">&#9650;</span>
+        </div>
+        <div id="inbox-list" class="inbox-list"></div>
+    </div>
+
+    <div class="controls-row">
+        <div class="controls-left">
+            <button class="filter-pill active" onclick="setFilter('all',this)">All</button>
+            <button class="filter-pill" onclick="setFilter('pending',this)">Pending</button>
+            <button class="filter-pill" onclick="setFilter('done',this)">Done</button>
+            <button class="filter-pill" onclick="setFilter('high',this)">&#128308; High</button>
+            <button class="filter-pill" onclick="setFilter('overdue',this)">&#9203; Overdue</button>
+            <div class="search-wrap">
+                <span class="search-icon">&#128269;</span>
+                <input type="text" id="search-input" placeholder="Search tasks..." oninput="renderTasks()" />
+            </div>
+            <select class="sort-select" id="sort-select" onchange="renderTasks()">
+                <option value="added">Sort: Added</option>
+                <option value="priority">Sort: Priority</option>
+                <option value="due">Sort: Due Date</option>
+                <option value="alpha">Sort: A–Z</option>
+            </select>
+        </div>
+        <div class="controls-right">
+            <button class="btn btn-danger" onclick="clearDone()">&#128465; Clear Done</button>
+        </div>
+    </div>
+    <div class="task-list" id="task-list">
+        <div class="empty-state"><div class="icon">&#128203;</div><p>No tasks yet — add one above or speak it!</p></div>
+    </div>
+</div>
+
+<!-- ─── JIRA TAB ──────────────────────────────────────────────────────────────── -->
+<div class="main" id="tab-jira" style="display:none">
+    <div id="jira-no-config" class="jira-no-config" style="display:none">
+        <div class="icon">&#9881;&#65039;</div>
+        <p>Start the proxy in a terminal (<code>node jira-proxy.js</code>), then open Settings to configure your Jira URL.</p>
+        <button class="btn btn-purple" onclick="openSettings()">Open Settings</button>
+    </div>
+    <div id="jira-content" style="display:none">
+        <div class="jira-toolbar">
+            <button class="jira-refresh-btn" id="jira-refresh-btn" onclick="fetchJiraIssues(false)">&#128260; Refresh</button>
+            <select id="jira-filter-status" onchange="renderJiraIssues()">
+                <option value="all">All Statuses</option>
+                <option value="inprogress">In Progress</option>
+                <option value="todo">To Do</option>
+            </select>
+            <select id="jira-filter-priority" onchange="renderJiraIssues()">
+                <option value="all">All Priorities</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+            </select>
+            <select id="jira-filter-project" onchange="renderJiraIssues()">
+                <option value="all">All Projects</option>
+            </select>
+            <span class="jira-count" id="jira-count"></span>
+        </div>
+        <div class="task-list" id="jira-list"></div>
+        <div class="jira-load-more" id="jira-load-more" style="display:none">
+            <button class="btn btn-outline" onclick="fetchJiraIssues(true)">Load more issues...</button>
+        </div>
+    </div>
+</div>
+
+<!-- ─── STATS TAB ────────────────────────────────────────────────────────────── -->
+<div class="main" id="tab-stats" style="display:none">
+    <div class="panel">
+        <div class="panel-header">&#128202; Activity Heatmap</div>
+        <div style="padding:16px">
+            <div id="heatmap-month-labels" class="heatmap-months"></div>
+            <div id="heatmap-grid" class="heatmap-grid"></div>
+            <div class="heatmap-legend">
+                <span class="heatmap-legend-label">Less</span>
+                <div class="heatmap-cell" style="background:var(--border)"></div>
+                <div class="heatmap-cell" style="background:rgba(75,0,130,0.2)"></div>
+                <div class="heatmap-cell" style="background:rgba(75,0,130,0.5)"></div>
+                <div class="heatmap-cell" style="background:rgba(75,0,130,0.8)"></div>
+                <div class="heatmap-cell" style="background:var(--purple)"></div>
+                <span class="heatmap-legend-label">More</span>
+            </div>
+        </div>
+    </div>
+    <div class="stats-grid" id="stats-cards"></div>
+</div>
+
+<!-- ─── SETTINGS MODAL ────────────────────────────────────────────────────────── -->
+<div id="settings-modal" style="display:none">
+    <div class="overlay" onclick="if(event.target===this)closeSettings()">
+        <div class="modal" style="max-width:700px" onclick="event.stopPropagation()">
+            <div class="modal-header">&#9881;&#65039; Settings — Jira Integration</div>
+            <div class="modal-body-scroll">
+                <div style="margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <button class="btn btn-outline" onclick="exportJSON()" style="flex:1;min-width:130px">&#128229; Export Backup</button>
+                        <label class="btn btn-outline" style="flex:1;min-width:130px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:5px">&#128194; Import Backup<input type="file" accept=".json" onchange="importJSON(event);closeSettings()" style="display:none"></label>
+                        <button class="btn btn-outline" onclick="exportTasks()" style="flex:1;min-width:130px">&#128202; Export CSV</button>
+                    </div>
+                </div>
+                <p style="font-size:0.8rem;color:var(--text-3);margin-bottom:16px;">Requires the local proxy running in a terminal: <code style="background:var(--purple-light);color:var(--purple);padding:1px 5px;border-radius:3px;">python jira-proxy.py</code></p>
+
+                <div class="field">
+                    <label>Jira Session Cookie</label>
+                    <details class="cookie-how">
+                        <summary>&#9654; How to get your cookie (click to expand)</summary>
+                        <ol class="cookie-steps">
+                            <li>Open <strong>telushealth.atlassian.net</strong> in your browser (log in if asked)</li>
+                            <li>Press <strong>F12</strong> to open DevTools &rarr; click the <strong>Network</strong> tab</li>
+                            <li>Click any request in the list (e.g. the first one)</li>
+                            <li>In the right panel scroll to <strong>Request Headers</strong></li>
+                            <li>Find the <strong>cookie:</strong> row &rarr; right-click it &rarr; <strong>Copy value</strong></li>
+                            <li>Paste below and click <strong>Update Cookie</strong></li>
+                        </ol>
+                    </details>
+                    <textarea id="s-cookie" placeholder="Paste your Jira session cookie here..."></textarea>
+                    <p class="field-note">Cookies expire after ~24 hours — come back here to refresh when Jira stops loading.</p>
+                </div>
+                <div id="cookie-result" class="conn-result"></div>
+
+                <div class="field">
+                    <label>Jira Base URL</label>
+                    <input type="text" id="s-jira-url" placeholder="https://yourcompany.atlassian.net" />
+                    <p class="field-note">Used for issue links — no trailing slash</p>
+                </div>
+
+                <div class="field">
+                    <label>JQL Filter Builder</label>
+                    <div class="jql-builder" id="jql-builder">
+                        <div class="jql-row" style="margin-bottom:10px;">
+                            <label class="jql-check"><input type="checkbox" id="jb-assignee" onchange="updateJqlPreview()"> Assigned to me</label>
+                            <label class="jql-check"><input type="checkbox" id="jb-unresolved" onchange="updateJqlPreview()"> Unresolved only</label>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 20px;">
+                            <div>
+                                <div class="jql-group-label">Status <label class="jql-not-toggle"><input type="checkbox" id="jb-status-not" onchange="updateJqlPreview()"> NOT</label></div>
+                                <div class="jql-row">
+                                    <label class="jql-check"><input type="checkbox" id="jb-s-inprogress" onchange="updateJqlPreview()"> In Progress</label>
+                                    <label class="jql-check"><input type="checkbox" id="jb-s-todo" onchange="updateJqlPreview()"> To Do</label>
+                                    <label class="jql-check"><input type="checkbox" id="jb-s-inreview" onchange="updateJqlPreview()"> In Review</label>
+                                    <label class="jql-check"><input type="checkbox" id="jb-s-blocked" onchange="updateJqlPreview()"> Blocked</label>
+                                    <label class="jql-check"><input type="checkbox" id="jb-s-closed" onchange="updateJqlPreview()"> Closed</label>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="jql-group-label">Priority <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem">(blank = any)</span></div>
+                                <div class="jql-row">
+                                    <label class="jql-check"><input type="checkbox" id="jb-p-highest" onchange="updateJqlPreview()"> Highest</label>
+                                    <label class="jql-check"><input type="checkbox" id="jb-p-high" onchange="updateJqlPreview()"> High</label>
+                                    <label class="jql-check"><input type="checkbox" id="jb-p-medium" onchange="updateJqlPreview()"> Medium</label>
+                                    <label class="jql-check"><input type="checkbox" id="jb-p-low" onchange="updateJqlPreview()"> Low</label>
+                                </div>
+                                <div class="jql-group-label" style="margin-top:10px;">Updated</div>
+                                <div class="jql-row">
+                                    <select id="jb-updated" onchange="updateJqlPreview()" style="font-size:0.82rem;padding:5px 8px;width:auto;">
+                                        <option value="">Any time</option>
+                                        <option value="7">Last 7 days</option>
+                                        <option value="30">Last 30 days</option>
+                                        <option value="90">Last 90 days</option>
+                                    </select>
+                                </div>
+                                <div class="jql-group-label" style="margin-top:10px;">Projects <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem">(e.g. HBMADJ, CRM)</span></div>
+                                <div class="jql-row">
+                                    <input type="text" id="jb-projects" placeholder="Blank = all" oninput="updateJqlPreview()" style="flex:1;min-width:0;font-size:0.82rem;padding:5px 8px;" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="jql-preview-wrap">
+                            <div class="jql-preview-label">Generated JQL</div>
+                            <div class="jql-preview" id="jql-preview"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>Custom JQL Override <span style="font-weight:400;text-transform:none;font-size:0.72rem">(optional)</span></label>
+                    <div class="jql-input-row">
+                        <input type="text" id="s-jira-jql" placeholder="e.g. project = MYPROJ AND status != Closed ORDER BY updated DESC" oninput="updateJqlPreview()" style="flex:1;" />
+                        <button class="jql-clear-btn" onclick="clearCustomJql()" title="Clear custom JQL">&#10005; remove</button>
+                    </div>
+                    <p class="field-note">Overrides the builder above entirely when filled. Leave blank to use the builder.</p>
+                </div>
+
+                <div id="conn-result" class="conn-result"></div>
+                <div class="modal-actions">
+                    <button class="btn btn-purple" onclick="updateCookie()">&#8593; Update Cookie</button>
+                    <button class="btn btn-outline" onclick="testConnection()">&#128268; Test Proxy</button>
+                    <button class="btn btn-outline" onclick="closeSettings()">Cancel</button>
+                    <button class="btn btn-green" onclick="saveSettings()">Save Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ─── EDIT MODAL ────────────────────────────────────────────────────────────── -->
+<div id="edit-modal" style="display:none">
+    <div class="overlay" onclick="if(event.target===this)closeEditModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">&#9998; Edit Task</div>
+            <div class="modal-body">
+                <div class="field"><label>Task</label><input type="text" id="edit-text" /></div>
+                <div class="field"><label>Notes</label><textarea id="edit-notes"></textarea></div>
+                <div class="field"><label>Priority</label>
+                    <select id="edit-priority">
+                        <option value="high">&#128308; High</option>
+                        <option value="medium">&#128993; Medium</option>
+                        <option value="low">&#128994; Low</option>
+                    </select>
+                </div>
+                <div class="field"><label>Color</label><div id="edit-color-swatches" class="color-swatches"></div></div>
+                <div class="field"><label>Category</label>
+                    <select id="edit-category">
+                        <option value="Work">&#128188; Work</option>
+                        <option value="Dev">&#128187; Dev</option>
+                        <option value="Meeting">&#128197; Meeting</option>
+                        <option value="Review">&#128269; Review</option>
+                        <option value="Admin">&#128203; Admin</option>
+                        <option value="JIRA">&#127919; JIRA</option>
+                        <option value="Other">&#128204; Other</option>
+                    </select>
+                </div>
+                <div class="field"><label>Due Date</label><input type="date" id="edit-due" /></div>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
+                    <button class="btn btn-purple" onclick="saveEdit()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="js/constants.js"></script>
+<script src="js/state.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/colors.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/tasks.js"></script>
+<script src="js/render.js"></script>
+<script src="js/drag.js"></script>
+<script src="js/jira.js"></script>
+<script src="js/inbox.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/main.js"></script>
+
+<!-- ⚡ Brain Dump FAB -->
+<button class="fab-capture" onclick="openCapture()" title="Brain dump (Space)">&#9889;</button>
+
+<!-- Capture modal -->
+<div id="capture-modal" style="display:none" class="overlay" onclick="if(event.target===this)closeCapture()">
+    <div class="capture-box">
+        <div class="capture-title">&#9889; Brain Dump</div>
+        <textarea id="capture-textarea" class="capture-ta" placeholder="What's on your mind? Capture it — sort it later..." rows="4"></textarea>
+        <div class="capture-actions">
+            <button class="btn" onclick="closeCapture()">Cancel</button>
+            <button class="btn btn-green" onclick="saveCapture()">&#10003; Capture</button>
+        </div>
+        <div class="capture-hint">Press Enter twice or click Capture · Esc to close</div>
+    </div>
+</div>
+
+</body>
+</html>
