@@ -140,39 +140,34 @@ function toggleTask(id, evt) {
     debouncedSave(); renderTasks(); updateStats();
 }
 
-// ── Soft delete with undo ─────────────────────────────────────────────────────
-let _pendingDelete = null;
+// ── Soft delete with undo stack ───────────────────────────────────────────────
+let _pendingDeletes = [];
 
 function deleteTask(id) {
     const idx = tasks.findIndex(t => t.id === id);
     if (idx === -1) return;
 
-    // Commit any previous pending delete before starting a new one
-    if (_pendingDelete) {
-        clearTimeout(_pendingDelete.timer);
-        debouncedSave();
-    }
-
     const removed = tasks.splice(idx, 1)[0];
     renderTasks(); updateStats();
 
-    const timer = setTimeout(() => {
-        _pendingDelete = null;
+    const entry = { task: removed, idx };
+    entry.timer = setTimeout(() => {
+        _pendingDeletes = _pendingDeletes.filter(e => e !== entry);
         debouncedSave();
     }, DELETE_UNDO_MS);
+    _pendingDeletes.push(entry);
 
-    _pendingDelete = { task: removed, idx, timer };
     toastWithAction('Task deleted', 'Undo', undoDelete);
 }
 
 function undoDelete() {
-    if (!_pendingDelete) return;
-    clearTimeout(_pendingDelete.timer);
-    const { task, idx } = _pendingDelete;
-    _pendingDelete = null;
-    tasks.splice(Math.min(idx, tasks.length), 0, task);
+    if (!_pendingDeletes.length) return;
+    const entry = _pendingDeletes.pop();
+    clearTimeout(entry.timer);
+    tasks.splice(Math.min(entry.idx, tasks.length), 0, entry.task);
     debouncedSave(); renderTasks(); updateStats();
-    toast('Task restored ✓');
+    const remaining = _pendingDeletes.length;
+    toast('Task restored ✓' + (remaining ? ' — ' + remaining + ' more deletion' + (remaining > 1 ? 's' : '') + ' pending' : ''));
 }
 
 function clearDone() {
