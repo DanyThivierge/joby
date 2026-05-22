@@ -226,9 +226,18 @@ select option { background: var(--card); color: var(--text); }
 
 /* ── Task list ──────────────────────────────────────────────────────────── */
 .task-zone-label {
-    font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 1.8px; color: var(--text-3);
-    margin-top: 14px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 10px;
+    margin: 16px 0 12px;
+}
+.task-zone-label::before,
+.task-zone-label::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(to var(--dir, right), transparent, var(--border));
+}
+.task-zone-label::after { --dir: left; }
+.task-zone-label span {
+    font-size: 0.66rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 2.5px; color: var(--text-3); white-space: nowrap;
 }
 .task-list { display: flex; flex-direction: column; gap: 8px; }
 .task-item {
