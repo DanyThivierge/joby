@@ -6,12 +6,12 @@ document.getElementById('edit-text').addEventListener('keydown', e=>{if(e.key===
 document.getElementById('edit-modal').addEventListener('keydown', e=>{if(e.key==='Escape')closeEditModal();});
 document.getElementById('settings-modal').addEventListener('keydown', e=>{if(e.key==='Escape')closeSettings();});
 
-// Space key — open capture if no input focused; Escape — close capture
+// Space → brain dump capture; n → ghost task row; Escape → close both
 document.addEventListener('keydown', e => {
-    if (e.key === ' ' && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) {
-        e.preventDefault(); openCapture();
-    }
-    if (e.key === 'Escape') closeCapture();
+    const notInInput = !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName);
+    if (e.key === ' ' && notInInput) { e.preventDefault(); openCapture(); }
+    if (e.key === 'n' && notInInput) { e.preventDefault(); openGhostTask(); }
+    if (e.key === 'Escape') { closeCapture(); closeGhostTask(); }
 });
 
 // ── Task keyboard navigation ───────────────────────────────────────────────────
@@ -54,18 +54,15 @@ document.addEventListener('keydown', e => {
     }
 });
 
-// ── New Task panel toggle ─────────────────────────────────────────────────────
-function toggleNewTask() {
-    const panel = document.getElementById('new-task-panel');
-    const btn   = document.getElementById('new-task-tab-btn');
-    const show  = panel.style.display === 'none';
-    panel.style.display = show ? 'block' : 'none';
-    btn.classList.toggle('active', show);
-    if (show) setTimeout(() => document.getElementById('task-input').focus(), 50);
+// ── Ghost task row ────────────────────────────────────────────────────────────
+function openGhostTask() {
+    const row = document.getElementById('ghost-task-row');
+    if (row.classList.contains('expanded')) return;
+    row.classList.add('expanded');
+    setTimeout(() => document.getElementById('task-input').focus(), 30);
 }
-function closeNewTask() {
-    document.getElementById('new-task-panel').style.display = 'none';
-    document.getElementById('new-task-tab-btn').classList.remove('active');
+function closeGhostTask() {
+    document.getElementById('ghost-task-row').classList.remove('expanded');
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────

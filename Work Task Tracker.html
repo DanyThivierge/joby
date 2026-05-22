@@ -32,8 +32,6 @@
     <button class="tab-btn active" onclick="switchTab('tasks',this)">&#128203; My Tasks</button>
     <button class="tab-btn" onclick="switchTab('jira',this)">&#127919; Jira</button>
     <button class="tab-btn" onclick="switchTab('stats',this)">&#128202; Stats</button>
-    <div class="tabs-spacer"></div>
-    <button class="tab-btn new-task-tab-btn" id="new-task-tab-btn" onclick="toggleNewTask()">&#43; New Task</button>
 </div>
 
 <!-- ─── MY TASKS ─────────────────────────────────────────────────────────────── -->
@@ -62,25 +60,23 @@
     <!-- Main content: collapsible new task + filters + list -->
     <div class="tasks-main">
 
-        <!-- New task panel (hidden until toggled from tab bar) -->
-        <div id="new-task-panel" class="new-task-panel" style="display:none">
-            <div class="panel">
-                <div class="panel-header new-task-panel-header">
-                    <span>&#43; New Task</span>
-                    <button onclick="closeNewTask()" class="close-panel-btn" aria-label="Close new task form">&#10005;</button>
-                </div>
-                <div class="input-body">
-                    <div class="input-row">
+        <!-- Ghost row: collapses to a placeholder line, expands inline on click / 'n' key -->
+        <div id="ghost-task-row" class="ghost-task-row" onclick="openGhostTask()" role="button" tabindex="0"
+             aria-label="Add a new task" onkeydown="if(event.key==='Enter')openGhostTask();">
+            <div class="ghost-placeholder">&#43; Add a task&#8230;</div>
+            <div class="ghost-expand-wrap">
+                <div class="ghost-expand-inner">
+                    <div class="input-row" style="margin-top:4px">
                         <div class="input-with-mic">
-                            <input type="text" id="task-input" placeholder="Describe your task — or tap 🎤 to speak..." />
-                            <button id="mic-btn" class="mic-btn" onclick="toggleSpeech()" title="Speak to add task" aria-label="Speak to add task">&#127908;</button>
+                            <input type="text" id="task-input" placeholder="Describe your task — or tap &#127908; to speak&#8230;" />
+                            <button id="mic-btn" class="mic-btn" onclick="event.stopPropagation();toggleSpeech()" title="Speak to add task" aria-label="Speak to add task">&#127908;</button>
                         </div>
-                        <select id="priority-select">
+                        <select id="priority-select" onclick="event.stopPropagation()">
                             <option value="high">&#128308; High</option>
                             <option value="medium" selected>&#128993; Medium</option>
                             <option value="low">&#128994; Low</option>
                         </select>
-                        <select id="category-select">
+                        <select id="category-select" onclick="event.stopPropagation()">
                             <option value="Work">&#128188; Work</option>
                             <option value="Dev">&#128187; Dev</option>
                             <option value="Meeting">&#128197; Meeting</option>
@@ -90,11 +86,12 @@
                             <option value="Other">&#128204; Other</option>
                         </select>
                     </div>
-                    <div class="input-row2">
-                        <input type="date" id="due-date" />
+                    <div class="input-row2" style="margin-top:8px">
+                        <input type="date" id="due-date" onclick="event.stopPropagation()" />
                         <div id="add-color-swatches" class="color-swatches"></div>
-                        <input type="text" id="task-notes" placeholder="Notes (optional)..." />
-                        <button class="btn btn-green" onclick="addTask()">&#43; Add Task</button>
+                        <input type="text" id="task-notes" placeholder="Notes (optional)&#8230;" onclick="event.stopPropagation()" />
+                        <button class="btn btn-green" onclick="event.stopPropagation();addTask()">&#43; Add Task</button>
+                        <button class="btn btn-outline" onclick="event.stopPropagation();closeGhostTask()">Cancel</button>
                     </div>
                 </div>
             </div>

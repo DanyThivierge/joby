@@ -117,18 +117,34 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color:
 .sidebar-progress { margin-bottom: 0; }
 .tasks-main { flex: 1; min-width: 0; }
 
-/* ── New task panel (tabs bar toggle) ───────────────────────────────────── */
-.tabs-bar { display: flex; }
-.tabs-spacer { flex: 1; }
-.new-task-tab-btn { color: var(--green-dark) !important; font-weight: 700; border-left: 1px solid var(--border); }
-.new-task-tab-btn.active { color: var(--purple) !important; border-bottom-color: var(--green) !important; }
-.new-task-panel { margin-bottom: 18px; }
-.new-task-panel-header { display: flex; justify-content: space-between; align-items: center; }
-.close-panel-btn {
-    background: none; border: none; color: rgba(255,255,255,0.7); cursor: pointer;
-    font-size: 0.95rem; padding: 0; line-height: 1; transition: color 0.15s;
+/* ── Ghost task row ──────────────────────────────────────────────────────── */
+.ghost-task-row {
+    background: var(--card); border: 1.5px dashed var(--border);
+    border-radius: 6px; padding: 10px 16px; cursor: text;
+    margin-bottom: 10px; transition: border-color 0.18s, box-shadow 0.18s;
 }
-.close-panel-btn:hover { color: #fff; }
+.ghost-task-row:not(.expanded):hover {
+    border-color: var(--purple); border-style: solid;
+    box-shadow: var(--shadow-sm);
+}
+.ghost-task-row:focus { outline: 2px solid var(--purple); outline-offset: 1px; }
+.ghost-task-row.expanded {
+    border: 1.5px solid var(--purple); border-style: solid;
+    box-shadow: 0 0 0 3px var(--purple-light); cursor: default;
+}
+.ghost-placeholder {
+    color: var(--text-3); font-size: 0.9rem; user-select: none;
+    transition: opacity 0.15s;
+}
+.ghost-task-row.expanded .ghost-placeholder { display: none; }
+
+/* CSS grid trick for smooth height animation */
+.ghost-expand-wrap {
+    display: grid; grid-template-rows: 0fr;
+    transition: grid-template-rows 0.22s ease;
+}
+.ghost-task-row.expanded .ghost-expand-wrap { grid-template-rows: 1fr; }
+.ghost-expand-inner { overflow: hidden; }
 
 /* ── Stats ──────────────────────────────────────────────────────────────── */
 .stats-bar { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }

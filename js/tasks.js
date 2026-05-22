@@ -10,7 +10,7 @@ function addTask() {
     renderColorSwatches('add-color-swatches', '');
     if (isListening) { recognition.stop(); isListening=false; updateMicBtn(); }
     debouncedSave(); renderTasks(); updateStats(); toast('Task added!');
-    closeNewTask();
+    closeGhostTask();
 }
 
 // ── Toggle / delete ───────────────────────────────────────────────────────────
