@@ -81,12 +81,14 @@ function renderTasks() {
 // ── Stats bar ─────────────────────────────────────────────────────────────────
 function updateStats() {
     const total=tasks.length,done=tasks.filter(t=>t.done).length;
+    const overdue=tasks.filter(t=>isOverdue(t)).length;
     document.getElementById('stat-total').textContent=total;
     document.getElementById('stat-pending').textContent=total-done;
     document.getElementById('stat-done').textContent=done;
     document.getElementById('stat-high').textContent=tasks.filter(t=>t.priority==='high'&&!t.done).length;
-    document.getElementById('stat-overdue').textContent=tasks.filter(t=>isOverdue(t)).length;
+    document.getElementById('stat-overdue').textContent=overdue;
     document.getElementById('progress-bar').style.width=(total>0?Math.round(done/total*100):0)+'%';
+    document.getElementById('stat-overdue').closest('.stat-card')?.classList.toggle('danger', overdue > 0);
 }
 
 // ── Export CSV ────────────────────────────────────────────────────────────────
