@@ -67,10 +67,17 @@ function debouncedSave() {
     clearTimeout(saveDebTimer);
     saveDebTimer = setTimeout(() => autoSave(), SAVE_DEBOUNCE_MS);
 }
+let _opfsWriting = false;
 async function autoSave() {
-    const ok = await saveToOPFS();
-    writeToLS();
-    setSaveIndicator(ok ? 'saved' : 'failed');
+    if (_opfsWriting) { setTimeout(autoSave, 100); return; }
+    _opfsWriting = true;
+    try {
+        const ok = await saveToOPFS();
+        writeToLS();
+        setSaveIndicator(ok ? 'saved' : 'failed');
+    } finally {
+        _opfsWriting = false;
+    }
 }
 function writeToLS() { window.db.set(LS_KEY, payload()); }
 
