@@ -95,6 +95,41 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color:
 /* ── Main content ───────────────────────────────────────────────────────── */
 .main { padding: 20px 24px; max-width: 1100px; margin: 0 auto; }
 
+/* ── Tasks 2-column layout ──────────────────────────────────────────────── */
+.tasks-layout {
+    display: flex; gap: 20px; align-items: flex-start;
+    padding: 20px 24px; max-width: 1260px; margin: 0 auto;
+}
+.tasks-sidebar {
+    width: 210px; flex-shrink: 0;
+    display: flex; flex-direction: column; gap: 10px;
+    position: sticky; top: 20px;
+}
+.stats-sidebar { display: flex; flex-direction: column; gap: 6px; }
+.tasks-sidebar .stat-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; text-align: left;
+    flex: unset; min-width: unset;
+}
+.tasks-sidebar .stat-card .number { font-size: 1.4rem; line-height: 1; }
+.tasks-sidebar .stat-card .label  { margin-top: 0; font-size: 0.68rem; }
+.tasks-sidebar .stat-card:hover    { transform: translateX(2px); }
+.sidebar-progress { margin-bottom: 0; }
+.tasks-main { flex: 1; min-width: 0; }
+
+/* ── New task panel (tabs bar toggle) ───────────────────────────────────── */
+.tabs-bar { display: flex; }
+.tabs-spacer { flex: 1; }
+.new-task-tab-btn { color: var(--green-dark) !important; font-weight: 700; border-left: 1px solid var(--border); }
+.new-task-tab-btn.active { color: var(--purple) !important; border-bottom-color: var(--green) !important; }
+.new-task-panel { margin-bottom: 18px; }
+.new-task-panel-header { display: flex; justify-content: space-between; align-items: center; }
+.close-panel-btn {
+    background: none; border: none; color: rgba(255,255,255,0.7); cursor: pointer;
+    font-size: 0.95rem; padding: 0; line-height: 1; transition: color 0.15s;
+}
+.close-panel-btn:hover { color: #fff; }
+
 /* ── Stats ──────────────────────────────────────────────────────────────── */
 .stats-bar { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
 .stat-card {

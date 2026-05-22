@@ -54,6 +54,20 @@ document.addEventListener('keydown', e => {
     }
 });
 
+// ── New Task panel toggle ─────────────────────────────────────────────────────
+function toggleNewTask() {
+    const panel = document.getElementById('new-task-panel');
+    const btn   = document.getElementById('new-task-tab-btn');
+    const show  = panel.style.display === 'none';
+    panel.style.display = show ? 'block' : 'none';
+    btn.classList.toggle('active', show);
+    if (show) setTimeout(() => document.getElementById('task-input').focus(), 50);
+}
+function closeNewTask() {
+    document.getElementById('new-task-panel').style.display = 'none';
+    document.getElementById('new-task-tab-btn').classList.remove('active');
+}
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 renderColorSwatches('add-color-swatches', '');
 initStorage();

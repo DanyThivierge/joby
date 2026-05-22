@@ -32,84 +32,99 @@
     <button class="tab-btn active" onclick="switchTab('tasks',this)">&#128203; My Tasks</button>
     <button class="tab-btn" onclick="switchTab('jira',this)">&#127919; Jira</button>
     <button class="tab-btn" onclick="switchTab('stats',this)">&#128202; Stats</button>
+    <div class="tabs-spacer"></div>
+    <button class="tab-btn new-task-tab-btn" id="new-task-tab-btn" onclick="toggleNewTask()">&#43; New Task</button>
 </div>
 
 <!-- ─── MY TASKS ─────────────────────────────────────────────────────────────── -->
-<div class="main" id="tab-tasks">
-    <div class="stats-bar">
-        <div class="stat-card"><div class="number" id="stat-total">0</div><div class="label">Total</div></div>
-        <div class="stat-card"><div class="number" id="stat-pending">0</div><div class="label">Pending</div></div>
-        <div class="stat-card"><div class="number" id="stat-done">0</div><div class="label">Completed</div></div>
-        <div class="stat-card"><div class="number" id="stat-high">0</div><div class="label">High Priority</div></div>
-        <div class="stat-card"><div class="number" id="stat-overdue">0</div><div class="label">Overdue</div></div>
-    </div>
-    <div class="progress-wrap"><div class="progress-fill" id="progress-bar" style="width:0%"></div></div>
+<div class="tasks-layout" id="tab-tasks">
 
-    <div class="panel">
-        <div class="panel-header">&#43; New Task</div>
-        <div class="input-body">
-            <div class="input-row">
-                <div class="input-with-mic">
-                    <input type="text" id="task-input" placeholder="Describe your task — or tap 🎤 to speak..." />
-                    <button id="mic-btn" class="mic-btn" onclick="toggleSpeech()" title="Speak to add task" aria-label="Speak to add task">&#127908;</button>
+    <!-- Left sidebar: stats + progress + inbox -->
+    <aside class="tasks-sidebar">
+        <div class="stats-sidebar">
+            <div class="stat-card"><div class="number" id="stat-total">0</div><div class="label">Total</div></div>
+            <div class="stat-card"><div class="number" id="stat-pending">0</div><div class="label">Pending</div></div>
+            <div class="stat-card"><div class="number" id="stat-done">0</div><div class="label">Completed</div></div>
+            <div class="stat-card"><div class="number" id="stat-high">0</div><div class="label">High Priority</div></div>
+            <div class="stat-card"><div class="number" id="stat-overdue">0</div><div class="label">Overdue</div></div>
+        </div>
+        <div class="progress-wrap sidebar-progress"><div class="progress-fill" id="progress-bar" style="width:0%"></div></div>
+        <!-- Inbox panel -->
+        <div class="panel inbox-panel" id="inbox-panel" style="display:none">
+            <div class="panel-header inbox-panel-header" onclick="toggleInboxPanel()">
+                <span id="inbox-header-label">&#128450; Inbox (0)</span>
+                <span class="inbox-chevron" id="inbox-chevron">&#9650;</span>
+            </div>
+            <div id="inbox-list" class="inbox-list"></div>
+        </div>
+    </aside>
+
+    <!-- Main content: collapsible new task + filters + list -->
+    <div class="tasks-main">
+
+        <!-- New task panel (hidden until toggled from tab bar) -->
+        <div id="new-task-panel" class="new-task-panel" style="display:none">
+            <div class="panel">
+                <div class="panel-header new-task-panel-header">
+                    <span>&#43; New Task</span>
+                    <button onclick="closeNewTask()" class="close-panel-btn" aria-label="Close new task form">&#10005;</button>
                 </div>
-                <select id="priority-select">
-                    <option value="high">&#128308; High</option>
-                    <option value="medium" selected>&#128993; Medium</option>
-                    <option value="low">&#128994; Low</option>
-                </select>
-                <select id="category-select">
-                    <option value="Work">&#128188; Work</option>
-                    <option value="Dev">&#128187; Dev</option>
-                    <option value="Meeting">&#128197; Meeting</option>
-                    <option value="Review">&#128269; Review</option>
-                    <option value="Admin">&#128203; Admin</option>
-                    <option value="JIRA">&#127919; JIRA</option>
-                    <option value="Other">&#128204; Other</option>
-                </select>
-            </div>
-            <div class="input-row2">
-                <input type="date" id="due-date" />
-                <div id="add-color-swatches" class="color-swatches"></div>
-                <input type="text" id="task-notes" placeholder="Notes (optional)..." />
-                <button class="btn btn-green" onclick="addTask()">&#43; Add Task</button>
+                <div class="input-body">
+                    <div class="input-row">
+                        <div class="input-with-mic">
+                            <input type="text" id="task-input" placeholder="Describe your task — or tap 🎤 to speak..." />
+                            <button id="mic-btn" class="mic-btn" onclick="toggleSpeech()" title="Speak to add task" aria-label="Speak to add task">&#127908;</button>
+                        </div>
+                        <select id="priority-select">
+                            <option value="high">&#128308; High</option>
+                            <option value="medium" selected>&#128993; Medium</option>
+                            <option value="low">&#128994; Low</option>
+                        </select>
+                        <select id="category-select">
+                            <option value="Work">&#128188; Work</option>
+                            <option value="Dev">&#128187; Dev</option>
+                            <option value="Meeting">&#128197; Meeting</option>
+                            <option value="Review">&#128269; Review</option>
+                            <option value="Admin">&#128203; Admin</option>
+                            <option value="JIRA">&#127919; JIRA</option>
+                            <option value="Other">&#128204; Other</option>
+                        </select>
+                    </div>
+                    <div class="input-row2">
+                        <input type="date" id="due-date" />
+                        <div id="add-color-swatches" class="color-swatches"></div>
+                        <input type="text" id="task-notes" placeholder="Notes (optional)..." />
+                        <button class="btn btn-green" onclick="addTask()">&#43; Add Task</button>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Inbox panel -->
-    <div class="panel inbox-panel" id="inbox-panel" style="display:none">
-        <div class="panel-header inbox-panel-header" onclick="toggleInboxPanel()">
-            <span id="inbox-header-label">&#128450; Inbox (0)</span>
-            <span class="inbox-chevron" id="inbox-chevron">&#9650;</span>
-        </div>
-        <div id="inbox-list" class="inbox-list"></div>
-    </div>
-
-    <div class="controls-row">
-        <div class="controls-left">
-            <button class="filter-pill active" onclick="setFilter('all',this)">All</button>
-            <button class="filter-pill" onclick="setFilter('pending',this)">Pending</button>
-            <button class="filter-pill" onclick="setFilter('done',this)">Done</button>
-            <button class="filter-pill" onclick="setFilter('high',this)">&#128308; High</button>
-            <button class="filter-pill" onclick="setFilter('overdue',this)">&#9203; Overdue</button>
-            <div class="search-wrap">
-                <span class="search-icon">&#128269;</span>
-                <input type="text" id="search-input" placeholder="Search tasks..." oninput="renderTasks()" />
+        <div class="controls-row">
+            <div class="controls-left">
+                <button class="filter-pill active" onclick="setFilter('all',this)">All</button>
+                <button class="filter-pill" onclick="setFilter('pending',this)">Pending</button>
+                <button class="filter-pill" onclick="setFilter('done',this)">Done</button>
+                <button class="filter-pill" onclick="setFilter('high',this)">&#128308; High</button>
+                <button class="filter-pill" onclick="setFilter('overdue',this)">&#9203; Overdue</button>
+                <div class="search-wrap">
+                    <span class="search-icon">&#128269;</span>
+                    <input type="text" id="search-input" placeholder="Search tasks..." oninput="renderTasks()" />
+                </div>
+                <select class="sort-select" id="sort-select" onchange="renderTasks()">
+                    <option value="added">Sort: Added</option>
+                    <option value="priority">Sort: Priority</option>
+                    <option value="due">Sort: Due Date</option>
+                    <option value="alpha">Sort: A–Z</option>
+                </select>
             </div>
-            <select class="sort-select" id="sort-select" onchange="renderTasks()">
-                <option value="added">Sort: Added</option>
-                <option value="priority">Sort: Priority</option>
-                <option value="due">Sort: Due Date</option>
-                <option value="alpha">Sort: A–Z</option>
-            </select>
+            <div class="controls-right">
+                <button class="btn btn-danger" onclick="clearDone()">&#128465; Clear Done</button>
+            </div>
         </div>
-        <div class="controls-right">
-            <button class="btn btn-danger" onclick="clearDone()">&#128465; Clear Done</button>
+        <div class="task-list" id="task-list">
+            <div class="empty-state"><div class="icon">&#128203;</div><p>No tasks yet — add one above or speak it!</p></div>
         </div>
-    </div>
-    <div class="task-list" id="task-list">
-        <div class="empty-state"><div class="icon">&#128203;</div><p>No tasks yet — add one above or speak it!</p></div>
     </div>
 </div>
 
