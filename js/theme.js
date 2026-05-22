@@ -444,6 +444,7 @@ function applyPreset(id) {
     document.querySelectorAll('.theme-preset-card').forEach(c => {
         c.classList.toggle('active', c.dataset.preset === id);
     });
+    _syncDarkToggle(id);
 }
 
 function restoreTheme() {
@@ -468,6 +469,7 @@ function restoreTheme() {
     Object.entries(custom).forEach(([k, v]) => {
         root.style.setProperty(k, v);
     });
+    _syncDarkToggle(id);
 }
 
 function renderThemePresets() {
@@ -561,6 +563,12 @@ function resetThemeStudio() {
     syncThemeStudio();
     if (typeof debouncedSave === 'function') debouncedSave();
     if (typeof toast === 'function') toast('Theme studio reset to preset defaults.');
+}
+
+// ── Dark-mode toggle visibility ───────────────────────────────────────────────
+function _syncDarkToggle(presetId) {
+    const btn = document.getElementById('dark-toggle-btn');
+    if (btn) btn.style.display = (presetId && presetId !== 'default') ? 'none' : '';
 }
 
 // ── Base theme (light / dark) ─────────────────────────────────────────────────
