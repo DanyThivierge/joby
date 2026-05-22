@@ -137,6 +137,12 @@ async function updateCookie() {
 
 // ── Jira ──────────────────────────────────────────────────────────────────────
 function initJiraTab() {
+    if (typeof GAS_MODE !== 'undefined' && GAS_MODE) {
+        document.getElementById('jira-gas-mode').style.display  = 'block';
+        document.getElementById('jira-no-config').style.display = 'none';
+        document.getElementById('jira-content').style.display   = 'none';
+        return;
+    }
     const ok = !!settings.jiraUrl;
     document.getElementById('jira-no-config').style.display = ok ? 'none' : 'block';
     document.getElementById('jira-content').style.display   = ok ? 'block' : 'none';

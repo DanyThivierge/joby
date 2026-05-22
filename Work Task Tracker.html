@@ -115,6 +115,12 @@
 
 <!-- ─── JIRA TAB ──────────────────────────────────────────────────────────────── -->
 <div class="main" id="tab-jira" style="display:none">
+    <div id="jira-gas-mode" class="jira-no-config" style="display:none">
+        <div class="icon">&#127919;</div>
+        <p><strong>Jira integration is only available in local mode.</strong></p>
+        <p style="margin-top:8px;font-size:0.88rem;color:var(--text-2)">This hosted version can't reach your Jira proxy. Download the source, run it locally with VS Code Live Server, and Jira sync works out of the box.</p>
+        <a class="btn btn-purple" href="https://github.com/DanyThivierge/joby" target="_blank" rel="noopener noreferrer" style="margin-top:12px;text-decoration:none">&#128279; Get the code on GitHub</a>
+    </div>
     <div id="jira-no-config" class="jira-no-config" style="display:none">
         <div class="icon">&#9881;&#65039;</div>
         <p>Start the proxy in a terminal (<code>node jira-proxy.js</code>), then open Settings to configure your Jira URL.</p>
