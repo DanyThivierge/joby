@@ -51,7 +51,7 @@
             <div class="input-row">
                 <div class="input-with-mic">
                     <input type="text" id="task-input" placeholder="Describe your task — or tap 🎤 to speak..." />
-                    <button id="mic-btn" class="mic-btn" onclick="toggleSpeech()" title="Speak to add task">&#127908;</button>
+                    <button id="mic-btn" class="mic-btn" onclick="toggleSpeech()" title="Speak to add task" aria-label="Speak to add task">&#127908;</button>
                 </div>
                 <select id="priority-select">
                     <option value="high">&#128308; High</option>
@@ -339,7 +339,7 @@
 <script src="js/main.js"></script>
 
 <!-- ⚡ Brain Dump FAB -->
-<button class="fab-capture" onclick="openCapture()" title="Brain dump (Space)">&#9889;</button>
+<button class="fab-capture" onclick="openCapture()" title="Brain dump (Space)" aria-label="Open Brain Dump capture (Space)">&#9889;</button>
 
 <!-- Capture modal -->
 <div id="capture-modal" style="display:none" class="overlay" onclick="if(event.target===this)closeCapture()">

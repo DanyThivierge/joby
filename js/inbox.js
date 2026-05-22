@@ -31,8 +31,8 @@ function renderInbox() {
             <div class="inbox-text">${escHtml(item.text)}</div>
             <div class="inbox-meta">${item.capturedAt}</div>
             <div class="inbox-actions">
-                <button class="btn btn-small" onclick="promoteInboxItem(${item.id})">&#8594; Add to Tasks</button>
-                <button class="btn btn-small btn-danger" onclick="deleteInboxItem(${item.id})">&#128465;</button>
+                <button class="btn btn-small" onclick="promoteInboxItem(${item.id})" aria-label="Add to tasks: ${escHtml(item.text)}">&#8594; Add to Tasks</button>
+                <button class="btn btn-small btn-danger" onclick="deleteInboxItem(${item.id})" aria-label="Delete inbox item: ${escHtml(item.text)}">&#128465;</button>
             </div>
         </div>
     `).join('');
