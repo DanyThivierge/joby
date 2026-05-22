@@ -19,6 +19,8 @@ function openSettings() {
     document.getElementById('jb-updated').value  = settings.jiraUpdatedDays || '';
     document.getElementById('jb-projects').value = settings.jiraProjects    || '';
     updateJqlPreview();
+    renderThemePresets();
+    syncThemeStudio();
     const cr = document.getElementById('conn-result'); cr.className = 'conn-result'; cr.textContent = '';
     document.getElementById('settings-modal').style.display = 'block';
 }

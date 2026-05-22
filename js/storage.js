@@ -1,7 +1,7 @@
 // storage.js — OPFS persistence, localStorage fallback, JSON export/import, save indicator.
 
 function payload() {
-    return { version: APP_VERSION, tasks, settings: { jiraUrl: settings.jiraUrl, jiraJql: settings.jiraJql, jiraAssigneeMe: settings.jiraAssigneeMe, jiraUnresolved: settings.jiraUnresolved, jiraStatuses: settings.jiraStatuses, jiraStatusNot: settings.jiraStatusNot, jiraPriorities: settings.jiraPriorities, jiraUpdatedDays: settings.jiraUpdatedDays, jiraProjects: settings.jiraProjects }, promotedJiraIds, inboxItems, completionLog, streak };
+    return { version: APP_VERSION, tasks, settings: { jiraUrl: settings.jiraUrl, jiraJql: settings.jiraJql, jiraAssigneeMe: settings.jiraAssigneeMe, jiraUnresolved: settings.jiraUnresolved, jiraStatuses: settings.jiraStatuses, jiraStatusNot: settings.jiraStatusNot, jiraPriorities: settings.jiraPriorities, jiraUpdatedDays: settings.jiraUpdatedDays, jiraProjects: settings.jiraProjects, themePreset: settings.themePreset, themeCustom: settings.themeCustom }, promotedJiraIds, inboxItems, completionLog, streak };
 }
 async function opfsHandle() {
     const root = await navigator.storage.getDirectory();
@@ -37,7 +37,9 @@ function normalizeSettings(s) {
         jiraStatusNot:  s && s.jiraStatusNot   !== undefined ? s.jiraStatusNot   : false,
         jiraPriorities: (s && s.jiraPriorities) || '',
         jiraUpdatedDays:(s && s.jiraUpdatedDays)|| '',
-        jiraProjects:   (s && s.jiraProjects)   || ''
+        jiraProjects:   (s && s.jiraProjects)   || '',
+        themePreset:    (s && s.themePreset)    || 'default',
+        themeCustom:    (s && s.themeCustom)    || {}
     };
 }
 function applyData(data) {
@@ -57,6 +59,7 @@ async function initStorage() {
         const ls = window.db.get(LS_KEY);
         if (ls) { applyData(ls); await saveToOPFS(); }
     }
+    restoreTheme();
     renderTasks(); updateStats(); renderStreakBadge(); renderInbox();
     setSaveIndicator('saved');
 }

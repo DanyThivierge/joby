@@ -289,6 +289,39 @@
                 </div>
 
                 <div id="conn-result" class="conn-result"></div>
+
+                <!-- ── Theme & Appearance ───────────────────────────────── -->
+                <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border);">
+                    <div style="font-weight:700;font-size:0.85rem;color:var(--text-1);margin-bottom:12px;letter-spacing:.5px">&#127912; Theme &amp; Appearance</div>
+
+                    <div class="field" style="margin-bottom:14px;">
+                        <label>Preset Themes</label>
+                        <div id="theme-preset-grid" class="theme-preset-grid"></div>
+                    </div>
+
+                    <div class="field">
+                        <label style="display:flex;align-items:center;justify-content:space-between">
+                            Custom Studio
+                            <button class="btn btn-outline" style="font-size:0.72rem;padding:3px 10px;" onclick="resetThemeStudio()">&#8635; Reset to preset</button>
+                        </label>
+                        <div class="theme-studio">
+                            <div class="studio-row">
+                                <span class="studio-lbl">Corner rounding</span>
+                                <input id="studio-radius-slider" class="studio-slider" type="range" min="0" max="24" value="6" oninput="adjustGeometry(this.value)">
+                                <span id="studio-radius-val" class="studio-val">6px</span>
+                            </div>
+                            <div class="studio-row">
+                                <span class="studio-lbl">Background</span>
+                                <input id="studio-bg-color" class="studio-color" type="color" oninput="adjustColors()" title="Background colour">
+                                <span class="studio-lbl" style="min-width:56px">Card</span>
+                                <input id="studio-card-color" class="studio-color" type="color" oninput="adjustColors()" title="Card colour">
+                                <span class="studio-lbl" style="min-width:52px">Accent</span>
+                                <input id="studio-accent-color" class="studio-color" type="color" oninput="adjustColors()" title="Accent / highlight colour">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="modal-actions">
                     <button class="btn btn-purple" onclick="updateCookie()">&#8593; Update Cookie</button>
                     <button class="btn btn-outline" onclick="testConnection()">&#128268; Test Proxy</button>
