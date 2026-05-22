@@ -148,23 +148,29 @@
 
 <!-- ─── STATS TAB ────────────────────────────────────────────────────────────── -->
 <div class="main" id="tab-stats" style="display:none">
-    <div class="panel">
-        <div class="panel-header">&#128202; Activity Heatmap</div>
-        <div style="padding:16px">
-            <div id="heatmap-month-labels" class="heatmap-months"></div>
-            <div id="heatmap-grid" class="heatmap-grid"></div>
-            <div class="heatmap-legend">
-                <span class="heatmap-legend-label">Less</span>
-                <div class="heatmap-cell" style="background:var(--border)"></div>
-                <div class="heatmap-cell" style="background:rgba(75,0,130,0.2)"></div>
-                <div class="heatmap-cell" style="background:rgba(75,0,130,0.5)"></div>
-                <div class="heatmap-cell" style="background:rgba(75,0,130,0.8)"></div>
-                <div class="heatmap-cell" style="background:var(--purple)"></div>
-                <span class="heatmap-legend-label">More</span>
+    <div class="stats-layout">
+        <div class="panel stats-heatmap-panel">
+            <div class="panel-header">&#128202; Activity Heatmap</div>
+            <div class="heatmap-wrap">
+                <div class="heatmap-inner">
+                    <div id="heatmap-month-labels" class="heatmap-months"></div>
+                    <div id="heatmap-grid" class="heatmap-grid"></div>
+                    <div class="heatmap-legend">
+                        <span class="heatmap-legend-label">Less</span>
+                        <div class="heatmap-cell" style="background:var(--border)"></div>
+                        <div class="heatmap-cell" style="background:rgba(75,0,130,0.2)"></div>
+                        <div class="heatmap-cell" style="background:rgba(75,0,130,0.5)"></div>
+                        <div class="heatmap-cell" style="background:rgba(75,0,130,0.8)"></div>
+                        <div class="heatmap-cell" style="background:var(--purple)"></div>
+                        <span class="heatmap-legend-label">More</span>
+                    </div>
+                </div>
             </div>
         </div>
+        <div class="stats-cards-area">
+            <div class="stats-grid" id="stats-cards"></div>
+        </div>
     </div>
-    <div class="stats-grid" id="stats-cards"></div>
 </div>
 
 <!-- ─── SETTINGS MODAL ────────────────────────────────────────────────────────── -->

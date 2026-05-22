@@ -58,15 +58,22 @@ function flashTagline(msg) {
 
 // ── Stats Tab ─────────────────────────────────────────────────────────────────
 function renderHeatmap() {
-    const WEEKS = HEATMAP_WEEKS;
-    const DAYS  = HEATMAP_DAYS;
+    const WEEKS      = HEATMAP_WEEKS;
+    const DAYS       = HEATMAP_DAYS;
+    const CELL_PX    = 16;   // cell width/height in px
+    const CELL_GAP   = 3;    // gap between cells
+    const LABEL_PX   = 30;   // day-label column width
     const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
     const today = new Date();
     today.setHours(0,0,0,0);
-    const endDate = new Date(today);
-    const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - (WEEKS * DAYS - 1));
+
+    // Snap to Monday of current week so today always lands in the correct weekday row
+    const todayDow   = (today.getDay() + 6) % 7; // Mon=0 … Sun=6
+    const thisMonday = new Date(today);
+    thisMonday.setDate(thisMonday.getDate() - todayDow);
+    const startDate  = new Date(thisMonday);
+    startDate.setDate(startDate.getDate() - (WEEKS - 1) * DAYS);
 
     const weeks = [];
     let cursor = new Date(startDate);
@@ -95,26 +102,40 @@ function renderHeatmap() {
         return 'var(--purple)';
     }
 
+    // Month-label element is now part of the unified grid — hide the legacy element
     const monthEl = document.getElementById('heatmap-month-labels');
-    if (monthEl) monthEl.innerHTML = monthLabels.map(m => '<span>' + m + '</span>').join('');
+    if (monthEl) monthEl.style.display = 'none';
 
     const gridEl = document.getElementById('heatmap-grid');
     if (!gridEl) return;
 
+    // Single unified grid: month header row + 7 day rows — alignment is structurally guaranteed
+    gridEl.style.gridTemplateColumns = LABEL_PX + 'px repeat(' + WEEKS + ', ' + CELL_PX + 'px)';
+
     let html = '';
+
+    // Row 0: month labels (top-left corner is empty)
+    html += '<div></div>';
+    for (let w = 0; w < WEEKS; w++) {
+        html += '<div class="heatmap-month-cell">' + (monthLabels[w] || '') + '</div>';
+    }
+
+    // Rows 1-7: day label + cells
     for (let d = 0; d < DAYS; d++) {
         html += '<div class="heatmap-day-label">' + (d % 2 === 0 ? DAY_LABELS[d] : '') + '</div>';
         for (let w = 0; w < WEEKS; w++) {
-            const dateObj = weeks[w][d];
-            const ds   = dateObj.toLocaleDateString('en-CA');
-            const cnt  = completionLog[ds] || 0;
-            const col  = cellColor(cnt);
+            const dateObj  = weeks[w][d];
+            const ds       = dateObj.toLocaleDateString('en-CA');
+            const cnt      = completionLog[ds] || 0;
             const isFuture = dateObj > today;
-            const tip  = isFuture ? '' : ds + (cnt ? ' — ' + cnt + ' task' + (cnt>1?'s':'') + ' done' : ' — no completions');
-            html += '<div class="heatmap-cell" style="background:' + (isFuture ? 'transparent' : col) + '; border: 1px solid var(--border);" title="' + tip + '"></div>';
+            if (isFuture) {
+                html += '<div class="heatmap-cell heatmap-cell-future"></div>';
+            } else {
+                const tip = ds + (cnt ? ' — ' + cnt + ' task' + (cnt > 1 ? 's' : '') + ' done' : ' — no completions');
+                html += '<div class="heatmap-cell" style="background:' + cellColor(cnt) + ';" title="' + tip + '"></div>';
+            }
         }
     }
-    gridEl.style.gridTemplateColumns = '28px repeat(' + WEEKS + ', 14px)';
     gridEl.innerHTML = html;
 }
 
