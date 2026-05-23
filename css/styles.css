@@ -81,6 +81,8 @@ body { font-family: var(--font-app); background: var(--bg); color: var(--text); 
 .hdr-btn.primary:hover { background: var(--purple-dark); border-color: var(--purple-dark); color: #fff; }
 .hdr-btn.saving { color: #F59E0B; border-color: #F59E0B; }
 .hdr-btn.saved  { color: var(--green-dark); border-color: var(--green-dark); }
+.theme-active-pill { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.2px; border-style: dashed; opacity: 0.85; }
+.theme-active-pill:hover { opacity: 1; }
 
 /* ── Status bar ─────────────────────────────────────────────────────────── */
 .status-bar { padding: 7px 24px; font-size: 0.8rem; display: none; }
@@ -425,13 +427,40 @@ select option { background: var(--card); color: var(--text); }
 [data-theme="dark"] .toast { border-left-color: var(--purple); }
 
 /* ── Task indent ─────────────────────────────────────────────────────────── */
-.indent-marker { color: var(--text-3); font-size: 0.78em; margin-right: 4px; opacity: 0.6; user-select: none; font-style: normal; }
-.task-item[data-indent="1"] { border-left: 2px solid rgba(139,92,246,0.25); }
-.task-item[data-indent="2"] { border-left: 2px solid rgba(139,92,246,0.38); }
-.task-item[data-indent="3"] { border-left: 2px solid rgba(139,92,246,0.52); }
-[data-theme="dark"] .task-item[data-indent="1"] { border-left: 2px solid rgba(139,92,246,0.3); }
-[data-theme="dark"] .task-item[data-indent="2"] { border-left: 2px solid rgba(139,92,246,0.45); }
-[data-theme="dark"] .task-item[data-indent="3"] { border-left: 2px solid rgba(139,92,246,0.6); }
+/* Subtask dot connector */
+.indent-marker {
+    display: inline-block;
+    width: 7px; height: 7px;
+    background: var(--purple);
+    border-radius: 50%;
+    margin-right: 7px;
+    opacity: 0.5;
+    flex-shrink: 0;
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+}
+/* Indented task — left accent bar (theme-aware via var) */
+.task-item[data-indent="1"] { border-left: 2px solid var(--purple); opacity-left: 0.3; }
+.task-item[data-indent="2"] { border-left: 2px solid var(--purple); }
+.task-item[data-indent="3"] { border-left: 3px solid var(--purple); }
+
+/* L-shaped connector drawn in the margin space to the left of each subtask */
+.task-item[data-indent="1"]::before,
+.task-item[data-indent="2"]::before,
+.task-item[data-indent="3"]::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: -6px;
+    height: calc(50% + 6px);
+    width: 12px;
+    border-left: 1.5px solid var(--purple);
+    border-bottom: 1.5px solid var(--purple);
+    border-bottom-left-radius: 3px;
+    opacity: 0.35;
+    pointer-events: none;
+}
 /* Drag indent hint — badge below the hovered card */
 .task-item[data-drag-indent]::after { content: attr(data-drag-indent-label); position: absolute; left: 12px; bottom: -18px; font-size: 0.72rem; color: #fff; background: var(--purple); padding: 1px 8px; border-radius: 3px; font-weight: 700; opacity: 0.92; pointer-events: none; z-index: 10; white-space: nowrap; }
 .task-item { position: relative; }

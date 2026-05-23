@@ -55,7 +55,7 @@ function renderTasks() {
         const indent = task.indent || 0;
         const due    = task.dueDate ? (ov&&!task.done ? '<span class="badge over-badge">&#9888; Overdue '+formatDue(task.dueDate)+'</span>' : '<span class="badge due-badge">&#128197; Due '+formatDue(task.dueDate)+'</span>') : '';
         const notes  = task.notes ? '<div class="task-notes">'+linkify(task.notes)+'</div>' : '';
-        const marker = indent > 0 ? '<span class="indent-marker">'+('↳').repeat(indent)+'</span>' : '';
+        const marker = indent > 0 ? '<span class="indent-marker" aria-hidden="true"></span>' : '';
         const mleft  = indent * INDENT_W;
         const ariaChecked = task.done ? 'true' : 'false';
         const ariaLabel   = (task.done ? 'Mark incomplete' : 'Mark complete') + ': ' + task.text;

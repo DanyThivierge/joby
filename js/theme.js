@@ -565,10 +565,19 @@ function resetThemeStudio() {
     if (typeof toast === 'function') toast('Theme studio reset to preset defaults.');
 }
 
-// ── Dark-mode toggle visibility ───────────────────────────────────────────────
+// ── Dark-mode toggle & active-theme pill ─────────────────────────────────────
 function _syncDarkToggle(presetId) {
-    const btn = document.getElementById('dark-toggle-btn');
-    if (btn) btn.style.display = (presetId && presetId !== 'default') ? 'none' : '';
+    const isThemed = presetId && presetId !== 'default';
+    const toggle   = document.getElementById('dark-toggle-btn');
+    const pill     = document.getElementById('active-theme-btn');
+    if (toggle) toggle.style.display = isThemed ? 'none' : '';
+    if (pill) {
+        pill.style.display = isThemed ? '' : 'none';
+        if (isThemed) {
+            const preset = THEME_PRESETS[presetId];
+            pill.textContent = (preset ? preset.emoji + ' ' + preset.label : presetId) + ' ✕';
+        }
+    }
 }
 
 // ── Base theme (light / dark) ─────────────────────────────────────────────────
