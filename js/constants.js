@@ -4,6 +4,7 @@ const APP_VERSION         = '1.5';
 const OPFS_FILENAME       = 'work-tasks.json';
 const LS_KEY              = 'work_tasks';
 const LS_THEME_KEY        = 'wtt-theme';
+const LS_USER_THEME_KEY   = 'wtt-user-theme'; // user's own light/dark toggle (separate from preset-forced mode)
 
 const LOGO_LIGHT          = 'th_logo_en.png';
 const LOGO_DARK           = 'telus_logo_dark.png';

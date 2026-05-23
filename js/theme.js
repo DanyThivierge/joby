@@ -412,35 +412,40 @@ const THEME_PRESETS = {
     }
 };
 
-// Tracks which CSS vars were last set by a preset (to clear them on switch)
-let _activePresetVars = [];
+// Single set tracking ALL inline CSS vars (preset vars + studio overrides combined).
+// Cleared atomically on every preset switch so nothing leaks across themes.
+const _inlineVars = new Set();
+
+function _setInlineVar(key, val) {
+    document.documentElement.style.setProperty(key, val);
+    _inlineVars.add(key);
+}
+function _clearAllInlineVars() {
+    _inlineVars.forEach(v => document.documentElement.style.removeProperty(v));
+    _inlineVars.clear();
+}
 
 function applyPreset(id) {
     const preset = THEME_PRESETS[id] || THEME_PRESETS.default;
-    const root   = document.documentElement;
 
-    // Clear previously applied preset vars
-    _activePresetVars.forEach(v => root.style.removeProperty(v));
-    _activePresetVars = [];
+    // Wipe every inline override (preset + studio) before applying new set
+    _clearAllInlineVars();
 
-    // Apply new preset vars
-    Object.entries(preset.vars).forEach(([k, v]) => {
-        root.style.setProperty(k, v);
-        _activePresetVars.push(k);
-    });
+    // Apply preset vars
+    Object.entries(preset.vars).forEach(([k, v]) => _setInlineVar(k, v));
 
-    // Apply base theme (dark/light), skip if 'auto'
-    if (preset.base === 'dark')  applyTheme('dark');
-    else if (preset.base === 'light') applyTheme('light');
+    // Apply base theme. For 'default' restore the user's own preference.
+    if (preset.base === 'dark')        applyTheme('dark');
+    else if (preset.base === 'light')  applyTheme('light');
+    else /* 'auto' / default */        applyTheme(localStorage.getItem(LS_USER_THEME_KEY) || 'light');
 
-    // Save to settings
+    // Save to settings — also clear any studio customisations on preset switch
     if (typeof settings !== 'undefined') {
         settings.themePreset = id;
-        settings.themeCustom = {};    // reset custom overrides when switching preset
+        settings.themeCustom = {};
         if (typeof debouncedSave === 'function') debouncedSave();
     }
 
-    // Refresh preset cards UI
     document.querySelectorAll('.theme-preset-card').forEach(c => {
         c.classList.toggle('active', c.dataset.preset === id);
     });
@@ -448,27 +453,20 @@ function applyPreset(id) {
 }
 
 function restoreTheme() {
-    const id = (typeof settings !== 'undefined' && settings.themePreset) || 'default';
+    const id     = (typeof settings !== 'undefined' && settings.themePreset) || 'default';
     const preset = THEME_PRESETS[id] || THEME_PRESETS.default;
-    const root   = document.documentElement;
 
-    // Apply base first
-    if (preset.base === 'dark')  applyTheme('dark');
+    _clearAllInlineVars();
+    Object.entries(preset.vars).forEach(([k, v]) => _setInlineVar(k, v));
+
+    if (preset.base === 'dark')       applyTheme('dark');
     else if (preset.base === 'light') applyTheme('light');
+    else                              applyTheme(localStorage.getItem(LS_USER_THEME_KEY) || 'light');
 
-    // Apply preset vars
-    _activePresetVars.forEach(v => root.style.removeProperty(v));
-    _activePresetVars = [];
-    Object.entries(preset.vars).forEach(([k, v]) => {
-        root.style.setProperty(k, v);
-        _activePresetVars.push(k);
-    });
-
-    // Layer any saved custom studio overrides on top
+    // Layer saved studio overrides on top
     const custom = (typeof settings !== 'undefined' && settings.themeCustom) || {};
-    Object.entries(custom).forEach(([k, v]) => {
-        root.style.setProperty(k, v);
-    });
+    Object.entries(custom).forEach(([k, v]) => _setInlineVar(k, v));
+
     _syncDarkToggle(id);
 }
 
@@ -522,28 +520,28 @@ function cssColorToHex(color) {
 
 function adjustGeometry(val) {
     const px   = val + 'px';
-    const root = document.documentElement;
-    root.style.setProperty('--radius-card',  px);
-    root.style.setProperty('--radius-btn',   px);
-    root.style.setProperty('--radius-pill',  Math.max(val * 3, 4) + 'px');
-    root.style.setProperty('--radius-check', val < 4 ? px : '50%');
+    const pill = Math.max(val * 3, 4) + 'px';
+    const chk  = val < 4 ? px : '50%';
+    _setInlineVar('--radius-card',  px);
+    _setInlineVar('--radius-btn',   px);
+    _setInlineVar('--radius-pill',  pill);
+    _setInlineVar('--radius-check', chk);
     document.getElementById('studio-radius-val').textContent = px;
     _saveStudioVar('--radius-card',  px);
     _saveStudioVar('--radius-btn',   px);
-    _saveStudioVar('--radius-pill',  Math.max(val * 3, 4) + 'px');
-    _saveStudioVar('--radius-check', val < 4 ? px : '50%');
+    _saveStudioVar('--radius-pill',  pill);
+    _saveStudioVar('--radius-check', chk);
 }
 
 function adjustColors() {
     const bg     = document.getElementById('studio-bg-color')?.value;
     const card   = document.getElementById('studio-card-color')?.value;
     const accent = document.getElementById('studio-accent-color')?.value;
-    const root   = document.documentElement;
-    if (bg)     { root.style.setProperty('--bg',     bg);     _saveStudioVar('--bg',     bg); }
-    if (card)   { root.style.setProperty('--card',   card);   _saveStudioVar('--card',   card); }
+    if (bg)     { _setInlineVar('--bg',     bg);     _saveStudioVar('--bg',     bg); }
+    if (card)   { _setInlineVar('--card',   card);   _saveStudioVar('--card',   card); }
     if (accent) {
-        root.style.setProperty('--purple', accent);
-        root.style.setProperty('--purple-light', accent + '22');
+        _setInlineVar('--purple',       accent);
+        _setInlineVar('--purple-light', accent + '22');
         _saveStudioVar('--purple',       accent);
         _saveStudioVar('--purple-light', accent + '22');
     }
@@ -587,7 +585,9 @@ function initTheme() {
 }
 function toggleDarkMode() {
     const cur = document.documentElement.getAttribute('data-theme') || 'light';
-    applyTheme(cur === 'dark' ? 'light' : 'dark');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(LS_USER_THEME_KEY, next); // remember user's own choice
+    applyTheme(next);
 }
 function applyTheme(t) {
     document.documentElement.setAttribute('data-theme', t);
