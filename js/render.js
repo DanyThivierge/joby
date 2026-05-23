@@ -55,6 +55,7 @@ function renderTasks() {
         const indent = task.indent || 0;
         const due    = task.dueDate ? (ov&&!task.done ? '<span class="badge over-badge">&#9888; Overdue '+formatDue(task.dueDate)+'</span>' : '<span class="badge due-badge">&#128197; Due '+formatDue(task.dueDate)+'</span>') : '';
         const notes  = task.notes ? '<div class="task-notes">'+linkify(task.notes)+'</div>' : '';
+        const recur  = task.recurFreq ? '<span class="badge recur-badge">&#8635; '+freqLabel(task.recurFreq)+'</span>' : '';
         const marker = indent > 0 ? '<span class="indent-marker" aria-hidden="true"></span>' : '';
         const mleft  = indent * INDENT_W;
         const ariaChecked = task.done ? 'true' : 'false';
@@ -67,7 +68,7 @@ function renderTasks() {
             +' aria-label="'+escAttr(ariaLabel)+'"'
             +' onclick="toggleTask('+task.id+',event)"'
             +' onkeydown="if(event.key===\' \'||event.key===\'Enter\'){event.preventDefault();toggleTask('+task.id+',event);}"></div>'
-            +'<div class="task-content"><div class="task-text">'+marker+escHtml(task.text)+'</div>'+notes+'<div class="task-meta"><span class="badge p-'+task.priority+'">'+task.priority+'</span><span class="badge cat-badge">'+escHtml(task.category)+'</span>'+due+'<span class="task-date">Added '+task.createdAt+'</span></div></div>'
+            +'<div class="task-content"><div class="task-text">'+marker+escHtml(task.text)+'</div>'+notes+'<div class="task-meta"><span class="badge p-'+task.priority+'">'+task.priority+'</span><span class="badge cat-badge">'+escHtml(task.category)+'</span>'+recur+due+'<span class="task-date">Added '+task.createdAt+'</span></div></div>'
             +'<div class="task-actions">'
             +'<button class="action-btn" onclick="openEdit('+task.id+')" title="Edit" aria-label="Edit task: '+escAttr(task.text)+'">&#9998;</button>'
             +'<button class="action-btn" onclick="deleteTask('+task.id+')" title="Delete" aria-label="Delete task: '+escAttr(task.text)+'">&#128465;</button>'

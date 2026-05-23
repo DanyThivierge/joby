@@ -40,3 +40,14 @@ function yesterdayStr() {
     const d = new Date(); d.setDate(d.getDate() - 1);
     return d.toLocaleDateString('en-CA');
 }
+function addDaysToDate(dateStr, n) {
+    const d = new Date(dateStr + 'T00:00:00');
+    d.setDate(d.getDate() + n);
+    return d.toLocaleDateString('en-CA');
+}
+function freqDays(freq) {
+    return freq === 'daily' ? 1 : freq === 'weekly' ? 7 : freq === 'biweekly' ? 14 : freq === 'monthly' ? 30 : 0;
+}
+function freqLabel(freq) {
+    return freq === 'daily' ? 'Daily' : freq === 'weekly' ? 'Weekly' : freq === 'biweekly' ? 'Bi-weekly' : freq === 'monthly' ? 'Monthly' : '';
+}

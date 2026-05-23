@@ -81,8 +81,8 @@ body { font-family: var(--font-app); background: var(--bg); color: var(--text); 
 .hdr-btn.primary:hover { background: var(--purple-dark); border-color: var(--purple-dark); color: #fff; }
 .hdr-btn.saving { color: #F59E0B; border-color: #F59E0B; }
 .hdr-btn.saved  { color: var(--green-dark); border-color: var(--green-dark); }
-.theme-active-pill { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.2px; border-style: dashed; opacity: 0.85; }
-.theme-active-pill:hover { opacity: 1; }
+.theme-active-pill { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.2px; border-style: dashed; }
+.badge.recur-badge { background: var(--purple-light); color: var(--purple); font-weight: 700; }
 
 /* ── Status bar ─────────────────────────────────────────────────────────── */
 .status-bar { padding: 7px 24px; font-size: 0.8rem; display: none; }

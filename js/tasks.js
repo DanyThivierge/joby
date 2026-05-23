@@ -5,8 +5,8 @@ function addTask() {
     const input=document.getElementById('task-input');
     const text=input.value.trim();
     if (!text) { input.style.borderColor='var(--red)'; setTimeout(()=>input.style.borderColor='',1000); return; }
-    tasks.unshift({ id:Date.now(), text, notes:document.getElementById('task-notes').value.trim(), priority:document.getElementById('priority-select').value, category:document.getElementById('category-select').value, dueDate:document.getElementById('due-date').value, color:getSelectedColor('add-color-swatches'), indent:0, done:false, createdAt:new Date().toLocaleDateString('en-CA') });
-    input.value=''; document.getElementById('task-notes').value=''; document.getElementById('due-date').value='';
+    tasks.unshift({ id:Date.now(), text, notes:document.getElementById('task-notes').value.trim(), priority:document.getElementById('priority-select').value, category:document.getElementById('category-select').value, dueDate:document.getElementById('due-date').value, recurFreq:document.getElementById('recur-select').value||null, color:getSelectedColor('add-color-swatches'), indent:0, done:false, createdAt:new Date().toLocaleDateString('en-CA') });
+    input.value=''; document.getElementById('task-notes').value=''; document.getElementById('due-date').value=''; document.getElementById('recur-select').value='';
     renderColorSwatches('add-color-swatches', '');
     if (isListening) { recognition.stop(); isListening=false; updateMicBtn(); }
     debouncedSave(); renderTasks(); updateStats(); toast('Task added!');
@@ -125,10 +125,23 @@ function toggleTask(id, evt) {
         t.doneAt = todayStr();
         logCompletion(); updateStreak();
         if (evt) fireConfetti(evt.clientX, evt.clientY);
-        setTimeout(() => {
-            const card = document.querySelector(`.task-card[data-id="${id}"]`);
-            if (card) { card.classList.add('task-just-done'); card.addEventListener('animationend', () => card.classList.remove('task-just-done'), { once: true }); }
-        }, 0);
+        // Schedule recurring reset — advance both dates by the frequency period
+        if (t.recurFreq) {
+            const days       = freqDays(t.recurFreq);
+            const label      = freqLabel(t.recurFreq);
+            const oldCreated = t.createdAt;
+            const oldDue     = t.dueDate;
+            setTimeout(() => {
+                const task = tasks.find(x => x.id === id);
+                if (!task || !task.done) return; // user may have un-done it
+                task.done      = false;
+                task.doneAt    = null;
+                task.createdAt = addDaysToDate(oldCreated, days);
+                task.dueDate   = oldDue ? addDaysToDate(oldDue, days) : null;
+                debouncedSave(); renderTasks(); updateStats();
+                toast('↻ ' + label + ' task reset' + (task.dueDate ? ' — due ' + formatDue(task.dueDate) : ''), 3500, 'var(--purple)');
+            }, 1600);
+        }
     } else {
         const day = t.doneAt || todayStr();
         t.doneAt = null;
@@ -186,6 +199,7 @@ function openEdit(id) {
     document.getElementById('edit-priority').value=t.priority;
     document.getElementById('edit-category').value=t.category;
     document.getElementById('edit-due').value=t.dueDate||'';
+    document.getElementById('edit-recur').value=t.recurFreq||'';
     renderColorSwatches('edit-color-swatches', t.color||'');
     document.getElementById('edit-modal').style.display='block';
 }
@@ -198,6 +212,7 @@ function saveEdit() {
     t.priority=document.getElementById('edit-priority').value;
     t.category=document.getElementById('edit-category').value;
     t.dueDate=document.getElementById('edit-due').value;
+    t.recurFreq=document.getElementById('edit-recur').value||null;
     t.color=getSelectedColor('edit-color-swatches');
     closeEditModal(); debouncedSave();renderTasks();updateStats();toast('Task updated!');
 }

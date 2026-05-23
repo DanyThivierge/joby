@@ -21,7 +21,6 @@
         <div class="streak-badge" id="streak-badge" title=""></div>
         <div class="save-indicator"><div class="save-dot" id="save-dot"></div><span id="save-label">Saved</span></div>
         <button id="dark-toggle-btn" class="hdr-btn" onclick="toggleDarkMode()">&#127769; Dark</button>
-        <button id="active-theme-btn" class="hdr-btn theme-active-pill" onclick="applyPreset('default')" style="display:none" title="Click to remove theme and return to default"></button>
         <button class="hdr-btn primary" onclick="openSettings()">&#9881;&#65039; Settings</button>
     </div>
 </header>
@@ -89,6 +88,13 @@
                     </div>
                     <div class="input-row2" style="margin-top:8px">
                         <input type="date" id="due-date" onclick="event.stopPropagation()" />
+                        <select id="recur-select" onclick="event.stopPropagation()" title="Repeat frequency">
+                            <option value="">&#128260; No repeat</option>
+                            <option value="daily">&#8635; Daily</option>
+                            <option value="weekly">&#8635; Weekly</option>
+                            <option value="biweekly">&#8635; Bi-weekly</option>
+                            <option value="monthly">&#8635; Monthly</option>
+                        </select>
                         <div id="add-color-swatches" class="color-swatches"></div>
                         <input type="text" id="task-notes" placeholder="Notes (optional)&#8230;" onclick="event.stopPropagation()" />
                         <button class="btn btn-green" onclick="event.stopPropagation();addTask()">&#43; Add Task</button>
@@ -296,7 +302,10 @@
                     <div style="font-weight:700;font-size:0.85rem;color:var(--text-1);margin-bottom:12px;letter-spacing:.5px">&#127912; Theme &amp; Appearance</div>
 
                     <div class="field" style="margin-bottom:14px;">
-                        <label>Preset Themes</label>
+                        <label style="display:flex;align-items:center;justify-content:space-between">
+                            Preset Themes
+                            <button id="active-theme-btn" class="btn btn-outline theme-active-pill" onclick="applyPreset('default');syncThemeStudio();" style="display:none;font-size:0.72rem;padding:3px 10px" title="Remove theme and return to default">&#10005; Remove theme</button>
+                        </label>
                         <div id="theme-preset-grid" class="theme-preset-grid"></div>
                     </div>
 
@@ -362,6 +371,15 @@
                     </select>
                 </div>
                 <div class="field"><label>Due Date</label><input type="date" id="edit-due" /></div>
+                <div class="field"><label>Repeat</label>
+                    <select id="edit-recur">
+                        <option value="">&#128260; No repeat</option>
+                        <option value="daily">&#8635; Daily</option>
+                        <option value="weekly">&#8635; Weekly</option>
+                        <option value="biweekly">&#8635; Bi-weekly</option>
+                        <option value="monthly">&#8635; Monthly</option>
+                    </select>
+                </div>
                 <div class="modal-actions">
                     <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
                     <button class="btn btn-purple" onclick="saveEdit()">Save Changes</button>

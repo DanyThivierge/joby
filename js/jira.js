@@ -21,6 +21,7 @@ function openSettings() {
     updateJqlPreview();
     renderThemePresets();
     syncThemeStudio();
+    _syncDarkToggle((typeof settings !== 'undefined' && settings.themePreset) || 'default');
     const cr = document.getElementById('conn-result'); cr.className = 'conn-result'; cr.textContent = '';
     document.getElementById('settings-modal').style.display = 'block';
 }
