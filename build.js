@@ -110,6 +110,8 @@ function buildHtml(gasMode, homeMode) {
 
     // In Home mode, replace logo with Joby logo embedded as base64.
     // Must happen AFTER bundle injection so the constants.js strings are in html.
+    // Patches PERSONAL_LOGO_LIGHT/DARK (used by applyTheme in personal mode)
+    // and the initial <img> src (which starts as th_logo_en.png in the HTML shell).
     if (homeMode) {
         const logoLight = toDataUri('Joby_logo.png', 'image/png');
         const logoDark  = toDataUri('Joby_logo_dark.png', 'image/png') || logoLight;
@@ -119,12 +121,12 @@ function buildHtml(gasMode, homeMode) {
                 '$1src="' + logoLight + '"$2'
             );
             html = html.replace(
-                "const LOGO_LIGHT          = 'th_logo_en.png';",
-                "const LOGO_LIGHT          = '" + logoLight + "';"
+                "const PERSONAL_LOGO_LIGHT = 'Joby_logo.png';",
+                "const PERSONAL_LOGO_LIGHT = '" + logoLight + "';"
             );
             html = html.replace(
-                "const LOGO_DARK           = 'telus_logo_dark.png';",
-                "const LOGO_DARK           = '" + logoDark + "';"
+                "const PERSONAL_LOGO_DARK  = 'Joby_logo_dark.png';",
+                "const PERSONAL_LOGO_DARK  = '" + logoDark + "';"
             );
         }
     }
