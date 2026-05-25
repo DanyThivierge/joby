@@ -7,9 +7,7 @@ function switchTab(tab, btn) {
     btn.classList.add('active');
     document.getElementById('tab-tasks').style.display  = tab === 'tasks'  ? '' : 'none';
     document.getElementById('tab-jira').style.display   = tab === 'jira'   ? '' : 'none';
-    document.getElementById('tab-stats').style.display  = tab === 'stats'  ? '' : 'none';
     if (tab === 'jira')  initJiraTab();
-    if (tab === 'stats') { renderHeatmap(); renderStatsCards(); }
 }
 
 // Groups tasks into [parent, ...children] blocks so sort keeps subtasks with their parent.
@@ -45,6 +43,9 @@ function getFiltered() {
 // ── Render tasks ──────────────────────────────────────────────────────────────
 function renderTasks() {
     const list = document.getElementById('task-list');
+    list.classList.toggle('compact-mode', compactView);
+    const cb = document.getElementById('compact-btn');
+    if (cb) cb.classList.toggle('active', compactView);
     const filtered = getFiltered();
     if (!filtered.length) {
         list.innerHTML = '<div class="empty-state"><div class="icon">&#128203;</div><p>' + (currentFilter==='all'&&!document.getElementById('search-input').value ? 'No tasks yet — add one above or speak it!' : 'No matching tasks.') + '</p></div>';
@@ -56,11 +57,16 @@ function renderTasks() {
         const due    = task.dueDate ? (ov&&!task.done ? '<span class="badge over-badge">&#9888; Overdue '+formatDue(task.dueDate)+'</span>' : '<span class="badge due-badge">&#128197; Due '+formatDue(task.dueDate)+'</span>') : '';
         const notes  = task.notes ? '<div class="task-notes">'+linkify(task.notes)+'</div>' : '';
         const recur  = task.recurFreq ? '<span class="badge recur-badge">&#8635; '+freqLabel(task.recurFreq)+'</span>' : '';
+        const cDue   = task.dueDate ? (ov&&!task.done ? '<span class="compact-due ovr">&#9888;</span>' : '<span class="compact-due">&#128197; '+formatDue(task.dueDate)+'</span>') : '';
+        const cNote  = task.notes   ? '<span class="compact-note-icon" title="Has notes">&#128206;</span>' : '';
+        const cRec   = task.recurFreq ? '<span class="compact-recur" title="'+freqLabel(task.recurFreq)+'">&#8635;</span>' : '';
+        const compactInline = '<div class="compact-inline">'+cDue+cNote+cRec+'<span class="compact-prio p-'+task.priority+'"></span><span class="compact-cat">'+escHtml(task.category)+'</span></div>';
         const marker = indent > 0 ? '<span class="indent-marker" aria-hidden="true"></span>' : '';
         const mleft  = indent * INDENT_W;
         const ariaChecked = task.done ? 'true' : 'false';
         const ariaLabel   = (task.done ? 'Mark incomplete' : 'Mark complete') + ': ' + task.text;
-        return '<div class="task-item'+(task.done?' done':'')+(ov&&!task.done?' overdue':'')+(task.color?' tc-'+task.color:'')+'"'
+        const isExpanded = expandedCompactIds.has(task.id);
+        return '<div class="task-item'+(task.done?' done':'')+(ov&&!task.done?' overdue':'')+(task.color?' tc-'+task.color:'')+(isExpanded?' compact-expanded':'')+'"'
             +' draggable="true" data-id="'+task.id+'" data-vis="'+vi+'" data-indent="'+indent+'"'
             +' style="margin-left:'+mleft+'px">'
             +'<div class="task-check'+(task.done?' checked':'')+'"'
@@ -68,7 +74,7 @@ function renderTasks() {
             +' aria-label="'+escAttr(ariaLabel)+'"'
             +' onclick="toggleTask('+task.id+',event)"'
             +' onkeydown="if(event.key===\' \'||event.key===\'Enter\'){event.preventDefault();toggleTask('+task.id+',event);}"></div>'
-            +'<div class="task-content"><div class="task-text">'+marker+escHtml(task.text)+'</div>'+notes+'<div class="task-meta"><span class="badge p-'+task.priority+'">'+task.priority+'</span><span class="badge cat-badge">'+escHtml(task.category)+'</span>'+recur+due+'<span class="task-date">Added '+task.createdAt+'</span></div></div>'
+            +'<div class="task-content" onclick="toggleCompactExpand('+task.id+',event)"><div class="task-text">'+marker+escHtml(task.text)+'</div>'+compactInline+notes+'<div class="task-meta"><span class="badge p-'+task.priority+'">'+task.priority+'</span><span class="badge cat-badge">'+escHtml(task.category)+'</span>'+recur+due+'<span class="task-date">Added '+task.createdAt+'</span></div></div>'
             +'<div class="task-actions">'
             +'<button class="action-btn" onclick="openEdit('+task.id+')" title="Edit" aria-label="Edit task: '+escAttr(task.text)+'">&#9998;</button>'
             +'<button class="action-btn" onclick="deleteTask('+task.id+')" title="Delete" aria-label="Delete task: '+escAttr(task.text)+'">&#128465;</button>'
@@ -90,6 +96,25 @@ function updateStats() {
     document.getElementById('stat-overdue').textContent=overdue;
     document.getElementById('progress-bar').style.width=(total>0?Math.round(done/total*100):0)+'%';
     document.getElementById('stat-overdue').closest('.stat-card')?.classList.toggle('danger', overdue > 0);
+    if (typeof renderSidebarStats === 'function') renderSidebarStats();
+    if (typeof renderHeatmap     === 'function') renderHeatmap();
+}
+
+// ── Compact view toggle ───────────────────────────────────────────────────────
+function toggleCompact() {
+    compactView = !compactView;
+    expandedCompactIds.clear();
+    settings.compactView = compactView;
+    debouncedSave();
+    renderTasks();
+}
+function toggleCompactExpand(id, event) {
+    if (!compactView) return;
+    if (event && event.target.closest('a, button')) return;
+    if (expandedCompactIds.has(id)) expandedCompactIds.delete(id);
+    else expandedCompactIds.add(id);
+    const card = document.querySelector(`.task-item[data-id="${id}"]`);
+    if (card) card.classList.toggle('compact-expanded', expandedCompactIds.has(id));
 }
 
 // ── Export CSV ────────────────────────────────────────────────────────────────

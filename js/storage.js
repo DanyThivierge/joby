@@ -1,7 +1,7 @@
 // storage.js — OPFS persistence, localStorage fallback, JSON export/import, save indicator.
 
 function payload() {
-    return { version: APP_VERSION, tasks, settings: { jiraUrl: settings.jiraUrl, jiraJql: settings.jiraJql, jiraAssigneeMe: settings.jiraAssigneeMe, jiraUnresolved: settings.jiraUnresolved, jiraStatuses: settings.jiraStatuses, jiraStatusNot: settings.jiraStatusNot, jiraPriorities: settings.jiraPriorities, jiraUpdatedDays: settings.jiraUpdatedDays, jiraProjects: settings.jiraProjects, themePreset: settings.themePreset, themeCustom: settings.themeCustom }, promotedJiraIds, inboxItems, completionLog, streak };
+    return { version: APP_VERSION, tasks, settings: { jiraUrl: settings.jiraUrl, jiraJql: settings.jiraJql, jiraAssigneeMe: settings.jiraAssigneeMe, jiraUnresolved: settings.jiraUnresolved, jiraStatuses: settings.jiraStatuses, jiraStatusNot: settings.jiraStatusNot, jiraPriorities: settings.jiraPriorities, jiraUpdatedDays: settings.jiraUpdatedDays, jiraProjects: settings.jiraProjects, themePreset: settings.themePreset, themeCustom: settings.themeCustom, compactView: settings.compactView }, promotedJiraIds, inboxItems, completionLog, streak };
 }
 async function opfsHandle() {
     const root = await navigator.storage.getDirectory();
@@ -39,7 +39,8 @@ function normalizeSettings(s) {
         jiraUpdatedDays:(s && s.jiraUpdatedDays)|| '',
         jiraProjects:   (s && s.jiraProjects)   || '',
         themePreset:    (s && s.themePreset)    || 'default',
-        themeCustom:    (s && s.themeCustom)    || {}
+        themeCustom:    (s && s.themeCustom)    || {},
+        compactView:    (s && s.compactView)    || false
     };
 }
 function applyData(data) {
@@ -60,6 +61,7 @@ async function initStorage() {
         if (ls) { applyData(ls); await saveToOPFS(); }
     }
     restoreTheme();
+    compactView = settings.compactView || false;
     renderTasks(); updateStats(); renderStreakBadge(); renderInbox();
     setSaveIndicator('saved');
 }
@@ -75,14 +77,16 @@ async function autoSave() {
     if (_opfsWriting) { setTimeout(autoSave, 100); return; }
     _opfsWriting = true;
     try {
-        const ok = await saveToOPFS();
-        writeToLS();
-        setSaveIndicator(ok ? 'saved' : 'failed');
+        const opfsOk = await saveToOPFS();
+        const lsOk   = writeToLS();
+        setSaveIndicator((opfsOk || lsOk) ? 'saved' : 'failed');
     } finally {
         _opfsWriting = false;
     }
 }
-function writeToLS() { window.db.set(LS_KEY, payload()); }
+function writeToLS() {
+    try { window.db.set(LS_KEY, payload()); return true; } catch { return false; }
+}
 
 function setSaveIndicator(state) {
     const dot   = document.getElementById('save-dot');

@@ -12,30 +12,79 @@ A self-contained task tracker built for daily work use at TELUS Health. Runs ent
 - Filter by All / Pending / Done / High Priority / Overdue
 - Search and sort (by date added, priority, due date, or A–Z)
 - Drag and drop to reorder tasks
-- **Drag right to indent** — create visual subtasks up to 3 levels deep; sort keeps subtasks with their parent
+- **Drag right to indent** — create visual subtasks up to 3 levels deep; sort keeps subtasks with their parent; L-shaped dot connectors show the parent→child relationship
 - **Parent completion guard** — cannot mark a parent done while children are still open
 - Progress bar showing completion percentage
 - Edit tasks inline via modal
 - **Soft delete with 5-second undo** — deleting a task shows an Undo button in the toast; removal is only committed to storage after the window expires
 - Speech-to-text input (mic button — Chrome / Edge)
+- **Ghost row** — press `n` or click `+ Add a task…` to expand the inline add form; press Escape to collapse
 - Export task list to CSV
 - Import / Export full backup as JSON
 - Overdue tasks get a full red border
+
+### Recurring Tasks
+
+- Mark any task as **Daily / Weekly / Bi-weekly / Monthly** using the repeat selector
+- On completion, the task automatically resets: both the creation date and the due date slide forward by the repeat interval, preserving the original lead-time buffer
+- A ↻ badge appears on recurring task cards
+
+### Compact View
+
+- **≡ Compact** toggle in the filter bar collapses all tasks to single-line rows — priority dot, category, due date, and 📎/↻ indicators remain visible
+- Click any compacted task row to expand it inline and see notes, badges, and the added date; click again to collapse
+- Preference is saved and restored between sessions
+
+### Themes & Customisation
+
+18 built-in presets covering a range of aesthetics:
+
+| Preset | Style |
+| --- | --- |
+| Default | TELUS Health brand (purple + green) |
+| LCARS | Star Trek LCARS interface |
+| Outer Rim | Dark sci-fi red |
+| Don't Panic | Deep space amber |
+| Knight Rider | Black-on-black red scanner |
+| Sakura | Soft cherry blossom pink |
+| Enchanted Forest | Soft blue-purple |
+| Synthwave | Neon pink retro |
+| Coffee House | Warm espresso |
+| Island Vacation | Sandy teal |
+| Pip-Boy | Fallout terminal green |
+| Steampunk | Victorian copper |
+| Midnight Dev | Hacker black-violet |
+| Executive Silver | Corporate navy |
+| Nord | Arctic blue-grey |
+| Dracula | Classic dark purple |
+| Solarized | Warm light base |
+| Deep Ocean | Bioluminescent teal |
+
+**Custom Theme Studio** — radius slider (square → round) and colour pickers for background, card, and accent; changes layer on top of any preset and persist independently.
+
+- Dark/light mode toggle is hidden when a named preset is active (the preset owns its mode)
+- Remove the active theme from the Settings modal to return to Default
+
+### Sidebar Stats (always visible)
+
+The left sidebar shows everything at a glance without switching tabs:
+
+- **Task counts** — Total, Pending, Completed, High Priority, Overdue + progress bar
+- **Productivity cards** — Current streak, completions this week / this month / all time, completion rate, most productive day of the week
+- **Activity heatmap** — 13-week GitHub-style grid in TELUS purple; updates live as tasks are completed
 
 ### Brain Dump Inbox ⚡
 
 - Fixed **⚡ FAB button** (bottom-right, always visible) opens a quick-capture modal
 - Press **Space** (when no input is focused) to open capture instantly
-- Captured items appear in a collapsible **📥 Inbox** panel above the task list
+- Captured items appear in a collapsible **📥 Inbox** panel in the sidebar
 - Each inbox item can be **promoted to a task** (pre-fills the add form) or deleted
-- Inbox count shown in the panel header
 
 ### Engagement & Rewards
 
-- **🔥 Streak counter** — consecutive days with at least one task completed; shown as a badge in the header; pulses when it increments
+- **🔥 Streak counter** — consecutive days with at least one task completed; shown as a badge in the header; pulses when it increments; milestone flashes at 3/7/14/30 days
 - **Confetti** — 28 coloured particles burst from the checkbox when you mark a task done
 - **Context-aware taglines** — the header tagline prioritises streak milestones, active streaks, strong performance, and inbox items before falling back to static lines
-- **📊 Stats tab** — GitHub-style 13-week activity heatmap (TELUS purple colour scale) + stat cards: current/longest streak, completions this week / this month / all time, completion rate, most productive day of the week
 
 ### Jira Integration
 
@@ -48,19 +97,12 @@ A self-contained task tracker built for daily work use at TELUS Health. Runs ent
 - Promoted issues are tracked so you don't double-add them
 - Pagination for large backlogs
 
-### Persistence
+### Persistence & Saving
 
 - Uses the **Origin Private File System (OPFS)** to save tasks locally — survives browser cache clears, no permission prompts
-- Falls back to `localStorage` as a belt-and-suspenders backup
+- Falls back to `localStorage` automatically (works when opening the file directly without a server)
 - Auto-saves on every change (800ms debounce)
 - Save indicator in the header (green = saved, amber = saving, red = failed)
-
-### Design
-
-- TELUS Health branding — official logo, purple (`#4b0082`) and green (`#66cc00`) palette
-- Light mode and dark mode toggle
-- Dark mode inspired by the TELUS I.R.I.S. app — deep navy, vibrant violet accent
-- Logo automatically swaps between light and dark variants
 
 ---
 
@@ -68,15 +110,19 @@ A self-contained task tracker built for daily work use at TELUS Health. Runs ent
 
 ### Requirements
 
-- Chrome or Edge (recommended — required for speech-to-text and OPFS)
+- Chrome or Edge (recommended — required for speech-to-text; OPFS requires a served URL)
 - Python 3 (for the Jira proxy)
-- [VSCode Live Server extension](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) or any local web server
+- Any local web server to get OPFS persistence (e.g. [VSCode Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer))
+
+> **No server?** Opening `dist/Work Task Tracker.html` directly from the file system works fine — tasks save to `localStorage` and all features work except OPFS. The save indicator will show "Saved" correctly in either mode.
 
 ### Getting Started
 
 1. Open the `Task Organizer` folder in VSCode
 2. Right-click `Work Task Tracker.html` → **Open with Live Server**
 3. Start adding tasks — data saves automatically
+
+Or open `dist/Work Task Tracker.html` directly in your browser for a zero-setup experience.
 
 ### Jira Setup
 
@@ -110,9 +156,9 @@ Switch to the **Jira** tab — your assigned issues load automatically.
 
 Each person needs their own copy of the cookie (cookies are personal session tokens). The workflow is the same for everyone:
 
-1. Copy the `Task Organizer` folder
+1. Copy the `Task Organizer` folder (or share the `dist/Work Task Tracker.html` build)
 2. Run `python jira-proxy.py` in a terminal
-3. Open the tracker via Live Server
+3. Open the tracker
 4. Go to Settings → paste their own Jira cookie → **Update Cookie**
 
 The `jira-cookie.txt` file that gets created is personal — do not share it.
@@ -125,20 +171,20 @@ The `jira-cookie.txt` file that gets created is personal — do not share it.
 Task Organizer/
 ├── Work Task Tracker.html   # App shell — open this in Live Server
 ├── css/
-│   └── styles.css           # All styles (~340 lines)
+│   └── styles.css           # All styles
 ├── js/
 │   ├── constants.js         # Magic strings, numbers, config (load first)
-│   ├── state.js             # Global mutable state (tasks, settings, streak, inbox)
-│   ├── utils.js             # Helpers: escHtml, linkify, toast, date strings
-│   ├── theme.js             # Dark mode + speech-to-text
+│   ├── state.js             # Global mutable state (tasks, settings, streak, inbox, compactView)
+│   ├── utils.js             # Helpers: escHtml, linkify, toast, date helpers, recurrence
+│   ├── theme.js             # 18 theme presets, Custom Studio, dark/light toggle, speech-to-text
 │   ├── colors.js            # Color swatch UI
 │   ├── storage.js           # OPFS + localStorage persistence, export/import
-│   ├── tasks.js             # Task CRUD, streak, confetti, edit modal
-│   ├── render.js            # Task list rendering, tabs, stats bar, CSV export
+│   ├── tasks.js             # Task CRUD, streak, confetti, recurring reset, edit modal
+│   ├── render.js            # Task list rendering, tabs, stats bar, compact view, CSV export
 │   ├── drag.js              # Drag-and-drop reorder + indent detection
 │   ├── jira.js              # Jira integration, JQL builder, proxy calls
 │   ├── inbox.js             # Brain Dump capture modal and inbox panel
-│   ├── stats.js             # Heatmap, stats cards, motivational taglines
+│   ├── stats.js             # Heatmap, sidebar stats cards, motivational taglines
 │   └── main.js              # Keyboard shortcuts + app boot
 ├── dist/
 │   └── Work Task Tracker.html  # Single-file production build (run: node build.js)
@@ -147,13 +193,14 @@ Task Organizer/
 ├── jira-cookie.txt          # Your personal session cookie (auto-created, do not share)
 ├── th_logo_en.png           # TELUS Health logo (light mode)
 ├── telus_logo_dark.png      # TELUS Health logo (dark mode, optional — falls back to light)
-├── favicon.ico              # Browser tab icon
+├── Joby_logo.png            # App icon
+├── favicon.png              # Browser tab icon
 └── README.md
 ```
 
 ### Production build
 
-To generate a single-file bundle for deployment (e.g. sharing with a co-worker who doesn't have Live Server):
+To generate a single-file bundle for deployment or sharing:
 
 ```text
 node build.js
@@ -169,7 +216,7 @@ Tasks and settings are stored in OPFS as `work-tasks.json`:
 
 ```json
 {
-  "version": "1.5",
+  "version": "1.6",
   "tasks": [
     {
       "id": 1234567890,
@@ -182,7 +229,8 @@ Tasks and settings are stored in OPFS as `work-tasks.json`:
       "doneAt": null,
       "createdAt": "2026-05-07",
       "indent": 0,
-      "color": ""
+      "color": "",
+      "recurFreq": null
     }
   ],
   "inboxItems": [
@@ -199,7 +247,10 @@ Tasks and settings are stored in OPFS as `work-tasks.json`:
     "jiraStatusNot": false,
     "jiraPriorities": "",
     "jiraUpdatedDays": "",
-    "jiraProjects": ""
+    "jiraProjects": "",
+    "themePreset": "default",
+    "themeCustom": {},
+    "compactView": false
   },
   "promotedJiraIds": ["1366029", "1362011"]
 }
@@ -207,57 +258,68 @@ Tasks and settings are stored in OPFS as `work-tasks.json`:
 
 ---
 
+## Keyboard Shortcuts
+
+| Key | Action |
+| --- | --- |
+| `n` | Open the inline add-task form |
+| `Space` | Open the Brain Dump capture modal |
+| `Escape` | Close any open modal or form |
+| `Tab` (on task checkbox) | Indent the task one level |
+| `Shift+Tab` (on task checkbox) | Dedent the task one level |
+| `Alt+↑ / Alt+↓` | Move the focused task up or down |
+| `Enter` (in task input) | Add the task |
+
+---
+
 ## Changelog
+
+### v1.6 (2026-05-25)
+
+- **Theme system** — 18 built-in presets (LCARS, Outer Rim, Don't Panic, Knight Rider, Sakura, Enchanted Forest, Synthwave, Coffee House, Island Vacation, Pip-Boy, Steampunk, Midnight Dev, Executive Silver, Nord, Dracula, Solarized, Deep Ocean, Default); presets define colours, border radius, and fonts; Custom Theme Studio adds a radius slider and bg/card/accent pickers that layer on top of any preset; dark/light toggle hidden when a named preset is active; "Remove theme" button in Settings
+- **Recurring tasks** — Daily/Weekly/Bi-weekly/Monthly; both `createdAt` and `dueDate` advance by the repeat interval on completion, preserving the original lead-time buffer; 1.6s reset delay so confetti completes; ↻ badge on recurring cards
+- **Subtask dot connectors** — purple dot marker + L-shaped CSS line visually connects subtasks to their parent
+- **Compact view** — ≡ Compact toggle in the filter bar; single-line task rows with inline priority dot, category, due date, and 📎/↻ indicators; click a row to expand it inline; preference persisted in settings
+- **Stats always visible** — activity heatmap and productivity cards (streak, weekly/monthly/all-time completions, completion rate, best day) moved to the left sidebar; Stats tab removed
+- **Font split** — `--font-app` applies only to the app name in the header; `--font-body` controls all task/body text; prevents decorative theme fonts (e.g. Impact) from inflating task text
+- **Save indicator fix** — "Save failed" no longer appears when running from a `file://` URL; localStorage success is correctly treated as saved
 
 ### v1.5 (2026-05-08)
 
-- **Brain Dump Inbox** — ⚡ FAB button + Space shortcut to capture fleeting thoughts; collapsible inbox panel above task list; promote to task or delete
+- **Brain Dump Inbox** — ⚡ FAB button + Space shortcut to capture fleeting thoughts; collapsible inbox panel in the sidebar; promote to task or delete
 - **Streak counter** — 🔥 header badge for consecutive days with completions; pulses on increment; milestone flashes at 3/7/14/30 days
 - **Confetti** — particle burst on task completion (pure CSS + JS, no libraries)
-- **Context-aware taglines** — header tagline now checks streak, yesterday's output, today's pace, and inbox count before falling back to static lines
-- **📊 Stats tab** — 13-week GitHub-style activity heatmap + stat cards (streak, weekly, monthly, all-time, most productive day)
-- **Unmark fix** — unchecking a task correctly decrements `completionLog` for the day it was marked done and recomputes the streak from scratch
+- **Context-aware taglines** — header tagline checks streak, yesterday's output, today's pace, and inbox count before falling back to static lines
+- **Stats tab** — 13-week GitHub-style activity heatmap + stat cards (streak, weekly, monthly, all-time, most productive day)
+- **Unmark fix** — unchecking a task correctly decrements `completionLog` and recomputes the streak from scratch
 - Task `doneAt` field tracks which day a task was completed
-- **Multi-file refactor** — split from one 1,864-line HTML into `css/styles.css` + 13 JS modules loaded via `<script src="">` (classic globals, not ES modules — avoids shared-state issues); zero behaviour changes
-- **`constants.js`** — all magic strings, numbers, and config values in one place; loaded first so every file can reference them
-- **`build.js`** — zero-dependency Node.js bundle script; inlines CSS + JS into a single-file `dist/` HTML for easy sharing
-- **Soft delete with undo** — deleting a task shows an Undo toast for 5 seconds; only committed to storage after the window expires
-- **Toast/FAB overlap fix** — toast now appears above the ⚡ FAB instead of behind it
-- **Dark logo fallback** — if `telus_logo_dark.png` is missing, the logo silently falls back to the light variant (no broken image)
+- **Multi-file refactor** — split from one 1,864-line HTML into `css/styles.css` + 13 JS modules; zero behaviour changes
+- **`constants.js`** — all magic strings, numbers, and config in one place
+- **`build.js`** — zero-dependency Node.js bundle script
+- **Soft delete with undo** — 5-second undo toast before removal is committed
 
 ### v1.4 (internal)
 
-- Task colour picker (7 light-shade colours + none), shown on add and edit
+- Task colour picker (7 light-shade colours + none)
 - Visual subtask indentation via drag (up to 3 levels); subtasks sort with their parent
-- Parent completion guard — blocks marking done if open children exist
-- Overdue tasks: full red border on all 4 sides
-- Settings modal widened to 700px; Export/Import/CSV moved into Settings menu
-- JQL builder: 2-column layout, NOT toggle for statuses
-- Browser tab title → "Joby | TELUS Health"
-- Jira status "Done" → "Closed"
+- Parent completion guard
+- Overdue tasks: full red border
+- Settings modal widened; Export/Import/CSV moved inside Settings
 
 ### v1.2 (2026-05-07)
 
-- Renamed app to **Joby** with rotating taglines in the header
-- Replaced API token auth with **local Python proxy** using browser session cookie
-- Cookie management moved entirely into the Settings UI — no file editing needed
-- Cookie updates apply live without restarting the proxy
-- Updated to **TELUS Health brand colors** (`#4b0082` purple, matched to markdown-converter)
-- Replaced text logo with **official TELUS Health logo image** (`th_logo_en.png`)
-- Added **favicon**
-- **Dark mode overhaul** — deep navy palette inspired by TELUS I.R.I.S. app
-- Panel headers now have a green bottom border (TELUS brand pattern)
-- Step-by-step cookie instructions built into the Settings modal
+- Renamed app to **Joby** with rotating taglines
+- Replaced API token auth with local Python proxy using browser session cookie
+- TELUS Health brand colours and official logo
+- Dark mode overhaul — deep navy palette
 
 ### v1.1 (2026-05-06)
 
-- Added Jira tab with issue fetch, filters, and promote-to-task
-- Added OPFS persistence (replaces File System Access API)
-- Added Settings panel with Jira connection test
-- Added tab layout (My Tasks / Jira)
-- Added JIRA category to task list
-- Speech-to-text input via Web Speech API (Chrome / Edge)
+- Jira tab: issue fetch, filters, promote-to-task
+- OPFS persistence
+- Settings panel with Jira connection test
+- Speech-to-text input
 
 ### v1.0
 
-- Initial release: task list, priorities, categories, due dates, drag-and-drop, CSV export, dark mode toggle
+- Initial release: task list, priorities, categories, due dates, drag-and-drop, CSV export, dark mode

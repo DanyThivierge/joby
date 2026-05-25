@@ -20,6 +20,8 @@ const INDENT_W        = 36;   // px per level — visual margin-left
 const DRAG_ZONE_W     = 80;   // px per level — drag detection zone (wider = easier to hit)
 let recognition       = null;
 let isListening       = false;
+let compactView       = false;
+const expandedCompactIds = new Set();
 
 window.db = {
     get: k => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } },

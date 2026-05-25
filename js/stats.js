@@ -60,9 +60,9 @@ function flashTagline(msg) {
 function renderHeatmap() {
     const WEEKS      = HEATMAP_WEEKS;
     const DAYS       = HEATMAP_DAYS;
-    const CELL_PX    = 16;   // cell width/height in px
-    const CELL_GAP   = 3;    // gap between cells
-    const LABEL_PX   = 30;   // day-label column width
+    const CELL_PX    = 10;   // cell width/height in px (compact sidebar size)
+    const CELL_GAP   = 2;    // gap between cells
+    const LABEL_PX   = 18;   // day-label column width
     const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
     const today = new Date();
@@ -139,10 +139,7 @@ function renderHeatmap() {
     gridEl.innerHTML = html;
 }
 
-function renderStatsCards() {
-    const el = document.getElementById('stats-cards');
-    if (!el) return;
-
+function _computeStatsData() {
     const today = todayStr();
     const yest  = yesterdayStr();
 
@@ -155,8 +152,7 @@ function renderStatsCards() {
     weekStart.setHours(0,0,0,0);
     let weekCount = 0;
     Object.entries(completionLog).forEach(([ds, cnt]) => {
-        const d = new Date(ds + 'T00:00:00');
-        if (d >= weekStart) weekCount += cnt;
+        if (new Date(ds + 'T00:00:00') >= weekStart) weekCount += cnt;
     });
 
     const monthPrefix = today.slice(0, 7);
@@ -166,15 +162,31 @@ function renderStatsCards() {
     });
 
     const dowTotals = [0,0,0,0,0,0,0];
-    const DOW_NAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    const DOW_LONG  = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    const DOW_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     Object.entries(completionLog).forEach(([ds, cnt]) => {
-        const d = new Date(ds + 'T00:00:00');
-        const idx = (d.getDay() + 6) % 7;
-        dowTotals[idx] += cnt;
+        dowTotals[(new Date(ds + 'T00:00:00').getDay() + 6) % 7] += cnt;
     });
     const bestDowIdx = dowTotals.indexOf(Math.max(...dowTotals));
-    const bestDow    = dowTotals[bestDowIdx] > 0 ? DOW_NAMES[bestDowIdx] : null;
 
+    return {
+        today, yest,
+        allTimeDone, totalTasks, compRate,
+        weekCount, monthCount,
+        todayCount:     completionLog[today] || 0,
+        yesterdayCount: completionLog[yest]  || 0,
+        bestDowIdx,
+        bestDowCount:   dowTotals[bestDowIdx],
+        bestDowLong:    dowTotals[bestDowIdx] > 0 ? DOW_LONG[bestDowIdx]  : null,
+        bestDowShort:   dowTotals[bestDowIdx] > 0 ? DOW_SHORT[bestDowIdx] : null,
+        dowTotals
+    };
+}
+
+function renderStatsCards() {
+    const el = document.getElementById('stats-cards');
+    if (!el) return;
+    const d = _computeStatsData();
     el.innerHTML = `
         <div class="stats-card-big">
             <div class="scb-value">🔥 ${streak.current}</div>
@@ -182,24 +194,56 @@ function renderStatsCards() {
             <div class="scb-sub">Longest: ${streak.longest} days</div>
         </div>
         <div class="stats-card-big">
-            <div class="scb-value">${weekCount}</div>
+            <div class="scb-value">${d.weekCount}</div>
             <div class="scb-label">Completed This Week</div>
-            <div class="scb-sub">${completionLog[today] || 0} today · ${completionLog[yest] || 0} yesterday</div>
+            <div class="scb-sub">${d.todayCount} today · ${d.yesterdayCount} yesterday</div>
         </div>
         <div class="stats-card-big">
-            <div class="scb-value">${monthCount}</div>
+            <div class="scb-value">${d.monthCount}</div>
             <div class="scb-label">Completed This Month</div>
-            <div class="scb-sub">${allTimeDone} all time</div>
+            <div class="scb-sub">${d.allTimeDone} all time</div>
         </div>
         <div class="stats-card-big">
-            <div class="scb-value">${compRate}%</div>
+            <div class="scb-value">${d.compRate}%</div>
             <div class="scb-label">Completion Rate</div>
-            <div class="scb-sub">${allTimeDone} done of ${totalTasks} created</div>
+            <div class="scb-sub">${d.allTimeDone} done of ${d.totalTasks} created</div>
         </div>
-        ${bestDow ? `<div class="stats-card-big">
-            <div class="scb-value" style="font-size:1.1rem">💪 ${bestDow}</div>
+        ${d.bestDowLong ? `<div class="stats-card-big">
+            <div class="scb-value" style="font-size:1.1rem">💪 ${d.bestDowLong}</div>
             <div class="scb-label">Most Productive Day</div>
-            <div class="scb-sub">${dowTotals[bestDowIdx]} tasks on ${bestDow}s total</div>
+            <div class="scb-sub">${d.bestDowCount} tasks on ${d.bestDowLong}s total</div>
+        </div>` : ''}
+    `;
+}
+
+function renderSidebarStats() {
+    const el = document.getElementById('sidebar-stats-cards');
+    if (!el) return;
+    const d = _computeStatsData();
+    el.innerHTML = `
+        <div class="ssc-card">
+            <div class="ssc-value">🔥 ${streak.current}</div>
+            <div class="ssc-label">Day Streak</div>
+            <div class="ssc-sub">Longest: ${streak.longest}d</div>
+        </div>
+        <div class="ssc-card">
+            <div class="ssc-value">${d.weekCount}</div>
+            <div class="ssc-label">This Week</div>
+            <div class="ssc-sub">${d.todayCount} today · ${d.yesterdayCount} yesterday</div>
+        </div>
+        <div class="ssc-card">
+            <div class="ssc-value">${d.monthCount}</div>
+            <div class="ssc-label">This Month</div>
+            <div class="ssc-sub">${d.allTimeDone} all time</div>
+        </div>
+        <div class="ssc-card">
+            <div class="ssc-value">${d.compRate}%</div>
+            <div class="ssc-label">Completion Rate</div>
+        </div>
+        ${d.bestDowShort ? `<div class="ssc-card">
+            <div class="ssc-value">💪 ${d.bestDowShort}</div>
+            <div class="ssc-label">Best Day</div>
+            <div class="ssc-sub">${d.bestDowCount} tasks total</div>
         </div>` : ''}
     `;
 }
