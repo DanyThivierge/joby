@@ -33,6 +33,12 @@ const JS_ORDER = [
 ];
 
 // ── Shared: build inlined HTML ─────────────────────────────────────────────────
+function toDataUri(filePath, mimeType) {
+    const abs = path.join(ROOT, filePath);
+    if (!fs.existsSync(abs)) return null;
+    return 'data:' + mimeType + ';base64,' + fs.readFileSync(abs).toString('base64');
+}
+
 function buildHtml(gasMode) {
     let html = fs.readFileSync(SRC, 'utf8');
 
@@ -51,6 +57,30 @@ function buildHtml(gasMode) {
     // Remove individual <script src="js/..."> tags then inject bundle
     html = html.replace(/<script src="js\/[^"]+"><\/script>\n?/g, '');
     html = html.replace('</body>', '<script>\n' + jsBundle + '\n</script>\n</body>');
+
+    // In GAS mode, replace logo references with inline base64 data URIs
+    // so the images work without a local file server.
+    // Must happen AFTER bundle injection so the constants.js strings are in html.
+    if (gasMode) {
+        const logoLight = toDataUri('th_logo_en.png', 'image/png');
+        const logoDark  = toDataUri('telus_logo_dark.png', 'image/png') || logoLight;
+        if (logoLight) {
+            // Patch the HTML img tag (src appears before id in the tag)
+            html = html.replace(
+                /(<img\s[^>]*)src="[^"]*"([^>]*id="logo-img")/,
+                '$1src="' + logoLight + '"$2'
+            );
+            // Patch LOGO_LIGHT / LOGO_DARK constants so theme.js dark-mode swap works
+            html = html.replace(
+                "const LOGO_LIGHT          = 'th_logo_en.png';",
+                "const LOGO_LIGHT          = '" + logoLight + "';"
+            );
+            html = html.replace(
+                "const LOGO_DARK           = 'telus_logo_dark.png';",
+                "const LOGO_DARK           = '" + logoDark + "';"
+            );
+        }
+    }
 
     return html;
 }
