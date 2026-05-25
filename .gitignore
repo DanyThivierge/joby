@@ -1,5 +1,7 @@
 jira-cookie.txt
 dist/*
 !dist/gas/
+!dist/Work Task Tracker.html
+!dist/home/
 .claude/
 Old_Joby_logo.png
