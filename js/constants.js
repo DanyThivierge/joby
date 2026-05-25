@@ -8,6 +8,8 @@ const LS_USER_THEME_KEY   = 'wtt-user-theme'; // user's own light/dark toggle (s
 
 const LOGO_LIGHT          = 'th_logo_en.png';
 const LOGO_DARK           = 'telus_logo_dark.png';
+const PERSONAL_LOGO_LIGHT = 'Joby_logo.png';
+const PERSONAL_LOGO_DARK  = 'Joby_logo_dark.png';
 
 const PROXY_ORIGIN        = 'http://localhost:3333';
 const JIRA_DEFAULT_URL    = 'https://telushealth.atlassian.net';

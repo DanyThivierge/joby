@@ -56,7 +56,7 @@ const THEME_PRESETS = {
             '--radius-pill':  '4px',
             '--radius-check': '2px',
             '--radius-btn':   '2px',
-            '--logo-filter':  'brightness(0.9) sepia(0.2)'
+            '--logo-filter':  'brightness(1.05) drop-shadow(0 0 6px rgba(255,255,255,0.5))'
         }
     },
 
@@ -173,7 +173,7 @@ const THEME_PRESETS = {
             '--radius-pill':  '99px',
             '--radius-check': '50%',
             '--radius-btn':   '6px',
-            '--logo-filter':  'hue-rotate(280deg) brightness(1.2)'
+            '--logo-filter':  'brightness(1.05) drop-shadow(0 0 6px rgba(255,255,255,0.5))'
         }
     },
 
@@ -344,7 +344,7 @@ const THEME_PRESETS = {
             '--radius-pill':  '16px',
             '--radius-check': '50%',
             '--radius-btn':   '4px',
-            '--logo-filter':  'hue-rotate(170deg) brightness(0.9)'
+            '--logo-filter':  'brightness(1.05) drop-shadow(0 0 6px rgba(255,255,255,0.5))'
         }
     },
 
@@ -367,7 +367,7 @@ const THEME_PRESETS = {
             '--radius-pill':  '16px',
             '--radius-check': '50%',
             '--radius-btn':   '4px',
-            '--logo-filter':  'hue-rotate(240deg) brightness(0.9) saturate(1.2)'
+            '--logo-filter':  'brightness(1.05) drop-shadow(0 0 6px rgba(255,255,255,0.5))'
         }
     },
 
@@ -413,7 +413,7 @@ const THEME_PRESETS = {
             '--radius-pill':  '24px',
             '--radius-check': '50%',
             '--radius-btn':   '6px',
-            '--logo-filter':  'hue-rotate(190deg) saturate(1.5) brightness(0.85)'
+            '--logo-filter':  'brightness(1.05) drop-shadow(0 0 6px rgba(255,255,255,0.5))'
         }
     }
 };
@@ -602,8 +602,11 @@ function applyTheme(t) {
     const logo = document.getElementById('logo-img');
     if (btn)  btn.innerHTML = t === 'dark' ? '&#9728;&#65039; Light' : '&#127769; Dark';
     if (logo) {
-        logo.src = t === 'dark' ? LOGO_DARK : LOGO_LIGHT;
-        logo.onerror = () => { logo.src = LOGO_LIGHT; logo.onerror = null; };
+        const isPersonal = typeof activeMode !== 'undefined' && activeMode === 'personal';
+        const light = isPersonal ? PERSONAL_LOGO_LIGHT : LOGO_LIGHT;
+        const dark  = isPersonal ? PERSONAL_LOGO_DARK  : LOGO_DARK;
+        logo.src = t === 'dark' ? dark : light;
+        logo.onerror = () => { logo.src = light; logo.onerror = null; };
     }
 }
 

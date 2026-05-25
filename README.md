@@ -1,10 +1,21 @@
-# Joby — Work Task Tracker
+# Joby — Task Tracker
 
-A self-contained task tracker built for daily work use at TELUS Health. Runs entirely in the browser — no install, no sign-in, no cloud dependency.
+A self-contained task tracker for work and personal use. Runs entirely in the browser — no install, no sign-in, no cloud dependency.
 
 ---
 
 ## Features
+
+### Work / Personal Mode
+
+- **Mode toggle** in the header (📋 Work / 🌿 Personal) — compact pill, always visible
+- Each mode has completely independent data: tasks, stats, streaks, inbox, and theme
+- **Work categories** — Work, Dev, Meeting, Review, Admin, Jira, Other
+- **Personal categories** — Home, Chores, Shopping, Health, Finance, Family, Car, Study, Garden, Errands, Personal
+- Sort preference and compact view saved separately per mode
+- Jira tab hidden in Personal mode
+- Logo swaps automatically: TELUS logo in Work mode, Joby logo in Personal mode
+- **Home-only build** (`node build.js --home`) strips the Work mode UI entirely — ideal for a shared family device
 
 ### My Tasks
 
@@ -187,36 +198,44 @@ Task Organizer/
 │   ├── stats.js             # Heatmap, sidebar stats cards, motivational taglines
 │   └── main.js              # Keyboard shortcuts + app boot
 ├── dist/
-│   └── Work Task Tracker.html  # Single-file production build (run: node build.js)
+│   ├── Work Task Tracker.html  # Standard build (run: node build.js)
+│   ├── gas/
+│   │   ├── Index.html          # Google Apps Script build — logos embedded as base64
+│   │   └── Code.gs             # GAS entry point (doGet)
+│   └── home/
+│       └── Joby Home.html      # Personal-only build — no Work mode, no Jira
 ├── build.js                 # Bundle script — inlines CSS + JS, outputs to dist/
 ├── jira-proxy.py            # Local proxy for Jira API access
 ├── jira-cookie.txt          # Your personal session cookie (auto-created, do not share)
-├── th_logo_en.png           # TELUS Health logo (light mode)
-├── telus_logo_dark.png      # TELUS Health logo (dark mode, optional — falls back to light)
-├── Joby_logo.png            # App icon
+├── th_logo_en.png           # TELUS Health logo (light mode — Work)
+├── telus_logo_dark.png      # TELUS Health logo (dark mode — Work)
+├── Joby_logo.png            # Joby logo (Personal mode)
+├── Joby_logo_dark.png       # Joby logo dark variant (optional — falls back to Joby_logo.png)
 ├── favicon.png              # Browser tab icon
 └── README.md
 ```
 
 ### Production build
 
-To generate a single-file bundle for deployment or sharing:
+Three build targets, all zero-dependency (Node.js built-ins only):
 
 ```text
-node build.js
+node build.js           → dist/Work Task Tracker.html      Full app, local use
+node build.js --gas     → dist/gas/Index.html + Code.gs    Google Apps Script deploy
+node build.js --home    → dist/home/Joby Home.html         Personal-only, no Work / Jira
 ```
 
-This inlines `css/styles.css` and all 13 JS files into `dist/Work Task Tracker.html`. No npm, no dependencies — just Node.js built-ins.
+The `--gas` build embeds all logo images as base64 data URIs so they work without a local file server. The `--home` build locks the app to Personal mode and strips the Work toggle and Jira tab.
 
 ---
 
 ## Save Data Format
 
-Tasks and settings are stored in OPFS as `work-tasks.json`:
+Tasks and settings are stored in OPFS — `work-tasks.json` for Work mode and `personal-tasks.json` for Personal mode. Both files share the same schema:
 
 ```json
 {
-  "version": "1.6",
+  "version": "1.7",
   "tasks": [
     {
       "id": 1234567890,
@@ -250,7 +269,8 @@ Tasks and settings are stored in OPFS as `work-tasks.json`:
     "jiraProjects": "",
     "themePreset": "default",
     "themeCustom": {},
-    "compactView": false
+    "compactView": false,
+    "sortPreference": "added"
   },
   "promotedJiraIds": ["1366029", "1362011"]
 }
@@ -273,6 +293,16 @@ Tasks and settings are stored in OPFS as `work-tasks.json`:
 ---
 
 ## Changelog
+
+### v1.7 (2026-05-25)
+
+- **Work / Personal mode toggle** — header pill (📋 / 🌿) switches between two fully independent contexts: separate OPFS files, tasks, stats, streaks, inbox, and theme; Jira tab hidden in Personal mode
+- **Personal categories** — Home, Chores, Shopping, Health, Finance, Family, Car, Study, Garden, Errands, Personal; dropdowns repopulate on mode switch
+- **Per-mode preferences** — sort order and compact view each saved independently per mode
+- **Logo swap on mode switch** — TELUS logo in Work mode, Joby logo in Personal mode; respects dark/light theme
+- **Home-only build** (`node build.js --home`) — Personal-mode-only single-file build with Work toggle and Jira tab removed; Joby logo embedded as base64
+- **GAS build logo embed** — `node build.js --gas` now embeds all logos as base64 data URIs so they display without a local file server
+- **Theme logo visibility** — added white drop-shadow glow to Outer Rim, Synthwave, Dracula, Deep Ocean, and Nord so logos read clearly on dark backgrounds
 
 ### v1.6 (2026-05-25)
 

@@ -87,7 +87,9 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 .mode-toggle { display: flex; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 2px; gap: 2px; }
 .mode-btn { background: none; border: none; border-radius: 16px; padding: 4px 10px; font-size: 1rem; cursor: pointer; color: var(--text-2); transition: background 0.15s, color 0.15s; line-height: 1; }
 .mode-btn:hover { background: var(--purple-light); }
-.mode-btn.active { background: var(--purple); color: #fff; }
+.mode-btn.active { color: #fff; }
+#mode-work-btn.active     { background: var(--green-dark); }
+#mode-personal-btn.active { background: #e05555; }
 .badge.recur-badge { background: var(--purple-light); color: var(--purple); font-weight: 700; }
 
 /* ── Status bar ─────────────────────────────────────────────────────────── */
