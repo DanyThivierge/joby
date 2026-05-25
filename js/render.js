@@ -117,6 +117,41 @@ function toggleCompactExpand(id, event) {
     if (card) card.classList.toggle('compact-expanded', expandedCompactIds.has(id));
 }
 
+// ── Mode UI helpers ───────────────────────────────────────────────────────────
+function populateCategorySelects() {
+    const cats = activeMode === 'personal' ? PERSONAL_CATEGORIES : WORK_CATEGORIES;
+    const html  = cats.map(c => `<option value="${c.value}">${c.emoji} ${c.label}</option>`).join('');
+    ['category-select', 'edit-category'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = html;
+    });
+}
+function restoreSortSelect() {
+    const el = document.getElementById('sort-select');
+    if (el) el.value = settings.sortPreference || 'added';
+}
+function onSortChange() {
+    settings.sortPreference = document.getElementById('sort-select').value;
+    debouncedSave();
+    renderTasks();
+}
+function resetFilterBar() {
+    currentFilter = 'all';
+    document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === 'all');
+    });
+}
+function updateModeUI() {
+    document.getElementById('mode-work-btn')?.classList.toggle('active', activeMode === 'work');
+    document.getElementById('mode-personal-btn')?.classList.toggle('active', activeMode === 'personal');
+    const jiraBtn = document.getElementById('jira-tab-btn');
+    if (jiraBtn) jiraBtn.style.display = activeMode === 'personal' ? 'none' : '';
+    if (activeMode === 'personal' && activeTab === 'jira') {
+        const tasksBtn = document.querySelector('.tab-btn');
+        if (tasksBtn) switchTab('tasks', tasksBtn);
+    }
+}
+
 // ── Export CSV ────────────────────────────────────────────────────────────────
 function exportTasks() {
     const rows=['Task,Priority,Category,Due Date,Notes,Status,Added'];

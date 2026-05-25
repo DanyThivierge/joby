@@ -1,11 +1,18 @@
 // storage.js — OPFS persistence, localStorage fallback, JSON export/import, save indicator.
 
+function currentOpfsFilename() {
+    return activeMode === 'personal' ? PERSONAL_OPFS_FILENAME : OPFS_FILENAME;
+}
+function currentLsKey() {
+    return activeMode === 'personal' ? PERSONAL_LS_KEY : LS_KEY;
+}
+
 function payload() {
-    return { version: APP_VERSION, tasks, settings: { jiraUrl: settings.jiraUrl, jiraJql: settings.jiraJql, jiraAssigneeMe: settings.jiraAssigneeMe, jiraUnresolved: settings.jiraUnresolved, jiraStatuses: settings.jiraStatuses, jiraStatusNot: settings.jiraStatusNot, jiraPriorities: settings.jiraPriorities, jiraUpdatedDays: settings.jiraUpdatedDays, jiraProjects: settings.jiraProjects, themePreset: settings.themePreset, themeCustom: settings.themeCustom, compactView: settings.compactView }, promotedJiraIds, inboxItems, completionLog, streak };
+    return { version: APP_VERSION, tasks, settings: { jiraUrl: settings.jiraUrl, jiraJql: settings.jiraJql, jiraAssigneeMe: settings.jiraAssigneeMe, jiraUnresolved: settings.jiraUnresolved, jiraStatuses: settings.jiraStatuses, jiraStatusNot: settings.jiraStatusNot, jiraPriorities: settings.jiraPriorities, jiraUpdatedDays: settings.jiraUpdatedDays, jiraProjects: settings.jiraProjects, themePreset: settings.themePreset, themeCustom: settings.themeCustom, compactView: settings.compactView, sortPreference: settings.sortPreference }, promotedJiraIds, inboxItems, completionLog, streak };
 }
 async function opfsHandle() {
     const root = await navigator.storage.getDirectory();
-    return root.getFileHandle(OPFS_FILENAME, { create: true });
+    return root.getFileHandle(currentOpfsFilename(), { create: true });
 }
 async function saveToOPFS() {
     try {
@@ -40,7 +47,8 @@ function normalizeSettings(s) {
         jiraProjects:   (s && s.jiraProjects)   || '',
         themePreset:    (s && s.themePreset)    || 'default',
         themeCustom:    (s && s.themeCustom)    || {},
-        compactView:    (s && s.compactView)    || false
+        compactView:    (s && s.compactView)    || false,
+        sortPreference: (s && s.sortPreference) || 'added'
     };
 }
 function applyData(data) {
@@ -54,14 +62,40 @@ function applyData(data) {
 
 // ── Storage init ──────────────────────────────────────────────────────────────
 async function initStorage() {
+    activeMode = localStorage.getItem(ACTIVE_MODE_LS_KEY) || 'work';
     initTheme();
     const loaded = await loadFromOPFS();
     if (!loaded) {
-        const ls = window.db.get(LS_KEY);
+        const ls = window.db.get(currentLsKey());
         if (ls) { applyData(ls); await saveToOPFS(); }
     }
     restoreTheme();
     compactView = settings.compactView || false;
+    populateCategorySelects();
+    restoreSortSelect();
+    updateModeUI();
+    renderTasks(); updateStats(); renderStreakBadge(); renderInbox();
+    setSaveIndicator('saved');
+}
+
+// ── Mode switch ───────────────────────────────────────────────────────────────
+async function switchMode(newMode) {
+    if (newMode === activeMode) return;
+    await autoSave();
+    activeMode = newMode;
+    localStorage.setItem(ACTIVE_MODE_LS_KEY, newMode);
+    const loaded = await loadFromOPFS();
+    if (!loaded) {
+        const ls = window.db.get(currentLsKey());
+        if (ls) { applyData(ls); } else { applyData({}); }
+    }
+    restoreTheme();
+    compactView = settings.compactView || false;
+    expandedCompactIds.clear();
+    resetFilterBar();
+    populateCategorySelects();
+    restoreSortSelect();
+    updateModeUI();
     renderTasks(); updateStats(); renderStreakBadge(); renderInbox();
     setSaveIndicator('saved');
 }
@@ -85,7 +119,7 @@ async function autoSave() {
     }
 }
 function writeToLS() {
-    try { window.db.set(LS_KEY, payload()); return true; } catch { return false; }
+    try { window.db.set(currentLsKey(), payload()); return true; } catch { return false; }
 }
 
 function setSaveIndicator(state) {

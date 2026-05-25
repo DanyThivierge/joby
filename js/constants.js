@@ -1,6 +1,6 @@
 // constants.js — App-wide configuration values and magic strings/numbers.
 
-const APP_VERSION         = '1.6';
+const APP_VERSION         = '1.7';
 const OPFS_FILENAME       = 'work-tasks.json';
 const LS_KEY              = 'work_tasks';
 const LS_THEME_KEY        = 'wtt-theme';
@@ -20,3 +20,31 @@ const MAX_INDENT          = 3;
 const CONFETTI_COUNT      = 28;
 const HEATMAP_WEEKS       = 13;
 const HEATMAP_DAYS        = 7;
+
+const PERSONAL_OPFS_FILENAME = 'personal-tasks.json';
+const PERSONAL_LS_KEY        = 'personal_tasks';
+const ACTIVE_MODE_LS_KEY     = 'joby-active-mode';
+
+const WORK_CATEGORIES = [
+    { value: 'Work',    emoji: '💼', label: 'Work'    },
+    { value: 'Dev',     emoji: '💻', label: 'Dev'     },
+    { value: 'Meeting', emoji: '📅', label: 'Meeting' },
+    { value: 'Review',  emoji: '🔍', label: 'Review'  },
+    { value: 'Admin',   emoji: '📋', label: 'Admin'   },
+    { value: 'Jira',    emoji: '🎯', label: 'Jira'    },
+    { value: 'Other',   emoji: '📌', label: 'Other'   },
+];
+
+const PERSONAL_CATEGORIES = [
+    { value: 'Home',     emoji: '🏠', label: 'Home'     },
+    { value: 'Chores',   emoji: '🧹', label: 'Chores'   },
+    { value: 'Shopping', emoji: '🛒', label: 'Shopping' },
+    { value: 'Health',   emoji: '❤️',  label: 'Health'   },
+    { value: 'Finance',  emoji: '💰', label: 'Finance'  },
+    { value: 'Family',   emoji: '👨‍👩‍👧', label: 'Family'   },
+    { value: 'Car',      emoji: '🚗', label: 'Car'      },
+    { value: 'Study',    emoji: '📚', label: 'Study'    },
+    { value: 'Garden',   emoji: '🌿', label: 'Garden'   },
+    { value: 'Errands',  emoji: '🏃', label: 'Errands'  },
+    { value: 'Personal', emoji: '👤', label: 'Personal' },
+];

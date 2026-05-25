@@ -20,6 +20,10 @@
     <div class="header-actions">
         <div class="streak-badge" id="streak-badge" title=""></div>
         <div class="save-indicator"><div class="save-dot" id="save-dot"></div><span id="save-label">Saved</span></div>
+        <div class="mode-toggle">
+            <button class="mode-btn active" id="mode-work-btn" onclick="switchMode('work')" title="Work mode">&#128188;</button>
+            <button class="mode-btn" id="mode-personal-btn" onclick="switchMode('personal')" title="Personal / Home mode">&#127968;</button>
+        </div>
         <button id="dark-toggle-btn" class="hdr-btn" onclick="toggleDarkMode()">&#127769; Dark</button>
         <button class="hdr-btn primary" onclick="openSettings()">&#9881;&#65039; Settings</button>
     </div>
@@ -30,7 +34,7 @@
 <!-- Tabs -->
 <div class="tabs-bar">
     <button class="tab-btn active" onclick="switchTab('tasks',this)">&#128203; My Tasks</button>
-    <button class="tab-btn" onclick="switchTab('jira',this)">&#127919; Jira</button>
+    <button id="jira-tab-btn" class="tab-btn" onclick="switchTab('jira',this)">&#127919; Jira</button>
 </div>
 
 <!-- ─── MY TASKS ─────────────────────────────────────────────────────────────── -->
@@ -94,15 +98,7 @@
                             <option value="medium" selected>&#128993; Medium</option>
                             <option value="low">&#128994; Low</option>
                         </select>
-                        <select id="category-select" onclick="event.stopPropagation()">
-                            <option value="Work">&#128188; Work</option>
-                            <option value="Dev">&#128187; Dev</option>
-                            <option value="Meeting">&#128197; Meeting</option>
-                            <option value="Review">&#128269; Review</option>
-                            <option value="Admin">&#128203; Admin</option>
-                            <option value="JIRA">&#127919; JIRA</option>
-                            <option value="Other">&#128204; Other</option>
-                        </select>
+                        <select id="category-select" onclick="event.stopPropagation()"></select>
                     </div>
                     <div class="input-row2" style="margin-top:8px">
                         <input type="date" id="due-date" onclick="event.stopPropagation()" />
@@ -124,16 +120,16 @@
 
         <div class="controls-row">
             <div class="controls-left">
-                <button class="filter-pill active" onclick="setFilter('all',this)">All</button>
-                <button class="filter-pill" onclick="setFilter('pending',this)">Pending</button>
-                <button class="filter-pill" onclick="setFilter('done',this)">Done</button>
-                <button class="filter-pill" onclick="setFilter('high',this)">&#128308; High</button>
-                <button class="filter-pill" onclick="setFilter('overdue',this)">&#9203; Overdue</button>
+                <button class="filter-btn filter-pill active" data-filter="all" onclick="setFilter('all',this)">All</button>
+                <button class="filter-btn filter-pill" data-filter="pending" onclick="setFilter('pending',this)">Pending</button>
+                <button class="filter-btn filter-pill" data-filter="done" onclick="setFilter('done',this)">Done</button>
+                <button class="filter-btn filter-pill" data-filter="high" onclick="setFilter('high',this)">&#128308; High</button>
+                <button class="filter-btn filter-pill" data-filter="overdue" onclick="setFilter('overdue',this)">&#9203; Overdue</button>
                 <div class="search-wrap">
                     <span class="search-icon">&#128269;</span>
                     <input type="text" id="search-input" placeholder="Search tasks..." oninput="renderTasks()" />
                 </div>
-                <select class="sort-select" id="sort-select" onchange="renderTasks()">
+                <select class="sort-select" id="sort-select" onchange="onSortChange()">
                     <option value="added">Sort: Added</option>
                     <option value="priority">Sort: Priority</option>
                     <option value="due">Sort: Due Date</option>
@@ -353,15 +349,7 @@
                 </div>
                 <div class="field"><label>Color</label><div id="edit-color-swatches" class="color-swatches"></div></div>
                 <div class="field"><label>Category</label>
-                    <select id="edit-category">
-                        <option value="Work">&#128188; Work</option>
-                        <option value="Dev">&#128187; Dev</option>
-                        <option value="Meeting">&#128197; Meeting</option>
-                        <option value="Review">&#128269; Review</option>
-                        <option value="Admin">&#128203; Admin</option>
-                        <option value="JIRA">&#127919; JIRA</option>
-                        <option value="Other">&#128204; Other</option>
-                    </select>
+                    <select id="edit-category"></select>
                 </div>
                 <div class="field"><label>Due Date</label><input type="date" id="edit-due" /></div>
                 <div class="field"><label>Repeat</label>
