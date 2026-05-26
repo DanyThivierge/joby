@@ -50,10 +50,17 @@ function buildHtml(gasMode, homeMode) {
         () => '<style>\n' + fs.readFileSync(path.join(ROOT, 'css/styles.css'), 'utf8') + '\n</style>'
     );
 
-    // Home build: strip mode toggle and Jira tab from HTML before bundling
+    // Home build: strip mode toggle, Jira tab, and Jira settings sections from HTML
     if (homeMode) {
         html = html.replace(/\s*<div class="mode-toggle">[\s\S]*?<\/div>/m, '');
         html = html.replace(/\s*<button id="jira-tab-btn"[^>]*>.*?<\/button>/g, '');
+        // Strip Jira config fields from settings modal
+        html = html.replace(/\s*<!-- jira-settings-start -->[\s\S]*?<!-- jira-settings-end -->/m, '');
+        // Strip Update Cookie / Test Proxy buttons from modal actions
+        html = html.replace(/\s*<!-- jira-modal-actions-start -->[\s\S]*?<!-- jira-modal-actions-end -->/m, '');
+        // Simplify the settings modal title
+        html = html.replace('Settings &#9881;&#65039; Settings — Jira Integration', '&#9881;&#65039; Settings');
+        html = html.replace('Settings — Jira Integration', 'Settings');
     }
 
     // Build JS bundle (optionally prepend flags)

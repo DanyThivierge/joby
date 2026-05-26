@@ -132,7 +132,19 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
     border-right: 1px solid var(--border);
     position: sticky; top: 0; align-self: flex-start;
     min-height: 100%;
+    transition: width 0.22s, min-width 0.22s, padding 0.22s, opacity 0.15s;
+    overflow: hidden;
 }
+.tasks-layout.sidebar-hidden .tasks-sidebar {
+    width: 0; min-width: 0; padding: 0; opacity: 0; border-right: none;
+}
+.sidebar-toggle-btn {
+    background: none; border: 1px solid var(--border); cursor: pointer;
+    color: var(--text-2); font-size: 0.85rem; padding: 3px 9px; line-height: 1.6;
+    border-radius: var(--radius-btn); flex-shrink: 0;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.sidebar-toggle-btn:hover { background: var(--purple-light); color: var(--purple); border-color: var(--purple); }
 .stats-sidebar { display: flex; flex-direction: column; gap: 4px; }
 .tasks-sidebar .stat-card {
     display: flex; align-items: center; gap: 12px;
@@ -694,7 +706,7 @@ select option { background: var(--card); color: var(--text); }
 <div class="tasks-layout" id="tab-tasks">
 
     <!-- Left sidebar: stats + progress + inbox -->
-    <aside class="tasks-sidebar">
+    <aside class="tasks-sidebar" id="tasks-sidebar">
         <div class="stats-sidebar">
             <div class="stat-card"><div class="number" id="stat-total">0</div><div class="label">Total</div></div>
             <div class="stat-card"><div class="number" id="stat-pending">0</div><div class="label">Pending</div></div>
@@ -773,6 +785,7 @@ select option { background: var(--card); color: var(--text); }
 
         <div class="controls-row">
             <div class="controls-left">
+                <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle sidebar">&#9776;</button>
                 <button class="filter-btn filter-pill active" data-filter="all" onclick="setFilter('all',this)">All</button>
                 <button class="filter-btn filter-pill" data-filter="pending" onclick="setFilter('pending',this)">Pending</button>
                 <button class="filter-btn filter-pill" data-filter="done" onclick="setFilter('done',this)">Done</button>
@@ -845,7 +858,7 @@ select option { background: var(--card); color: var(--text); }
 <div id="settings-modal" style="display:none">
     <div class="overlay" onclick="if(event.target===this)closeSettings()">
         <div class="modal" style="max-width:700px" onclick="event.stopPropagation()">
-            <div class="modal-header">&#9881;&#65039; Settings — Jira Integration</div>
+            <div class="modal-header" id="settings-modal-header">&#9881;&#65039; Settings</div>
             <div class="modal-body-scroll">
                 <div style="margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border);">
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -854,90 +867,6 @@ select option { background: var(--card); color: var(--text); }
                         <button class="btn btn-outline" onclick="exportTasks()" style="flex:1;min-width:130px">&#128202; Export CSV</button>
                     </div>
                 </div>
-                <p style="font-size:0.8rem;color:var(--text-3);margin-bottom:16px;">Requires the local proxy running in a terminal: <code style="background:var(--purple-light);color:var(--purple);padding:1px 5px;border-radius:3px;">python jira-proxy.py</code></p>
-
-                <div class="field">
-                    <label>Jira Session Cookie</label>
-                    <details class="cookie-how">
-                        <summary>&#9654; How to get your cookie (click to expand)</summary>
-                        <ol class="cookie-steps">
-                            <li>Open <strong>telushealth.atlassian.net</strong> in your browser (log in if asked)</li>
-                            <li>Press <strong>F12</strong> to open DevTools &rarr; click the <strong>Network</strong> tab</li>
-                            <li>Click any request in the list (e.g. the first one)</li>
-                            <li>In the right panel scroll to <strong>Request Headers</strong></li>
-                            <li>Find the <strong>cookie:</strong> row &rarr; right-click it &rarr; <strong>Copy value</strong></li>
-                            <li>Paste below and click <strong>Update Cookie</strong></li>
-                        </ol>
-                    </details>
-                    <textarea id="s-cookie" placeholder="Paste your Jira session cookie here..."></textarea>
-                    <p class="field-note">Cookies expire after ~24 hours — come back here to refresh when Jira stops loading.</p>
-                </div>
-                <div id="cookie-result" class="conn-result"></div>
-
-                <div class="field">
-                    <label>Jira Base URL</label>
-                    <input type="text" id="s-jira-url" placeholder="https://yourcompany.atlassian.net" />
-                    <p class="field-note">Used for issue links — no trailing slash</p>
-                </div>
-
-                <div class="field">
-                    <label>JQL Filter Builder</label>
-                    <div class="jql-builder" id="jql-builder">
-                        <div class="jql-row" style="margin-bottom:10px;">
-                            <label class="jql-check"><input type="checkbox" id="jb-assignee" onchange="updateJqlPreview()"> Assigned to me</label>
-                            <label class="jql-check"><input type="checkbox" id="jb-unresolved" onchange="updateJqlPreview()"> Unresolved only</label>
-                        </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 20px;">
-                            <div>
-                                <div class="jql-group-label">Status <label class="jql-not-toggle"><input type="checkbox" id="jb-status-not" onchange="updateJqlPreview()"> NOT</label></div>
-                                <div class="jql-row">
-                                    <label class="jql-check"><input type="checkbox" id="jb-s-inprogress" onchange="updateJqlPreview()"> In Progress</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-s-todo" onchange="updateJqlPreview()"> To Do</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-s-inreview" onchange="updateJqlPreview()"> In Review</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-s-blocked" onchange="updateJqlPreview()"> Blocked</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-s-closed" onchange="updateJqlPreview()"> Closed</label>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="jql-group-label">Priority <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem">(blank = any)</span></div>
-                                <div class="jql-row">
-                                    <label class="jql-check"><input type="checkbox" id="jb-p-highest" onchange="updateJqlPreview()"> Highest</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-p-high" onchange="updateJqlPreview()"> High</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-p-medium" onchange="updateJqlPreview()"> Medium</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-p-low" onchange="updateJqlPreview()"> Low</label>
-                                </div>
-                                <div class="jql-group-label" style="margin-top:10px;">Updated</div>
-                                <div class="jql-row">
-                                    <select id="jb-updated" onchange="updateJqlPreview()" style="font-size:0.82rem;padding:5px 8px;width:auto;">
-                                        <option value="">Any time</option>
-                                        <option value="7">Last 7 days</option>
-                                        <option value="30">Last 30 days</option>
-                                        <option value="90">Last 90 days</option>
-                                    </select>
-                                </div>
-                                <div class="jql-group-label" style="margin-top:10px;">Projects <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem">(e.g. HBMADJ, CRM)</span></div>
-                                <div class="jql-row">
-                                    <input type="text" id="jb-projects" placeholder="Blank = all" oninput="updateJqlPreview()" style="flex:1;min-width:0;font-size:0.82rem;padding:5px 8px;" />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="jql-preview-wrap">
-                            <div class="jql-preview-label">Generated JQL</div>
-                            <div class="jql-preview" id="jql-preview"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label>Custom JQL Override <span style="font-weight:400;text-transform:none;font-size:0.72rem">(optional)</span></label>
-                    <div class="jql-input-row">
-                        <input type="text" id="s-jira-jql" placeholder="e.g. project = MYPROJ AND status != Closed ORDER BY updated DESC" oninput="updateJqlPreview()" style="flex:1;" />
-                        <button class="jql-clear-btn" onclick="clearCustomJql()" title="Clear custom JQL">&#10005; remove</button>
-                    </div>
-                    <p class="field-note">Overrides the builder above entirely when filled. Leave blank to use the builder.</p>
-                </div>
-
-                <div id="conn-result" class="conn-result"></div>
 
                 <!-- ── Theme & Appearance ───────────────────────────────── -->
                 <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border);">
@@ -975,8 +904,6 @@ select option { background: var(--card); color: var(--text); }
                 </div>
 
                 <div class="modal-actions">
-                    <button class="btn btn-purple" onclick="updateCookie()">&#8593; Update Cookie</button>
-                    <button class="btn btn-outline" onclick="testConnection()">&#128268; Test Proxy</button>
                     <button class="btn btn-outline" onclick="closeSettings()">Cancel</button>
                     <button class="btn btn-green" onclick="saveSettings()">Save Settings</button>
                 </div>
@@ -2424,6 +2351,11 @@ function updateModeUI() {
     }
 }
 
+// ── Sidebar toggle ────────────────────────────────────────────────────────────
+function toggleSidebar() {
+    document.getElementById('tab-tasks').classList.toggle('sidebar-hidden');
+}
+
 // ── Export CSV ────────────────────────────────────────────────────────────────
 function exportTasks() {
     const rows=['Task,Priority,Category,Due Date,Notes,Status,Added'];
@@ -3097,6 +3029,7 @@ function closeGhostTask() {
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
+if (window.innerWidth < 700) document.getElementById('tab-tasks').classList.add('sidebar-hidden');
 renderColorSwatches('add-color-swatches', '');
 initStorage();
 

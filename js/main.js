@@ -66,5 +66,6 @@ function closeGhostTask() {
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
+if (window.innerWidth < 700) document.getElementById('tab-tasks').classList.add('sidebar-hidden');
 renderColorSwatches('add-color-swatches', '');
 initStorage();

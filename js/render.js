@@ -152,6 +152,11 @@ function updateModeUI() {
     }
 }
 
+// ── Sidebar toggle ────────────────────────────────────────────────────────────
+function toggleSidebar() {
+    document.getElementById('tab-tasks').classList.toggle('sidebar-hidden');
+}
+
 // ── Export CSV ────────────────────────────────────────────────────────────────
 function exportTasks() {
     const rows=['Task,Priority,Category,Due Date,Notes,Status,Added'];
