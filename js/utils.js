@@ -92,6 +92,11 @@ function t(key) {
     const s = STRINGS[uiLang];
     return (s && s[key] !== undefined) ? s[key] : (STRINGS.en[key] || key);
 }
+function catLabel(val) {
+    const key = 'cat' + val;
+    const result = t(key);
+    return result === key ? val : result; // fall back to raw value if key not defined
+}
 function tFmt(key, ...args) {
     let s = t(key);
     args.forEach((v, i) => { s = s.replace('{' + i + '}', v); });
@@ -120,6 +125,7 @@ function applyLang(lang) {
     const langBtn = document.getElementById('lang-btn');
     if (langBtn) langBtn.textContent = uiLang === 'en' ? 'FR' : 'EN';
     try { localStorage.setItem(LANG_LS_KEY, uiLang); } catch {}
+    if (typeof populateCategorySelects === 'function') populateCategorySelects();
     if (typeof renderTasks  === 'function') renderTasks();
     if (typeof updateStats  === 'function') updateStats();
     if (typeof renderInbox  === 'function') renderInbox();

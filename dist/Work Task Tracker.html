@@ -1249,6 +1249,14 @@ const STRINGS = {
         inboxLabel:      'Inbox',
         inboxAddBtn:     '&#8594; Add to Tasks',
         inboxPromoted:   'Inbox item ready to add — fill in the details above &#128221;',
+        catAll:          'Category: All',
+        catWork:         'Work',     catDev:      'Dev',       catMeeting:  'Meeting',
+        catReview:       'Review',   catAdmin:    'Admin',     catJira:     'Jira',
+        catOther:        'Other',
+        catHome:         'Home',     catChores:   'Chores',    catShopping: 'Shopping',
+        catHealth:       'Health',   catFinance:  'Finance',   catFamily:   'Family',
+        catCar:          'Car',      catStudy:    'Study',     catGarden:   'Garden',
+        catErrands:      'Errands',  catPersonal: 'Personal',
     },
     fr: {
         tabTasks:        '&#128203; Mes t&#226;ches',
@@ -1338,6 +1346,14 @@ const STRINGS = {
         inboxLabel:      'R&#233;ception',
         inboxAddBtn:     '&#8594; Ajouter aux t&#226;ches',
         inboxPromoted:   'Saisie pr&#234;te &#224; ajouter — compl&#233;tez les d&#233;tails ci-dessus &#128221;',
+        catAll:          'Cat&#233;gorie : Tout',
+        catWork:         'Travail',  catDev:      'D&#233;v',  catMeeting:  'R&#233;union',
+        catReview:       'R&#233;vision', catAdmin: 'Admin',   catJira:     'Jira',
+        catOther:        'Autre',
+        catHome:         'Maison',   catChores:   'M&#233;nage',  catShopping: 'Magasinage',
+        catHealth:       'Sant&#233;', catFinance: 'Finances',  catFamily:   'Famille',
+        catCar:          'Voiture',  catStudy:    '&#201;tudes',  catGarden:   'Jardin',
+        catErrands:      'Courses',  catPersonal: 'Personnel',
     },
 };
 
@@ -1508,6 +1524,11 @@ function t(key) {
     const s = STRINGS[uiLang];
     return (s && s[key] !== undefined) ? s[key] : (STRINGS.en[key] || key);
 }
+function catLabel(val) {
+    const key = 'cat' + val;
+    const result = t(key);
+    return result === key ? val : result; // fall back to raw value if key not defined
+}
 function tFmt(key, ...args) {
     let s = t(key);
     args.forEach((v, i) => { s = s.replace('{' + i + '}', v); });
@@ -1536,6 +1557,7 @@ function applyLang(lang) {
     const langBtn = document.getElementById('lang-btn');
     if (langBtn) langBtn.textContent = uiLang === 'en' ? 'FR' : 'EN';
     try { localStorage.setItem(LANG_LS_KEY, uiLang); } catch {}
+    if (typeof populateCategorySelects === 'function') populateCategorySelects();
     if (typeof renderTasks  === 'function') renderTasks();
     if (typeof updateStats  === 'function') updateStats();
     if (typeof renderInbox  === 'function') renderInbox();
@@ -2718,7 +2740,7 @@ function renderTasks() {
         const cDue   = task.dueDate ? (ov&&!task.done ? '<span class="compact-due ovr" title="'+t('badgeOverdue')+'">&#9888;</span>' : '<span class="compact-due">&#128197; '+formatDue(task.dueDate)+'</span>') : '';
         const cNote  = task.notes   ? '<span class="compact-note-icon" title="Has notes">&#128206;</span>' : '';
         const cRec   = task.recurFreq ? '<span class="compact-recur" title="'+freqLabel(task.recurFreq)+'">&#8635;</span>' : '';
-        const compactInline = '<div class="compact-inline">'+cDue+cNote+cRec+'<span class="compact-prio p-'+task.priority+'"></span><span class="compact-cat">'+escHtml(task.category)+'</span></div>';
+        const compactInline = '<div class="compact-inline">'+cDue+cNote+cRec+'<span class="compact-prio p-'+task.priority+'"></span><span class="compact-cat">'+escHtml(catLabel(task.category))+'</span></div>';
         const marker = indent > 0 ? '<span class="indent-marker" aria-hidden="true"></span>' : '';
         const mleft  = indent * INDENT_W;
         const ariaChecked = task.done ? 'true' : 'false';
@@ -2732,7 +2754,7 @@ function renderTasks() {
             +' aria-label="'+escAttr(ariaLabel)+'"'
             +' onclick="toggleTask('+task.id+',event)"'
             +' onkeydown="if(event.key===\' \'||event.key===\'Enter\'){event.preventDefault();toggleTask('+task.id+',event);}"></div>'
-            +'<div class="task-content" onclick="toggleCompactExpand('+task.id+',event)"><div class="task-text">'+marker+escHtml(task.text)+'</div>'+compactInline+notes+'<div class="task-meta"><span class="badge p-'+task.priority+'">'+t('prio'+task.priority.charAt(0).toUpperCase()+task.priority.slice(1))+'</span><span class="badge cat-badge">'+escHtml(task.category)+'</span>'+recur+due+assign+'<span class="task-date">Added '+task.createdAt+'</span></div></div>'
+            +'<div class="task-content" onclick="toggleCompactExpand('+task.id+',event)"><div class="task-text">'+marker+escHtml(task.text)+'</div>'+compactInline+notes+'<div class="task-meta"><span class="badge p-'+task.priority+'">'+t('prio'+task.priority.charAt(0).toUpperCase()+task.priority.slice(1))+'</span><span class="badge cat-badge">'+escHtml(catLabel(task.category))+'</span>'+recur+due+assign+'<span class="task-date">Added '+task.createdAt+'</span></div></div>'
             +'<div class="task-actions">'
             +'<button class="action-btn" onclick="openEdit('+task.id+')" title="Edit" aria-label="Edit task: '+escAttr(task.text)+'">&#9998;</button>'
             +'<button class="action-btn" onclick="deleteTask('+task.id+')" title="Delete" aria-label="Delete task: '+escAttr(task.text)+'">&#128465;</button>'
@@ -2778,7 +2800,7 @@ function toggleCompactExpand(id, event) {
 // ── Mode UI helpers ───────────────────────────────────────────────────────────
 function populateCategorySelects() {
     const cats = activeMode === 'personal' ? PERSONAL_CATEGORIES : WORK_CATEGORIES;
-    const html  = cats.map(c => `<option value="${c.value}">${c.emoji} ${c.label}</option>`).join('');
+    const html  = cats.map(c => `<option value="${c.value}">${c.emoji} ${catLabel(c.value)}</option>`).join('');
     ['category-select', 'edit-category'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = html;
@@ -2821,8 +2843,8 @@ function populateCategoryFilter() {
     const el = document.getElementById('category-filter-select');
     if (!el) return;
     const cats = activeMode === 'personal' ? PERSONAL_CATEGORIES : WORK_CATEGORIES;
-    el.innerHTML = '<option value="all">Category: All</option>' +
-        cats.map(c => `<option value="${c.value}">${c.emoji} ${c.label}</option>`).join('');
+    el.innerHTML = '<option value="all">' + t('catAll') + '</option>' +
+        cats.map(c => `<option value="${c.value}">${c.emoji} ${catLabel(c.value)}</option>`).join('');
     el.value = currentCategoryFilter !== 'all' && cats.some(c => c.value === currentCategoryFilter)
         ? currentCategoryFilter : 'all';
     currentCategoryFilter = el.value;
