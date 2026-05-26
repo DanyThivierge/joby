@@ -6,6 +6,15 @@ const JQL_PRIORITIES = ['Highest','High','Medium','Low'];
 function jbSid(s) { return 'jb-s-' + s.replace(/\s+/g,'').toLowerCase(); }
 function jbPid(p) { return 'jb-p-' + p.toLowerCase(); }
 
+function switchSettingsTab(tab) {
+    ['general', 'jira', 'personal'].forEach(t => {
+        const btn   = document.getElementById('stab-' + t);
+        const panel = document.getElementById('settings-panel-' + t);
+        if (btn)   btn.classList.toggle('active', t === tab);
+        if (panel) panel.style.display = t === tab ? '' : 'none';
+    });
+}
+
 function openSettings() {
     document.getElementById('s-jira-url').value  = settings.jiraUrl || '';
     document.getElementById('s-jira-jql').value  = settings.jiraJql || '';
@@ -22,7 +31,10 @@ function openSettings() {
     renderThemePresets();
     syncThemeStudio();
     _syncDarkToggle((typeof settings !== 'undefined' && settings.themePreset) || 'default');
-    const cr = document.getElementById('conn-result'); cr.className = 'conn-result'; cr.textContent = '';
+    const cr = document.getElementById('conn-result'); if (cr) { cr.className = 'conn-result'; cr.textContent = ''; }
+    const preferredTab = activeMode === 'personal' ? 'personal' : 'jira';
+    const available = document.getElementById('stab-' + preferredTab) ? preferredTab : (document.getElementById('stab-jira') ? 'jira' : 'general');
+    switchSettingsTab(available);
     document.getElementById('settings-modal').style.display = 'block';
 }
 function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }

@@ -30,6 +30,7 @@ const JS_ORDER = [
     'js/drag.js',
     'js/jira.js',
     'js/inbox.js',
+    'js/drive.js',
     'js/stats.js',
     'js/main.js',
 ];
@@ -55,12 +56,14 @@ function buildHtml(gasMode, homeMode) {
         html = html.replace(/\s*<div class="mode-toggle">[\s\S]*?<\/div>/m, '');
         html = html.replace(/\s*<button id="jira-tab-btn"[^>]*>.*?<\/button>/g, '');
         // Strip Jira config fields from settings modal
-        html = html.replace(/\s*<!-- jira-settings-start -->[\s\S]*?<!-- jira-settings-end -->/m, '');
-        // Strip Update Cookie / Test Proxy buttons from modal actions
-        html = html.replace(/\s*<!-- jira-modal-actions-start -->[\s\S]*?<!-- jira-modal-actions-end -->/m, '');
-        // Simplify the settings modal title
-        html = html.replace('Settings &#9881;&#65039; Settings — Jira Integration', '&#9881;&#65039; Settings');
-        html = html.replace('Settings — Jira Integration', 'Settings');
+        html = html.replace(/\s*<!-- jira-settings-start -->[\s\S]*?<!-- jira-settings-end -->/gm, '');
+        // Strip Update Cookie / Test Proxy buttons from modal actions (now inside work panel, stripped with jira-settings above)
+        html = html.replace(/\s*<!-- jira-modal-actions-start -->[\s\S]*?<!-- jira-modal-actions-end -->/gm, '');
+    }
+
+    // Standard and GAS builds: strip home-only sections
+    if (!homeMode) {
+        html = html.replace(/\s*<!-- home-only-start -->[\s\S]*?<!-- home-only-end -->/gm, '');
     }
 
     // Build JS bundle (optionally prepend flags)

@@ -63,7 +63,6 @@ function renderHeatmap() {
     const CELL_PX    = 10;   // cell width/height in px (compact sidebar size)
     const CELL_GAP   = 2;    // gap between cells
     const LABEL_PX   = 18;   // day-label column width
-    const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
     const today = new Date();
     today.setHours(0,0,0,0);
@@ -86,10 +85,14 @@ function renderHeatmap() {
         weeks.push(week);
     }
 
+    const locale      = uiLang === 'fr' ? 'fr-CA' : 'en-CA';
+    const DAY_LABELS  = Array.from({length: 7}, (_, i) =>
+        new Date(2024, 0, 1 + i).toLocaleDateString(locale, { weekday: 'short' })
+    );
     const monthLabels = weeks.map((week, wi) => {
         const firstDay = week[0];
         if (wi === 0 || firstDay.getMonth() !== weeks[wi-1][0].getMonth()) {
-            return firstDay.toLocaleDateString('en-CA', { month: 'short' });
+            return firstDay.toLocaleDateString(locale, { month: 'short' });
         }
         return '';
     });
@@ -131,7 +134,7 @@ function renderHeatmap() {
             if (isFuture) {
                 html += '<div class="heatmap-cell heatmap-cell-future"></div>';
             } else {
-                const tip = ds + (cnt ? ' — ' + cnt + ' task' + (cnt > 1 ? 's' : '') + ' done' : ' — no completions');
+                const tip = ds + (cnt ? ' — ' + cnt + ' ' + (cnt > 1 ? t('hmTasksDone') : t('hmTaskDone')) : ' — ' + t('hmNoComp'));
                 html += '<div class="heatmap-cell" style="background:' + cellColor(cnt) + ';" title="' + tip + '"></div>';
             }
         }
@@ -162,8 +165,9 @@ function _computeStatsData() {
     });
 
     const dowTotals = [0,0,0,0,0,0,0];
-    const DOW_LONG  = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-    const DOW_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const locale    = uiLang === 'fr' ? 'fr-CA' : 'en-CA';
+    const DOW_LONG  = Array.from({length: 7}, (_, i) => new Date(2024, 0, 1 + i).toLocaleDateString(locale, { weekday: 'long' }));
+    const DOW_SHORT = Array.from({length: 7}, (_, i) => new Date(2024, 0, 1 + i).toLocaleDateString(locale, { weekday: 'short' }));
     Object.entries(completionLog).forEach(([ds, cnt]) => {
         dowTotals[(new Date(ds + 'T00:00:00').getDay() + 6) % 7] += cnt;
     });
@@ -190,28 +194,28 @@ function renderStatsCards() {
     el.innerHTML = `
         <div class="stats-card-big">
             <div class="scb-value">🔥 ${streak.current}</div>
-            <div class="scb-label">Current Streak</div>
-            <div class="scb-sub">Longest: ${streak.longest} days</div>
+            <div class="scb-label">${t('scbCurrStreak')}</div>
+            <div class="scb-sub">${tFmt('scbLongest', streak.longest)}</div>
         </div>
         <div class="stats-card-big">
             <div class="scb-value">${d.weekCount}</div>
-            <div class="scb-label">Completed This Week</div>
-            <div class="scb-sub">${d.todayCount} today · ${d.yesterdayCount} yesterday</div>
+            <div class="scb-label">${t('scbCompWeek')}</div>
+            <div class="scb-sub">${tFmt('ssbTodayYest', d.todayCount, d.yesterdayCount)}</div>
         </div>
         <div class="stats-card-big">
             <div class="scb-value">${d.monthCount}</div>
-            <div class="scb-label">Completed This Month</div>
-            <div class="scb-sub">${d.allTimeDone} all time</div>
+            <div class="scb-label">${t('scbCompMonth')}</div>
+            <div class="scb-sub">${tFmt('ssbAllTime', d.allTimeDone)}</div>
         </div>
         <div class="stats-card-big">
             <div class="scb-value">${d.compRate}%</div>
-            <div class="scb-label">Completion Rate</div>
-            <div class="scb-sub">${d.allTimeDone} done of ${d.totalTasks} created</div>
+            <div class="scb-label">${t('ssbCompRate')}</div>
+            <div class="scb-sub">${tFmt('scbDoneOf', d.allTimeDone, d.totalTasks)}</div>
         </div>
         ${d.bestDowLong ? `<div class="stats-card-big">
             <div class="scb-value" style="font-size:1.1rem">💪 ${d.bestDowLong}</div>
-            <div class="scb-label">Most Productive Day</div>
-            <div class="scb-sub">${d.bestDowCount} tasks on ${d.bestDowLong}s total</div>
+            <div class="scb-label">${t('scbMostProd')}</div>
+            <div class="scb-sub">${tFmt('scbTasksOnDay', d.bestDowCount, d.bestDowLong)}</div>
         </div>` : ''}
     `;
 }
@@ -223,27 +227,27 @@ function renderSidebarStats() {
     el.innerHTML = `
         <div class="ssc-card">
             <div class="ssc-value">🔥 ${streak.current}</div>
-            <div class="ssc-label">Day Streak</div>
-            <div class="ssc-sub">Longest: ${streak.longest}d</div>
+            <div class="ssc-label">${t('ssbDayStreak')}</div>
+            <div class="ssc-sub">${tFmt('ssbLongest', streak.longest)}</div>
         </div>
         <div class="ssc-card">
             <div class="ssc-value">${d.weekCount}</div>
-            <div class="ssc-label">This Week</div>
-            <div class="ssc-sub">${d.todayCount} today · ${d.yesterdayCount} yesterday</div>
+            <div class="ssc-label">${t('ssbThisWeek')}</div>
+            <div class="ssc-sub">${tFmt('ssbTodayYest', d.todayCount, d.yesterdayCount)}</div>
         </div>
         <div class="ssc-card">
             <div class="ssc-value">${d.monthCount}</div>
-            <div class="ssc-label">This Month</div>
-            <div class="ssc-sub">${d.allTimeDone} all time</div>
+            <div class="ssc-label">${t('ssbThisMonth')}</div>
+            <div class="ssc-sub">${tFmt('ssbAllTime', d.allTimeDone)}</div>
         </div>
         <div class="ssc-card">
             <div class="ssc-value">${d.compRate}%</div>
-            <div class="ssc-label">Completion Rate</div>
+            <div class="ssc-label">${t('ssbCompRate')}</div>
         </div>
         ${d.bestDowShort ? `<div class="ssc-card">
             <div class="ssc-value">💪 ${d.bestDowShort}</div>
-            <div class="ssc-label">Best Day</div>
-            <div class="ssc-sub">${d.bestDowCount} tasks total</div>
+            <div class="ssc-label">${t('ssbBestDay')}</div>
+            <div class="ssc-sub">${tFmt('ssbTasksTotal', d.bestDowCount)}</div>
         </div>` : ''}
     `;
 }

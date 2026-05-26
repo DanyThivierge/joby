@@ -409,6 +409,17 @@ select option { background: var(--card); color: var(--text); }
 .save-dot.dirty  { background: #F59E0B; }
 .save-dot.failed { background: var(--red); }
 
+/* Drive sync indicator */
+.drive-sync-indicator { display: flex; align-items: center; gap: 5px; font-size: 0.78rem; color: var(--text-2); }
+.drive-sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+.drive-sync-dot.syncing { background: #f59e0b; animation: drive-pulse 1s ease-in-out infinite; }
+.drive-sync-dot.synced  { background: #22c55e; }
+.drive-sync-dot.error   { background: var(--red); }
+@keyframes drive-pulse { 0%,100%{opacity:1;} 50%{opacity:.4;} }
+.drive-user-chip { font-size: 0.78rem; color: var(--text-2); background: var(--purple-light); border: 1px solid var(--border); border-radius: 12px; padding: 2px 10px; white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+.badge.assign-badge { background: var(--purple-light); color: var(--purple); }
+.filter-divider { color: var(--border); font-size: 1rem; padding: 0 4px; user-select: none; }
+
 /* Streak badge */
 .streak-badge { display: none; align-items: center; gap: 4px; font-size: 0.8rem; font-weight: 600; color: var(--text); background: rgba(255,140,0,0.12); border: 1px solid rgba(255,140,0,0.3); border-radius: 12px; padding: 2px 9px; cursor: default; transition: transform 0.25s; }
 .streak-badge.visible { display: flex; }
@@ -584,7 +595,16 @@ select option { background: var(--card); color: var(--text); }
 .jql-input-row { display: flex; gap: 6px; align-items: center; }
 .jql-clear-btn { background: transparent; border: 1px solid var(--border); border-radius: var(--radius-btn); padding: 5px 10px; cursor: pointer; font-size: 0.8rem; color: var(--text-3); transition: all 0.18s; white-space: nowrap; flex-shrink: 0; line-height: 1; }
 .jql-clear-btn:hover { border-color: var(--red); color: var(--red); background: rgba(217,48,37,0.06); }
-.modal-body-scroll { max-height: 90vh; overflow-y: auto; padding: 20px; }
+.modal-body-scroll { max-height: calc(90vh - 100px); overflow-y: auto; padding: 20px; }
+
+/* ── Settings tabs ──────────────────────────────────────────────────────── */
+.settings-tabs-bar { display: flex; border-bottom: 2px solid var(--border); padding: 0 20px; background: var(--card); gap: 2px; }
+.settings-tab { background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -2px; padding: 10px 18px; font-size: 0.85rem; font-weight: 600; color: var(--text-3); cursor: pointer; transition: color 0.15s, border-color 0.15s; white-space: nowrap; letter-spacing: .2px; }
+.settings-tab:hover { color: var(--purple); }
+.settings-tab.active { color: var(--purple); border-bottom-color: var(--purple); }
+[data-theme="dark"] .settings-tab.active { color: #c084fc; border-bottom-color: #c084fc; }
+[data-theme="dark"] .settings-tab:hover  { color: #c084fc; }
+[data-theme="dark"] .settings-tabs-bar   { border-bottom-color: var(--border); }
 
 /* ── Brain Dump FAB ─────────────────────────────────────────────────────── */
 .fab-capture { position: fixed; bottom: 28px; right: 28px; width: 52px; height: 52px; border-radius: 50%; background: var(--purple); color: #fff; border: none; font-size: 1.4rem; cursor: pointer; box-shadow: 0 4px 16px rgba(75,0,130,0.35); z-index: 400; transition: transform 0.18s, box-shadow 0.18s; display: flex; align-items: center; justify-content: center; }
@@ -603,13 +623,14 @@ select option { background: var(--card); color: var(--text); }
 /* ── Inbox panel ────────────────────────────────────────────────────────── */
 .inbox-panel { margin-bottom: 14px; padding: 0; overflow: hidden; }
 .inbox-panel-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; padding: 10px 16px; }
-.inbox-panel-header:hover { background: rgba(75,0,130,0.04); }
+.inbox-panel-header:hover { filter: brightness(1.25); }
 .inbox-chevron { font-size: 0.7rem; color: var(--text-3); }
 .inbox-list { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; }
-.inbox-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; gap: 4px 10px; }
-.inbox-text { font-size: 0.875rem; color: var(--text); grid-column: 1; grid-row: 1; }
-.inbox-meta { font-size: 0.7rem; color: var(--text-3); grid-column: 1; grid-row: 2; }
-.inbox-actions { grid-column: 2; grid-row: 1 / 3; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; justify-content: center; }
+.inbox-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.inbox-text { font-size: 0.875rem; color: var(--text); line-height: 1.45; word-break: break-word; }
+.inbox-footer { display: contents; }
+.inbox-meta { font-size: 0.7rem; color: var(--text-3); }
+.inbox-actions { display: flex; gap: 6px; align-items: center; }
 .btn-small { font-size: 0.72rem; padding: 3px 9px; }
 
 /* ── Heatmap ────────────────────────────────────────────────────────────── */
@@ -694,8 +715,9 @@ select option { background: var(--card); color: var(--text); }
             <button class="mode-btn active" id="mode-work-btn" onclick="switchMode('work')" title="Work mode">&#128203;</button>
             <button class="mode-btn" id="mode-personal-btn" onclick="switchMode('personal')" title="Personal / Home mode">&#127807;</button>
         </div>
-        <button id="dark-toggle-btn" class="hdr-btn" onclick="toggleDarkMode()">&#127769; Dark</button>
-        <button class="hdr-btn primary" onclick="openSettings()">&#9881;&#65039; Settings</button>
+        <button id="lang-btn" class="hdr-btn" onclick="toggleLang()" title="Switch language / Changer de langue">FR</button>
+        <button id="dark-toggle-btn" class="hdr-btn" onclick="toggleDarkMode()" data-i18n="darkBtnLabel">&#127769; Dark</button>
+        <button class="hdr-btn primary" onclick="openSettings()" data-i18n="settingsBtnLabel">&#9881;&#65039; Settings</button>
     </div>
 </header>
 
@@ -703,7 +725,7 @@ select option { background: var(--card); color: var(--text); }
 
 <!-- Tabs -->
 <div class="tabs-bar">
-    <button class="tab-btn active" onclick="switchTab('tasks',this)">&#128203; My Tasks</button>
+    <button class="tab-btn active" onclick="switchTab('tasks',this)" data-i18n="tabTasks">&#128203; My Tasks</button>
     <button id="jira-tab-btn" class="tab-btn" onclick="switchTab('jira',this)">&#127919; Jira</button>
 </div>
 
@@ -713,11 +735,11 @@ select option { background: var(--card); color: var(--text); }
     <!-- Left sidebar: stats + progress + inbox -->
     <aside class="tasks-sidebar" id="tasks-sidebar">
         <div class="stats-sidebar">
-            <div class="stat-card"><div class="number" id="stat-total">0</div><div class="label">Total</div></div>
-            <div class="stat-card"><div class="number" id="stat-pending">0</div><div class="label">Pending</div></div>
-            <div class="stat-card"><div class="number" id="stat-done">0</div><div class="label">Completed</div></div>
-            <div class="stat-card"><div class="number" id="stat-high">0</div><div class="label">High Priority</div></div>
-            <div class="stat-card"><div class="number" id="stat-overdue">0</div><div class="label">Overdue</div></div>
+            <div class="stat-card"><div class="number" id="stat-total">0</div><div class="label" data-i18n="statTotal">Total</div></div>
+            <div class="stat-card"><div class="number" id="stat-pending">0</div><div class="label" data-i18n="statPending">Pending</div></div>
+            <div class="stat-card"><div class="number" id="stat-done">0</div><div class="label" data-i18n="statDone">Completed</div></div>
+            <div class="stat-card"><div class="number" id="stat-high">0</div><div class="label" data-i18n="statHigh">High Priority</div></div>
+            <div class="stat-card"><div class="number" id="stat-overdue">0</div><div class="label" data-i18n="statOverdue">Overdue</div></div>
         </div>
         <div class="progress-wrap sidebar-progress"><div class="progress-fill" id="progress-bar" style="width:0%"></div></div>
         <!-- Productivity stats -->
@@ -726,17 +748,17 @@ select option { background: var(--card); color: var(--text); }
         <!-- Activity heatmap -->
         <div class="sidebar-section-divider"></div>
         <div class="sidebar-heatmap">
-            <div class="sidebar-section-label">&#128202; Activity</div>
+            <div class="sidebar-section-label" data-i18n="heatmapAct">&#128202; Activity</div>
             <div id="heatmap-month-labels" class="heatmap-months"></div>
             <div id="heatmap-grid" class="heatmap-grid"></div>
             <div class="heatmap-legend" style="margin-top:6px">
-                <span class="heatmap-legend-label">Less</span>
+                <span class="heatmap-legend-label" data-i18n="heatmapLess">Less</span>
                 <div class="heatmap-cell" style="background:var(--border)"></div>
                 <div class="heatmap-cell" style="background:rgba(75,0,130,0.2)"></div>
                 <div class="heatmap-cell" style="background:rgba(75,0,130,0.5)"></div>
                 <div class="heatmap-cell" style="background:rgba(75,0,130,0.8)"></div>
                 <div class="heatmap-cell" style="background:var(--purple)"></div>
-                <span class="heatmap-legend-label">More</span>
+                <span class="heatmap-legend-label" data-i18n="heatmapMore">More</span>
             </div>
         </div>
         <!-- Inbox panel -->
@@ -755,7 +777,7 @@ select option { background: var(--card); color: var(--text); }
         <!-- Ghost row: collapses to a placeholder line, expands inline on click / 'n' key -->
         <div id="ghost-task-row" class="ghost-task-row" onclick="openGhostTask()" role="button" tabindex="0"
              aria-label="Add a new task" onkeydown="if(event.key==='Enter')openGhostTask();">
-            <div class="ghost-placeholder">&#43; Add a task&#8230;</div>
+            <div class="ghost-placeholder" data-i18n="ghostPlaceholder">&#43; Add a task&#8230;</div>
             <div class="ghost-expand-wrap">
                 <div class="ghost-expand-inner">
                     <div class="input-row" style="margin-top:4px">
@@ -764,25 +786,32 @@ select option { background: var(--card); color: var(--text); }
                             <button id="mic-btn" class="mic-btn" onclick="event.stopPropagation();toggleSpeech()" title="Speak to add task" aria-label="Speak to add task">&#127908;</button>
                         </div>
                         <select id="priority-select" onclick="event.stopPropagation()">
-                            <option value="high">&#128308; High</option>
-                            <option value="medium" selected>&#128993; Medium</option>
-                            <option value="low">&#128994; Low</option>
+                            <option value="high" data-i18n="prioHighOpt">&#128308; High</option>
+                            <option value="medium" selected data-i18n="prioMediumOpt">&#128993; Medium</option>
+                            <option value="low" data-i18n="prioLowOpt">&#128994; Low</option>
                         </select>
                         <select id="category-select" onclick="event.stopPropagation()"></select>
                     </div>
                     <div class="input-row2" style="margin-top:8px">
                         <input type="date" id="due-date" onclick="event.stopPropagation()" />
                         <select id="recur-select" onclick="event.stopPropagation()" title="Repeat frequency">
-                            <option value="">&#128260; No repeat</option>
-                            <option value="daily">&#8635; Daily</option>
-                            <option value="weekly">&#8635; Weekly</option>
-                            <option value="biweekly">&#8635; Bi-weekly</option>
-                            <option value="monthly">&#8635; Monthly</option>
+                            <option value="" data-i18n="recurNoneOpt">&#128260; No repeat</option>
+                            <option value="daily" data-i18n="recurDailyOpt">&#8635; Daily</option>
+                            <option value="weekdays" data-i18n="recurWeekdaysOpt">&#8635; Weekdays (M&#8211;F)</option>
+                            <option value="weekly-mon" data-i18n="recurEveryMonOpt">&#8635; Every Monday</option>
+                            <option value="weekly-tue" data-i18n="recurEveryTueOpt">&#8635; Every Tuesday</option>
+                            <option value="weekly-wed" data-i18n="recurEveryWedOpt">&#8635; Every Wednesday</option>
+                            <option value="weekly-thu" data-i18n="recurEveryThuOpt">&#8635; Every Thursday</option>
+                            <option value="weekly-fri" data-i18n="recurEveryFriOpt">&#8635; Every Friday</option>
+                            <option value="weekly" data-i18n="recurWeeklyOpt">&#8635; Weekly</option>
+                            <option value="biweekly" data-i18n="recurBiweeklyOpt">&#8635; Bi-weekly</option>
+                            <option value="monthly" data-i18n="recurMonthlyOpt">&#8635; Monthly</option>
+                            <option value="yearly" data-i18n="recurYearlyOpt">&#8635; Yearly</option>
                         </select>
                         <div id="add-color-swatches" class="color-swatches"></div>
                         <input type="text" id="task-notes" placeholder="Notes (optional)&#8230;" onclick="event.stopPropagation()" />
-                        <button class="btn btn-green" onclick="event.stopPropagation();addTask()">&#43; Add Task</button>
-                        <button class="btn btn-outline" onclick="event.stopPropagation();closeGhostTask()">Cancel</button>
+                        <button class="btn btn-green" onclick="event.stopPropagation();addTask()" data-i18n="addTaskBtn">&#43; Add Task</button>
+                        <button class="btn btn-outline" onclick="event.stopPropagation();closeGhostTask()" data-i18n="cancelBtn">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -791,28 +820,31 @@ select option { background: var(--card); color: var(--text); }
         <div class="controls-row">
             <div class="controls-left">
                 <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle sidebar">&#9776;</button>
-                <button class="filter-btn filter-pill active" data-filter="all" onclick="setFilter('all',this)">All</button>
-                <button class="filter-btn filter-pill" data-filter="pending" onclick="setFilter('pending',this)">Pending</button>
-                <button class="filter-btn filter-pill" data-filter="done" onclick="setFilter('done',this)">Done</button>
-                <button class="filter-btn filter-pill" data-filter="high" onclick="setFilter('high',this)">&#128308; High</button>
-                <button class="filter-btn filter-pill" data-filter="overdue" onclick="setFilter('overdue',this)">&#9203; Overdue</button>
+                <button class="filter-btn filter-pill active" data-filter="all" onclick="setFilter('all',this)" data-i18n="filterAll">All</button>
+                <button class="filter-btn filter-pill" data-filter="pending" onclick="setFilter('pending',this)" data-i18n="filterPending">Pending</button>
+                <button class="filter-btn filter-pill" data-filter="done" onclick="setFilter('done',this)" data-i18n="filterDone">Done</button>
+                <button class="filter-btn filter-pill" data-filter="high" onclick="setFilter('high',this)" data-i18n="filterHigh">&#128308; High</button>
+                <button class="filter-btn filter-pill" data-filter="overdue" onclick="setFilter('overdue',this)" data-i18n="filterOverdue">&#9203; Overdue</button>
                 <div class="search-wrap">
                     <span class="search-icon">&#128269;</span>
                     <input type="text" id="search-input" placeholder="Search tasks..." oninput="renderTasks()" />
                 </div>
                 <select class="sort-select" id="sort-select" onchange="onSortChange()">
-                    <option value="added">Sort: Added</option>
-                    <option value="priority">Sort: Priority</option>
-                    <option value="due">Sort: Due Date</option>
-                    <option value="alpha">Sort: A–Z</option>
+                    <option value="added" data-i18n="sortAdded">Sort: Added</option>
+                    <option value="priority" data-i18n="sortPriority">Sort: Priority</option>
+                    <option value="due" data-i18n="sortDue">Sort: Due Date</option>
+                    <option value="alpha" data-i18n="sortAlpha">Sort: A–Z</option>
+                </select>
+                <select class="sort-select" id="category-filter-select" onchange="onCategoryFilterChange()">
+                    <option value="all">Category: All</option>
                 </select>
             </div>
             <div class="controls-right">
-                <button id="compact-btn" class="btn btn-outline" onclick="toggleCompact()" title="Toggle compact view">&#8801; Compact</button>
-                <button class="btn btn-danger" onclick="clearDone()">&#128465; Clear Done</button>
+                <button id="compact-btn" class="btn btn-outline" onclick="toggleCompact()" title="Toggle compact view" data-i18n="compactBtn">&#8801; Compact</button>
+                <button class="btn btn-danger" onclick="clearDone()" data-i18n="clearDoneBtn">&#128465; Clear Done</button>
             </div>
         </div>
-        <div class="task-zone-label"><span>&#10022; Task Zone &#10022;</span></div>
+        <div class="task-zone-label"><span data-i18n="taskZone">&#10022; Task Zone &#10022;</span></div>
         <div class="task-list" id="task-list">
             <div class="empty-state"><div class="icon">&#128203;</div><p>No tasks yet — add one above or speak it!</p></div>
         </div>
@@ -863,142 +895,158 @@ select option { background: var(--card); color: var(--text); }
 <div id="settings-modal" style="display:none">
     <div class="overlay" onclick="if(event.target===this)closeSettings()">
         <div class="modal" style="max-width:700px" onclick="event.stopPropagation()">
-            <div class="modal-header" id="settings-modal-header">&#9881;&#65039; Settings — Jira Integration</div>
-            <div class="modal-body-scroll">
-                <div style="margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border);">
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        <button class="btn btn-outline" onclick="exportJSON()" style="flex:1;min-width:130px">&#128229; Export Backup</button>
-                        <label class="btn btn-outline" style="flex:1;min-width:130px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:5px">&#128194; Import Backup<input type="file" accept=".json" onchange="importJSON(event);closeSettings()" style="display:none"></label>
-                        <button class="btn btn-outline" onclick="exportTasks()" style="flex:1;min-width:130px">&#128202; Export CSV</button>
-                    </div>
-                </div>
+            <div class="modal-header">&#9881;&#65039; Settings</div>
+            <div class="settings-tabs-bar">
+                <button class="settings-tab active" id="stab-general" onclick="switchSettingsTab('general')" data-i18n="stTabGeneral">&#127775; General</button>
                 <!-- jira-settings-start -->
-                <p style="font-size:0.8rem;color:var(--text-3);margin-bottom:16px;">Requires the local proxy running in a terminal: <code style="background:var(--purple-light);color:var(--purple);padding:1px 5px;border-radius:3px;">python jira-proxy.py</code></p>
-
-                <div class="field">
-                    <label>Jira Session Cookie</label>
-                    <details class="cookie-how">
-                        <summary>&#9654; How to get your cookie (click to expand)</summary>
-                        <ol class="cookie-steps">
-                            <li>Open <strong>telushealth.atlassian.net</strong> in your browser (log in if asked)</li>
-                            <li>Press <strong>F12</strong> to open DevTools &rarr; click the <strong>Network</strong> tab</li>
-                            <li>Click any request in the list (e.g. the first one)</li>
-                            <li>In the right panel scroll to <strong>Request Headers</strong></li>
-                            <li>Find the <strong>cookie:</strong> row &rarr; right-click it &rarr; <strong>Copy value</strong></li>
-                            <li>Paste below and click <strong>Update Cookie</strong></li>
-                        </ol>
-                    </details>
-                    <textarea id="s-cookie" placeholder="Paste your Jira session cookie here..."></textarea>
-                    <p class="field-note">Cookies expire after ~24 hours — come back here to refresh when Jira stops loading.</p>
-                </div>
-                <div id="cookie-result" class="conn-result"></div>
-
-                <div class="field">
-                    <label>Jira Base URL</label>
-                    <input type="text" id="s-jira-url" placeholder="https://yourcompany.atlassian.net" />
-                    <p class="field-note">Used for issue links — no trailing slash</p>
-                </div>
-
-                <div class="field">
-                    <label>JQL Filter Builder</label>
-                    <div class="jql-builder" id="jql-builder">
-                        <div class="jql-row" style="margin-bottom:10px;">
-                            <label class="jql-check"><input type="checkbox" id="jb-assignee" onchange="updateJqlPreview()"> Assigned to me</label>
-                            <label class="jql-check"><input type="checkbox" id="jb-unresolved" onchange="updateJqlPreview()"> Unresolved only</label>
-                        </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 20px;">
-                            <div>
-                                <div class="jql-group-label">Status <label class="jql-not-toggle"><input type="checkbox" id="jb-status-not" onchange="updateJqlPreview()"> NOT</label></div>
-                                <div class="jql-row">
-                                    <label class="jql-check"><input type="checkbox" id="jb-s-inprogress" onchange="updateJqlPreview()"> In Progress</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-s-todo" onchange="updateJqlPreview()"> To Do</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-s-inreview" onchange="updateJqlPreview()"> In Review</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-s-blocked" onchange="updateJqlPreview()"> Blocked</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-s-closed" onchange="updateJqlPreview()"> Closed</label>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="jql-group-label">Priority <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem">(blank = any)</span></div>
-                                <div class="jql-row">
-                                    <label class="jql-check"><input type="checkbox" id="jb-p-highest" onchange="updateJqlPreview()"> Highest</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-p-high" onchange="updateJqlPreview()"> High</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-p-medium" onchange="updateJqlPreview()"> Medium</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-p-low" onchange="updateJqlPreview()"> Low</label>
-                                </div>
-                                <div class="jql-group-label" style="margin-top:10px;">Updated</div>
-                                <div class="jql-row">
-                                    <select id="jb-updated" onchange="updateJqlPreview()" style="font-size:0.82rem;padding:5px 8px;width:auto;">
-                                        <option value="">Any time</option>
-                                        <option value="7">Last 7 days</option>
-                                        <option value="30">Last 30 days</option>
-                                        <option value="90">Last 90 days</option>
-                                    </select>
-                                </div>
-                                <div class="jql-group-label" style="margin-top:10px;">Projects <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem">(e.g. HBMADJ, CRM)</span></div>
-                                <div class="jql-row">
-                                    <input type="text" id="jb-projects" placeholder="Blank = all" oninput="updateJqlPreview()" style="flex:1;min-width:0;font-size:0.82rem;padding:5px 8px;" />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="jql-preview-wrap">
-                            <div class="jql-preview-label">Generated JQL</div>
-                            <div class="jql-preview" id="jql-preview"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label>Custom JQL Override <span style="font-weight:400;text-transform:none;font-size:0.72rem">(optional)</span></label>
-                    <div class="jql-input-row">
-                        <input type="text" id="s-jira-jql" placeholder="e.g. project = MYPROJ AND status != Closed ORDER BY updated DESC" oninput="updateJqlPreview()" style="flex:1;" />
-                        <button class="jql-clear-btn" onclick="clearCustomJql()" title="Clear custom JQL">&#10005; remove</button>
-                    </div>
-                    <p class="field-note">Overrides the builder above entirely when filled. Leave blank to use the builder.</p>
-                </div>
-
-                <div id="conn-result" class="conn-result"></div>
+                <button class="settings-tab" id="stab-jira" onclick="switchSettingsTab('jira')" data-i18n="stTabJira">&#127919; Jira</button>
                 <!-- jira-settings-end -->
+            </div>
+            <div class="modal-body-scroll">
 
-                <!-- ── Theme & Appearance ───────────────────────────────── -->
-                <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border);">
-                    <div style="font-weight:700;font-size:0.85rem;color:var(--text-1);margin-bottom:12px;letter-spacing:.5px">&#127912; Theme &amp; Appearance</div>
+                <!-- ── General panel ── -->
+                <div id="settings-panel-general" class="settings-panel">
+                    <div style="margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+                        <div style="font-weight:700;font-size:0.85rem;color:var(--text-1);margin-bottom:12px;letter-spacing:.5px">&#128190; Data</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button class="btn btn-outline" onclick="exportJSON()" style="flex:1;min-width:130px">&#128229; Export Backup</button>
+                            <label class="btn btn-outline" style="flex:1;min-width:130px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:5px">&#128194; Import Backup<input type="file" accept=".json" onchange="importJSON(event);closeSettings()" style="display:none"></label>
+                            <button class="btn btn-outline" onclick="exportTasks()" style="flex:1;min-width:130px">&#128202; Export CSV</button>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-weight:700;font-size:0.85rem;color:var(--text-1);margin-bottom:12px;letter-spacing:.5px">&#127912; Theme &amp; Appearance</div>
+                        <div class="field" style="margin-bottom:14px;">
+                            <label style="display:flex;align-items:center;justify-content:space-between">
+                                Preset Themes
+                                <button id="active-theme-btn" class="btn btn-outline theme-active-pill" onclick="applyPreset('default');syncThemeStudio();" style="display:none;font-size:0.72rem;padding:3px 10px" title="Remove theme and return to default">&#10005; Remove theme</button>
+                            </label>
+                            <div id="theme-preset-grid" class="theme-preset-grid"></div>
+                        </div>
+                        <div class="field">
+                            <label style="display:flex;align-items:center;justify-content:space-between">
+                                Custom Studio
+                                <button class="btn btn-outline" style="font-size:0.72rem;padding:3px 10px;" onclick="resetThemeStudio()">&#8635; Reset to preset</button>
+                            </label>
+                            <div class="theme-studio">
+                                <div class="studio-row">
+                                    <span class="studio-lbl">Corner rounding</span>
+                                    <input id="studio-radius-slider" class="studio-slider" type="range" min="0" max="24" value="6" oninput="adjustGeometry(this.value)">
+                                    <span id="studio-radius-val" class="studio-val">6px</span>
+                                </div>
+                                <div class="studio-row">
+                                    <span class="studio-lbl">Background</span>
+                                    <input id="studio-bg-color" class="studio-color" type="color" oninput="adjustColors()" title="Background colour">
+                                    <span class="studio-lbl" style="min-width:56px">Card</span>
+                                    <input id="studio-card-color" class="studio-color" type="color" oninput="adjustColors()" title="Card colour">
+                                    <span class="studio-lbl" style="min-width:52px">Accent</span>
+                                    <input id="studio-accent-color" class="studio-color" type="color" oninput="adjustColors()" title="Accent / highlight colour">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                    <div class="field" style="margin-bottom:14px;">
-                        <label style="display:flex;align-items:center;justify-content:space-between">
-                            Preset Themes
-                            <button id="active-theme-btn" class="btn btn-outline theme-active-pill" onclick="applyPreset('default');syncThemeStudio();" style="display:none;font-size:0.72rem;padding:3px 10px" title="Remove theme and return to default">&#10005; Remove theme</button>
-                        </label>
-                        <div id="theme-preset-grid" class="theme-preset-grid"></div>
+                <!-- ── Jira panel ── -->
+                <!-- jira-settings-start -->
+                <div id="settings-panel-jira" class="settings-panel" style="display:none">
+                    <p style="font-size:0.8rem;color:var(--text-3);margin-bottom:16px;">Requires the local proxy running in a terminal: <code style="background:var(--purple-light);color:var(--purple);padding:1px 5px;border-radius:3px;">python jira-proxy.py</code></p>
+
+                    <div class="field">
+                        <label>Jira Session Cookie</label>
+                        <details class="cookie-how">
+                            <summary>&#9654; How to get your cookie (click to expand)</summary>
+                            <ol class="cookie-steps">
+                                <li>Open <strong>telushealth.atlassian.net</strong> in your browser (log in if asked)</li>
+                                <li>Press <strong>F12</strong> to open DevTools &rarr; click the <strong>Network</strong> tab</li>
+                                <li>Click any request in the list (e.g. the first one)</li>
+                                <li>In the right panel scroll to <strong>Request Headers</strong></li>
+                                <li>Find the <strong>cookie:</strong> row &rarr; right-click it &rarr; <strong>Copy value</strong></li>
+                                <li>Paste below and click <strong>Update Cookie</strong></li>
+                            </ol>
+                        </details>
+                        <textarea id="s-cookie" placeholder="Paste your Jira session cookie here..."></textarea>
+                        <p class="field-note">Cookies expire after ~24 hours — come back here to refresh when Jira stops loading.</p>
+                    </div>
+                    <div id="cookie-result" class="conn-result"></div>
+
+                    <div class="field">
+                        <label>Jira Base URL</label>
+                        <input type="text" id="s-jira-url" placeholder="https://yourcompany.atlassian.net" />
+                        <p class="field-note">Used for issue links — no trailing slash</p>
                     </div>
 
                     <div class="field">
-                        <label style="display:flex;align-items:center;justify-content:space-between">
-                            Custom Studio
-                            <button class="btn btn-outline" style="font-size:0.72rem;padding:3px 10px;" onclick="resetThemeStudio()">&#8635; Reset to preset</button>
-                        </label>
-                        <div class="theme-studio">
-                            <div class="studio-row">
-                                <span class="studio-lbl">Corner rounding</span>
-                                <input id="studio-radius-slider" class="studio-slider" type="range" min="0" max="24" value="6" oninput="adjustGeometry(this.value)">
-                                <span id="studio-radius-val" class="studio-val">6px</span>
+                        <label>JQL Filter Builder</label>
+                        <div class="jql-builder" id="jql-builder">
+                            <div class="jql-row" style="margin-bottom:10px;">
+                                <label class="jql-check"><input type="checkbox" id="jb-assignee" onchange="updateJqlPreview()"> Assigned to me</label>
+                                <label class="jql-check"><input type="checkbox" id="jb-unresolved" onchange="updateJqlPreview()"> Unresolved only</label>
                             </div>
-                            <div class="studio-row">
-                                <span class="studio-lbl">Background</span>
-                                <input id="studio-bg-color" class="studio-color" type="color" oninput="adjustColors()" title="Background colour">
-                                <span class="studio-lbl" style="min-width:56px">Card</span>
-                                <input id="studio-card-color" class="studio-color" type="color" oninput="adjustColors()" title="Card colour">
-                                <span class="studio-lbl" style="min-width:52px">Accent</span>
-                                <input id="studio-accent-color" class="studio-color" type="color" oninput="adjustColors()" title="Accent / highlight colour">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 20px;">
+                                <div>
+                                    <div class="jql-group-label">Status <label class="jql-not-toggle"><input type="checkbox" id="jb-status-not" onchange="updateJqlPreview()"> NOT</label></div>
+                                    <div class="jql-row">
+                                        <label class="jql-check"><input type="checkbox" id="jb-s-inprogress" onchange="updateJqlPreview()"> In Progress</label>
+                                        <label class="jql-check"><input type="checkbox" id="jb-s-todo" onchange="updateJqlPreview()"> To Do</label>
+                                        <label class="jql-check"><input type="checkbox" id="jb-s-inreview" onchange="updateJqlPreview()"> In Review</label>
+                                        <label class="jql-check"><input type="checkbox" id="jb-s-blocked" onchange="updateJqlPreview()"> Blocked</label>
+                                        <label class="jql-check"><input type="checkbox" id="jb-s-closed" onchange="updateJqlPreview()"> Closed</label>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="jql-group-label">Priority <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem">(blank = any)</span></div>
+                                    <div class="jql-row">
+                                        <label class="jql-check"><input type="checkbox" id="jb-p-highest" onchange="updateJqlPreview()"> Highest</label>
+                                        <label class="jql-check"><input type="checkbox" id="jb-p-high" onchange="updateJqlPreview()"> High</label>
+                                        <label class="jql-check"><input type="checkbox" id="jb-p-medium" onchange="updateJqlPreview()"> Medium</label>
+                                        <label class="jql-check"><input type="checkbox" id="jb-p-low" onchange="updateJqlPreview()"> Low</label>
+                                    </div>
+                                    <div class="jql-group-label" style="margin-top:10px;">Updated</div>
+                                    <div class="jql-row">
+                                        <select id="jb-updated" onchange="updateJqlPreview()" style="font-size:0.82rem;padding:5px 8px;width:auto;">
+                                            <option value="">Any time</option>
+                                            <option value="7">Last 7 days</option>
+                                            <option value="30">Last 30 days</option>
+                                            <option value="90">Last 90 days</option>
+                                        </select>
+                                    </div>
+                                    <div class="jql-group-label" style="margin-top:10px;">Projects <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem">(e.g. HBMADJ, CRM)</span></div>
+                                    <div class="jql-row">
+                                        <input type="text" id="jb-projects" placeholder="Blank = all" oninput="updateJqlPreview()" style="flex:1;min-width:0;font-size:0.82rem;padding:5px 8px;" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="jql-preview-wrap">
+                                <div class="jql-preview-label">Generated JQL</div>
+                                <div class="jql-preview" id="jql-preview"></div>
                             </div>
                         </div>
                     </div>
+
+                    <div class="field">
+                        <label>Custom JQL Override <span style="font-weight:400;text-transform:none;font-size:0.72rem">(optional)</span></label>
+                        <div class="jql-input-row">
+                            <input type="text" id="s-jira-jql" placeholder="e.g. project = MYPROJ AND status != Closed ORDER BY updated DESC" oninput="updateJqlPreview()" style="flex:1;" />
+                            <button class="jql-clear-btn" onclick="clearCustomJql()" title="Clear custom JQL">&#10005; remove</button>
+                        </div>
+                        <p class="field-note">Overrides the builder above entirely when filled. Leave blank to use the builder.</p>
+                    </div>
+
+                    <div id="conn-result" class="conn-result"></div>
+
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;">
+                        <!-- jira-modal-actions-start -->
+                        <button class="btn btn-purple" onclick="updateCookie()">&#8593; Update Cookie</button>
+                        <button class="btn btn-outline" onclick="testConnection()">&#128268; Test Proxy</button>
+                        <!-- jira-modal-actions-end -->
+                    </div>
                 </div>
+                <!-- jira-settings-end -->
+
+                <!-- ── Personal panel (home-only) ── -->
 
                 <div class="modal-actions">
-                    <!-- jira-modal-actions-start -->
-                    <button class="btn btn-purple" onclick="updateCookie()">&#8593; Update Cookie</button>
-                    <button class="btn btn-outline" onclick="testConnection()">&#128268; Test Proxy</button>
-                    <!-- jira-modal-actions-end -->
                     <button class="btn btn-outline" onclick="closeSettings()">Cancel</button>
                     <button class="btn btn-green" onclick="saveSettings()">Save Settings</button>
                 </div>
@@ -1010,36 +1058,49 @@ select option { background: var(--card); color: var(--text); }
 <!-- ─── EDIT MODAL ────────────────────────────────────────────────────────────── -->
 <div id="edit-modal" style="display:none">
     <div class="overlay" onclick="if(event.target===this)closeEditModal()">
-        <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal" style="max-width:620px;max-height:90vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
             <div class="modal-header">&#9998; Edit Task</div>
-            <div class="modal-body">
+            <div class="modal-body" style="overflow-y:auto;flex:1;padding:14px 20px;">
                 <div class="field"><label>Task</label><input type="text" id="edit-text" /></div>
-                <div class="field"><label>Notes</label><textarea id="edit-notes"></textarea></div>
-                <div class="field"><label>Priority</label>
-                    <select id="edit-priority">
-                        <option value="high">&#128308; High</option>
-                        <option value="medium">&#128993; Medium</option>
-                        <option value="low">&#128994; Low</option>
-                    </select>
+                <div class="field"><label>Notes</label><textarea id="edit-notes" style="height:52px;"></textarea></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
+                    <div class="field"><label>Priority</label>
+                        <select id="edit-priority">
+                            <option value="high" data-i18n="prioHighOpt">&#128308; High</option>
+                            <option value="medium" data-i18n="prioMediumOpt">&#128993; Medium</option>
+                            <option value="low" data-i18n="prioLowOpt">&#128994; Low</option>
+                        </select>
+                    </div>
+                    <div class="field"><label>Color</label><div id="edit-color-swatches" class="color-swatches"></div></div>
                 </div>
-                <div class="field"><label>Color</label><div id="edit-color-swatches" class="color-swatches"></div></div>
-                <div class="field"><label>Category</label>
-                    <select id="edit-category"></select>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
+                    <div class="field"><label>Category</label>
+                        <select id="edit-category"></select>
+                    </div>
+                    <div class="field"><label>Due Date</label><input type="date" id="edit-due" /></div>
                 </div>
-                <div class="field"><label>Due Date</label><input type="date" id="edit-due" /></div>
-                <div class="field"><label>Repeat</label>
-                    <select id="edit-recur">
-                        <option value="">&#128260; No repeat</option>
-                        <option value="daily">&#8635; Daily</option>
-                        <option value="weekly">&#8635; Weekly</option>
-                        <option value="biweekly">&#8635; Bi-weekly</option>
-                        <option value="monthly">&#8635; Monthly</option>
-                    </select>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
+                    <div class="field"><label>Repeat</label>
+                        <select id="edit-recur">
+                            <option value="" data-i18n="recurNoneOpt">&#128260; No repeat</option>
+                            <option value="daily" data-i18n="recurDailyOpt">&#8635; Daily</option>
+                            <option value="weekdays" data-i18n="recurWeekdaysOpt">&#8635; Weekdays (M&#8211;F)</option>
+                            <option value="weekly-mon" data-i18n="recurEveryMonOpt">&#8635; Every Monday</option>
+                            <option value="weekly-tue" data-i18n="recurEveryTueOpt">&#8635; Every Tuesday</option>
+                            <option value="weekly-wed" data-i18n="recurEveryWedOpt">&#8635; Every Wednesday</option>
+                            <option value="weekly-thu" data-i18n="recurEveryThuOpt">&#8635; Every Thursday</option>
+                            <option value="weekly-fri" data-i18n="recurEveryFriOpt">&#8635; Every Friday</option>
+                            <option value="weekly" data-i18n="recurWeeklyOpt">&#8635; Weekly</option>
+                            <option value="biweekly" data-i18n="recurBiweeklyOpt">&#8635; Bi-weekly</option>
+                            <option value="monthly" data-i18n="recurMonthlyOpt">&#8635; Monthly</option>
+                            <option value="yearly" data-i18n="recurYearlyOpt">&#8635; Yearly</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="modal-actions">
-                    <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
-                    <button class="btn btn-purple" onclick="saveEdit()">Save Changes</button>
-                </div>
+            </div>
+            <div class="modal-actions" style="margin:0;padding:12px 20px;">
+                <button class="btn btn-outline" onclick="closeEditModal()" data-i18n="cancelBtn">Cancel</button>
+                <button class="btn btn-purple" onclick="saveEdit()">Save Changes</button>
             </div>
         </div>
     </div>
@@ -1058,7 +1119,7 @@ select option { background: var(--card); color: var(--text); }
             <button class="btn" onclick="closeCapture()">Cancel</button>
             <button class="btn btn-green" onclick="saveCapture()">&#10003; Capture</button>
         </div>
-        <div class="capture-hint">Press Enter twice or click Capture · Esc to close</div>
+        <div class="capture-hint">Space to open · click Capture · Esc to cancel</div>
     </div>
 </div>
 
@@ -1066,7 +1127,7 @@ select option { background: var(--card); color: var(--text); }
 /* ── js/constants.js ── */
 // constants.js — App-wide configuration values and magic strings/numbers.
 
-const APP_VERSION         = '1.7';
+const APP_VERSION         = '1.8';
 const OPFS_FILENAME       = 'work-tasks.json';
 const LS_KEY              = 'work_tasks';
 const LS_THEME_KEY        = 'wtt-theme';
@@ -1092,6 +1153,193 @@ const HEATMAP_DAYS        = 7;
 const PERSONAL_OPFS_FILENAME = 'personal-tasks.json';
 const PERSONAL_LS_KEY        = 'personal_tasks';
 const ACTIVE_MODE_LS_KEY     = 'joby-active-mode';
+
+const DRIVE_TOKEN_LS_KEY = 'joby-drive-token';
+const DRIVE_API_BASE     = 'https://www.googleapis.com/drive/v3';
+const DRIVE_UPLOAD_BASE  = 'https://www.googleapis.com/upload/drive/v3';
+
+const LANG_LS_KEY = 'joby-lang';
+
+const STRINGS = {
+    en: {
+        tabTasks:        '&#128203; My Tasks',
+        filterAll:       'All',
+        filterPending:   'Pending',
+        filterDone:      'Done',
+        filterHigh:      '&#128308; High',
+        filterOverdue:   '&#9203; Overdue',
+        sortAdded:       'Sort: Added',
+        sortPriority:    'Sort: Priority',
+        sortDue:         'Sort: Due Date',
+        sortAlpha:       'Sort: A–Z',
+        statTotal:       'Total',
+        statPending:     'Pending',
+        statDone:        'Completed',
+        statHigh:        'High Priority',
+        statOverdue:     'Overdue',
+        addTaskBtn:      '&#43; Add Task',
+        clearDoneBtn:    '&#128465; Clear Done',
+        compactBtn:      '&#8801; Compact',
+        searchPlaceholder: 'Search tasks…',
+        settingsBtnLabel: '&#9881;&#65039; Settings',
+        darkBtnLabel:    '&#127769; Dark',
+        stTabGeneral:    '&#127775; General',
+        stTabJira:       '&#127919; Jira',
+        stTabPersonal:   '&#128100; Personal',
+        prioHigh:        'high',
+        prioMedium:      'medium',
+        prioLow:         'low',
+        badgeDue:        'Due',
+        badgeOverdue:    'Overdue',
+        recurDaily:      'Daily',
+        recurWeekdays:   'Weekdays (M–F)',
+        recurWeekly:     'Weekly',
+        recurBiweekly:   'Bi-weekly',
+        recurMonthly:    'Monthly',
+        recurYearly:     'Yearly',
+        recurEveryMon:   'Every Monday',
+        recurEveryTue:   'Every Tuesday',
+        recurEveryWed:   'Every Wednesday',
+        recurEveryThu:   'Every Thursday',
+        recurEveryFri:   'Every Friday',
+        ghostPlaceholder: '&#43; Add a task&#8230;',
+        taskPlaceholder:  'Describe your task — or tap &#127908; to speak&#8230;',
+        notesPlaceholder: 'Notes (optional)&#8230;',
+        cancelBtn:        'Cancel',
+        prioHighOpt:      '&#128308; High',
+        prioMediumOpt:    '&#128993; Medium',
+        prioLowOpt:       '&#128994; Low',
+        recurNoneOpt:       '&#128260; No repeat',
+        recurDailyOpt:      '&#8635; Daily',
+        recurWeekdaysOpt:   '&#8635; Weekdays (M&#8211;F)',
+        recurWeeklyOpt:     '&#8635; Weekly',
+        recurBiweeklyOpt:   '&#8635; Bi-weekly',
+        recurMonthlyOpt:    '&#8635; Monthly',
+        recurYearlyOpt:     '&#8635; Yearly',
+        recurEveryMonOpt:   '&#8635; Every Monday',
+        recurEveryTueOpt:   '&#8635; Every Tuesday',
+        recurEveryWedOpt:   '&#8635; Every Wednesday',
+        recurEveryThuOpt:   '&#8635; Every Thursday',
+        recurEveryFriOpt:   '&#8635; Every Friday',
+        emptyNoTasks:    'No tasks yet — add one above or speak it!',
+        emptyNoMatch:    'No matching tasks.',
+        ssbDayStreak:    'Day Streak',
+        ssbLongest:      'Longest: {0}d',
+        ssbThisWeek:     'This Week',
+        ssbTodayYest:    '{0} today &middot; {1} yesterday',
+        ssbThisMonth:    'This Month',
+        ssbAllTime:      '{0} all time',
+        ssbCompRate:     'Completion Rate',
+        ssbBestDay:      'Best Day',
+        ssbTasksTotal:   '{0} tasks total',
+        scbCurrStreak:   'Current Streak',
+        scbLongest:      'Longest: {0} days',
+        scbCompWeek:     'Completed This Week',
+        scbCompMonth:    'Completed This Month',
+        scbDoneOf:       '{0} done of {1} created',
+        scbMostProd:     'Most Productive Day',
+        scbTasksOnDay:   '{0} tasks on {1}s total',
+        heatmapAct:      '&#128202; Activity',
+        heatmapLess:     'Less',
+        heatmapMore:     'More',
+        taskZone:        '&#10022; Task Zone &#10022;',
+        hmNoComp:        'no completions',
+        hmTaskDone:      'task done',
+        hmTasksDone:     'tasks done',
+        inboxLabel:      'Inbox',
+        inboxAddBtn:     '&#8594; Add to Tasks',
+        inboxPromoted:   'Inbox item ready to add — fill in the details above &#128221;',
+    },
+    fr: {
+        tabTasks:        '&#128203; Mes t&#226;ches',
+        filterAll:       'Tout',
+        filterPending:   'En cours',
+        filterDone:      'Termin&#233;',
+        filterHigh:      '&#128308; Urgent',
+        filterOverdue:   '&#9203; En retard',
+        sortAdded:       'Tri: Ajout&#233;',
+        sortPriority:    'Tri: Priorit&#233;',
+        sortDue:         'Tri: &#201;ch&#233;ance',
+        sortAlpha:       'Tri: A–Z',
+        statTotal:       'Total',
+        statPending:     'En cours',
+        statDone:        'Termin&#233;',
+        statHigh:        'Urgent',
+        statOverdue:     'En retard',
+        addTaskBtn:      '&#43; Ajouter',
+        clearDoneBtn:    '&#128465; Effacer',
+        compactBtn:      '&#8801; Compact',
+        searchPlaceholder: 'Rechercher…',
+        settingsBtnLabel: '&#9881;&#65039; R&#233;glages',
+        darkBtnLabel:    '&#127769; Sombre',
+        stTabGeneral:    '&#127775; G&#233;n&#233;ral',
+        stTabJira:       '&#127919; Jira',
+        stTabPersonal:   '&#128100; Personnel',
+        prioHigh:        'urgent',
+        prioMedium:      'moyen',
+        prioLow:         'bas',
+        badgeDue:        '&#201;ch&#233;ance',
+        badgeOverdue:    'En retard',
+        recurDaily:      'Quotidien',
+        recurWeekdays:   'Jours ouvrables (L&#8211;V)',
+        recurWeekly:     'Hebdo.',
+        recurBiweekly:   'Bimensuel',
+        recurMonthly:    'Mensuel',
+        recurYearly:     'Annuel',
+        recurEveryMon:   'Chaque lundi',
+        recurEveryTue:   'Chaque mardi',
+        recurEveryWed:   'Chaque mercredi',
+        recurEveryThu:   'Chaque jeudi',
+        recurEveryFri:   'Chaque vendredi',
+        ghostPlaceholder: '&#43; Ajouter une t&#226;che&#8230;',
+        taskPlaceholder:  'D&#233;crivez votre t&#226;che — ou appuyez sur &#127908; pour parler&#8230;',
+        notesPlaceholder: 'Notes (optionnel)&#8230;',
+        cancelBtn:        'Annuler',
+        prioHighOpt:      '&#128308; Urgent',
+        prioMediumOpt:    '&#128993; Moyen',
+        prioLowOpt:       '&#128994; Bas',
+        recurNoneOpt:       '&#128260; Pas de r&#233;p&#233;tition',
+        recurDailyOpt:      '&#8635; Quotidien',
+        recurWeekdaysOpt:   '&#8635; Jours ouvrables (L&#8211;V)',
+        recurWeeklyOpt:     '&#8635; Hebdo.',
+        recurBiweeklyOpt:   '&#8635; Bimensuel',
+        recurMonthlyOpt:    '&#8635; Mensuel',
+        recurYearlyOpt:     '&#8635; Annuel',
+        recurEveryMonOpt:   '&#8635; Chaque lundi',
+        recurEveryTueOpt:   '&#8635; Chaque mardi',
+        recurEveryWedOpt:   '&#8635; Chaque mercredi',
+        recurEveryThuOpt:   '&#8635; Chaque jeudi',
+        recurEveryFriOpt:   '&#8635; Chaque vendredi',
+        emptyNoTasks:    'Aucune t&#226;che — ajoutez-en une ci-dessus!',
+        emptyNoMatch:    'Aucune t&#226;che correspondante.',
+        ssbDayStreak:    'Jours cons&#233;cutifs',
+        ssbLongest:      'Record&#160;: {0}j',
+        ssbThisWeek:     'Cette semaine',
+        ssbTodayYest:    '{0} auj. &middot; {1} hier',
+        ssbThisMonth:    'Ce mois',
+        ssbAllTime:      '{0} au total',
+        ssbCompRate:     "Taux d'ach&#232;vement",
+        ssbBestDay:      'Meilleur jour',
+        ssbTasksTotal:   '{0} t&#226;ches au total',
+        scbCurrStreak:   'S&#233;rie actuelle',
+        scbLongest:      'Record&#160;: {0} jours',
+        scbCompWeek:     'Termin&#233; cette semaine',
+        scbCompMonth:    'Termin&#233; ce mois',
+        scbDoneOf:       '{0} termin&#233;(s) sur {1} cr&#233;&#233;(s)',
+        scbMostProd:     'Jour le plus productif',
+        scbTasksOnDay:   '{0} t&#226;ches les {1}s au total',
+        heatmapAct:      '&#128202; Activit&#233;',
+        heatmapLess:     'Moins',
+        heatmapMore:     'Plus',
+        taskZone:        '&#10022; Zone de t&#226;ches &#10022;',
+        hmNoComp:        'aucune compl&#233;tion',
+        hmTaskDone:      't&#226;che termin&#233;e',
+        hmTasksDone:     't&#226;ches termin&#233;es',
+        inboxLabel:      'R&#233;ception',
+        inboxAddBtn:     '&#8594; Ajouter aux t&#226;ches',
+        inboxPromoted:   'Saisie pr&#234;te &#224; ajouter — compl&#233;tez les d&#233;tails ci-dessus &#128221;',
+    },
+};
 
 const WORK_CATEGORIES = [
     { value: 'Work',    emoji: '💼', label: 'Work'    },
@@ -1130,7 +1378,8 @@ let jiraIssues        = [];
 let jiraNextPageToken = null;
 let jiraIsLoading     = false;
 let activeTab         = 'tasks';
-let currentFilter     = 'all';
+let currentFilter         = 'all';
+let currentCategoryFilter = 'all';
 let editId            = null;
 let dragSrcIdx        = null;
 let dragTargetIndent  = 0;
@@ -1144,6 +1393,7 @@ let isListening       = false;
 let compactView          = false;
 const expandedCompactIds = new Set();
 let activeMode           = 'work'; // 'work' | 'personal'
+let uiLang               = 'en';   // 'en' | 'fr'
 
 window.db = {
     get: k => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } },
@@ -1212,10 +1462,86 @@ function addDaysToDate(dateStr, n) {
     return d.toLocaleDateString('en-CA');
 }
 function freqDays(freq) {
-    return freq === 'daily' ? 1 : freq === 'weekly' ? 7 : freq === 'biweekly' ? 14 : freq === 'monthly' ? 30 : 0;
+    return freq === 'daily' ? 1 : freq === 'weekly' ? 7 : freq === 'biweekly' ? 14 : freq === 'monthly' ? 30 : freq === 'yearly' ? 365 : 0;
 }
 function freqLabel(freq) {
-    return freq === 'daily' ? 'Daily' : freq === 'weekly' ? 'Weekly' : freq === 'biweekly' ? 'Bi-weekly' : freq === 'monthly' ? 'Monthly' : '';
+    const map = {
+        daily: 'recurDaily', weekdays: 'recurWeekdays',
+        weekly: 'recurWeekly', biweekly: 'recurBiweekly',
+        monthly: 'recurMonthly', yearly: 'recurYearly',
+        'weekly-mon': 'recurEveryMon', 'weekly-tue': 'recurEveryTue',
+        'weekly-wed': 'recurEveryWed', 'weekly-thu': 'recurEveryThu',
+        'weekly-fri': 'recurEveryFri',
+    };
+    return (freq && map[freq]) ? t(map[freq]) : '';
+}
+
+// ── Recurrence next-date helpers ──────────────────────────────────────────────
+const _DOW_MAP = { 'weekly-mon': 1, 'weekly-tue': 2, 'weekly-wed': 3, 'weekly-thu': 4, 'weekly-fri': 5 };
+function nextRecurDate(freq, fromDateStr) {
+    const d = new Date(fromDateStr + 'T00:00:00');
+    if (freq === 'daily')    { d.setDate(d.getDate() + 1); return d.toLocaleDateString('en-CA'); }
+    if (freq === 'weekdays') { do { d.setDate(d.getDate() + 1); } while (d.getDay() === 0 || d.getDay() === 6); return d.toLocaleDateString('en-CA'); }
+    if (freq === 'weekly')   { d.setDate(d.getDate() + 7);  return d.toLocaleDateString('en-CA'); }
+    if (freq === 'biweekly') { d.setDate(d.getDate() + 14); return d.toLocaleDateString('en-CA'); }
+    if (freq === 'monthly')  { d.setMonth(d.getMonth() + 1); return d.toLocaleDateString('en-CA'); }
+    if (freq === 'yearly')   { d.setFullYear(d.getFullYear() + 1); return d.toLocaleDateString('en-CA'); }
+    const target = _DOW_MAP[freq];
+    if (target !== undefined) { do { d.setDate(d.getDate() + 1); } while (d.getDay() !== target); return d.toLocaleDateString('en-CA'); }
+    const days = freqDays(freq);
+    if (days > 0) d.setDate(d.getDate() + days);
+    return d.toLocaleDateString('en-CA');
+}
+function prevWorkday(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    do { d.setDate(d.getDate() - 1); } while (d.getDay() === 0 || d.getDay() === 6);
+    return d.toLocaleDateString('en-CA');
+}
+function isNextWorkday(aStr, bStr) {
+    const a = new Date(aStr + 'T00:00:00');
+    do { a.setDate(a.getDate() + 1); } while (a.getDay() === 0 || a.getDay() === 6);
+    return a.toLocaleDateString('en-CA') === bStr;
+}
+
+// ── i18n ──────────────────────────────────────────────────────────────────────
+function t(key) {
+    const s = STRINGS[uiLang];
+    return (s && s[key] !== undefined) ? s[key] : (STRINGS.en[key] || key);
+}
+function tFmt(key, ...args) {
+    let s = t(key);
+    args.forEach((v, i) => { s = s.replace('{' + i + '}', v); });
+    return s;
+}
+function _decodeHtml(str) {
+    const d = document.createElement('div');
+    d.innerHTML = str;
+    return d.textContent;
+}
+function applyLang(lang) {
+    if (lang) uiLang = lang;
+    const s = STRINGS[uiLang];
+    if (!s) return;
+    document.documentElement.lang = uiLang;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const val = s[el.dataset.i18n];
+        if (val !== undefined) el.innerHTML = val;
+    });
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) searchInput.placeholder = _decodeHtml(s.searchPlaceholder || '');
+    const taskInput = document.getElementById('task-input');
+    if (taskInput) taskInput.placeholder = _decodeHtml(s.taskPlaceholder || '');
+    const notesInput = document.getElementById('task-notes');
+    if (notesInput) notesInput.placeholder = _decodeHtml(s.notesPlaceholder || '');
+    const langBtn = document.getElementById('lang-btn');
+    if (langBtn) langBtn.textContent = uiLang === 'en' ? 'FR' : 'EN';
+    try { localStorage.setItem(LANG_LS_KEY, uiLang); } catch {}
+    if (typeof renderTasks  === 'function') renderTasks();
+    if (typeof updateStats  === 'function') updateStats();
+    if (typeof renderInbox  === 'function') renderInbox();
+}
+function toggleLang() {
+    applyLang(uiLang === 'en' ? 'fr' : 'en');
 }
 
 
@@ -1902,7 +2228,7 @@ function currentLsKey() {
 }
 
 function payload() {
-    return { version: APP_VERSION, tasks, settings: { jiraUrl: settings.jiraUrl, jiraJql: settings.jiraJql, jiraAssigneeMe: settings.jiraAssigneeMe, jiraUnresolved: settings.jiraUnresolved, jiraStatuses: settings.jiraStatuses, jiraStatusNot: settings.jiraStatusNot, jiraPriorities: settings.jiraPriorities, jiraUpdatedDays: settings.jiraUpdatedDays, jiraProjects: settings.jiraProjects, themePreset: settings.themePreset, themeCustom: settings.themeCustom, compactView: settings.compactView, sortPreference: settings.sortPreference }, promotedJiraIds, inboxItems, completionLog, streak };
+    return { version: APP_VERSION, tasks, settings: { jiraUrl: settings.jiraUrl, jiraJql: settings.jiraJql, jiraAssigneeMe: settings.jiraAssigneeMe, jiraUnresolved: settings.jiraUnresolved, jiraStatuses: settings.jiraStatuses, jiraStatusNot: settings.jiraStatusNot, jiraPriorities: settings.jiraPriorities, jiraUpdatedDays: settings.jiraUpdatedDays, jiraProjects: settings.jiraProjects, themePreset: settings.themePreset, themeCustom: settings.themeCustom, compactView: settings.compactView, sortPreference: settings.sortPreference, driveClientId: settings.driveClientId, driveFileId: settings.driveFileId, familyMembers: settings.familyMembers }, promotedJiraIds, inboxItems, completionLog, streak };
 }
 async function opfsHandle() {
     const root = await navigator.storage.getDirectory();
@@ -1942,7 +2268,10 @@ function normalizeSettings(s) {
         themePreset:    (s && s.themePreset)    || 'default',
         themeCustom:    (s && s.themeCustom)    || {},
         compactView:    (s && s.compactView)    || false,
-        sortPreference: (s && s.sortPreference) || 'added'
+        sortPreference: (s && s.sortPreference) || 'added',
+        driveClientId:  (s && s.driveClientId)  || '',
+        driveFileId:    (s && s.driveFileId)    || '',
+        familyMembers:  (s && s.familyMembers)  || '',
     };
 }
 function applyData(data) {
@@ -1970,6 +2299,10 @@ async function initStorage() {
     updateModeUI();
     renderTasks(); updateStats(); renderStreakBadge(); renderInbox();
     setSaveIndicator('saved');
+    loadDriveSettingsUI();
+    if (typeof initDrive === 'function') initDrive();
+    try { uiLang = localStorage.getItem(LANG_LS_KEY) || 'en'; } catch {}
+    if (typeof applyLang === 'function') applyLang();
 }
 
 // ── Mode switch ───────────────────────────────────────────────────────────────
@@ -2008,6 +2341,7 @@ async function autoSave() {
         const opfsOk = await saveToOPFS();
         const lsOk   = writeToLS();
         setSaveIndicator((opfsOk || lsOk) ? 'saved' : 'failed');
+        if (typeof driveSave === 'function') driveSave(); // non-blocking
     } finally {
         _opfsWriting = false;
     }
@@ -2063,6 +2397,26 @@ async function importJSON(event) {
 
 window.addEventListener('beforeunload', () => writeToLS());
 
+// ── Drive settings UI helpers ─────────────────────────────────────────────────
+function loadDriveSettingsUI() {
+    const cid = document.getElementById('s-drive-client-id');
+    const fid = document.getElementById('s-drive-file-id');
+    const fam = document.getElementById('s-family-members');
+    if (cid) cid.value = settings.driveClientId || '';
+    if (fid) fid.value = settings.driveFileId   || '';
+    if (fam) fam.value = settings.familyMembers  || '';
+}
+function saveDriveSettings() {
+    settings.driveClientId = (document.getElementById('s-drive-client-id')?.value || '').trim();
+    settings.driveFileId   = (document.getElementById('s-drive-file-id')?.value   || '').trim();
+    settings.familyMembers = (document.getElementById('s-family-members')?.value  || '').trim();
+    debouncedSave();
+    if (typeof initDrive          === 'function') initDrive();
+    if (typeof renderAssignFilterPills === 'function') renderAssignFilterPills();
+    if (typeof populateAssignSelects   === 'function') populateAssignSelects();
+    toast('Drive settings saved!');
+}
+
 
 /* ── js/tasks.js ── */
 // tasks.js — Task CRUD, completion tracking, streak logic, confetti, edit modal, filter.
@@ -2072,7 +2426,7 @@ function addTask() {
     const input=document.getElementById('task-input');
     const text=input.value.trim();
     if (!text) { input.style.borderColor='var(--red)'; setTimeout(()=>input.style.borderColor='',1000); return; }
-    tasks.unshift({ id:Date.now(), text, notes:document.getElementById('task-notes').value.trim(), priority:document.getElementById('priority-select').value, category:document.getElementById('category-select').value, dueDate:document.getElementById('due-date').value, recurFreq:document.getElementById('recur-select').value||null, color:getSelectedColor('add-color-swatches'), indent:0, done:false, createdAt:new Date().toLocaleDateString('en-CA') });
+    tasks.unshift({ id:Date.now(), text, notes:document.getElementById('task-notes').value.trim(), priority:document.getElementById('priority-select').value, category:document.getElementById('category-select').value, dueDate:document.getElementById('due-date').value, recurFreq:document.getElementById('recur-select').value||null, color:getSelectedColor('add-color-swatches'), indent:0, done:false, createdAt:new Date().toLocaleDateString('en-CA'), createdBy:(typeof driveUser !== 'undefined' && driveUser ? driveUser.name : ''), assignedTo:document.getElementById('assign-select')?.value||'', updatedAt:new Date().toISOString() });
     input.value=''; document.getElementById('task-notes').value=''; document.getElementById('due-date').value=''; document.getElementById('recur-select').value='';
     renderColorSwatches('add-color-swatches', '');
     if (isListening) { recognition.stop(); isListening=false; updateMicBtn(); }
@@ -2099,10 +2453,10 @@ function logCompletion() {
     completionLog[today] = (completionLog[today] || 0) + 1;
 }
 function updateStreak() {
-    const today = todayStr();
-    const yest  = yesterdayStr();
+    const today   = todayStr();
     if (streak.lastDate === today) return;
-    if (streak.lastDate === yest) {
+    const prevDay = activeMode === 'work' ? prevWorkday(today) : yesterdayStr();
+    if (streak.lastDate === prevDay || streak.lastDate === yesterdayStr()) {
         streak.current += 1;
     } else {
         streak.current = 1;
@@ -2149,25 +2503,32 @@ function fireConfetti(x, y) {
     }
 }
 
+function _skipWeekends(d) { while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1); }
 function recomputeStreak() {
-    const today = todayStr();
+    const today   = todayStr();
+    const workMode = activeMode === 'work';
     const dateSet = new Set(Object.keys(completionLog).filter(ds => completionLog[ds] > 0));
     if (!dateSet.size) { streak.current = 0; streak.lastDate = ''; renderStreakBadge(); return; }
 
     let current = 0;
     let cursor  = new Date(today + 'T00:00:00');
-    if (!dateSet.has(today)) cursor.setDate(cursor.getDate() - 1);
+    if (!dateSet.has(today)) {
+        cursor.setDate(cursor.getDate() - 1);
+        if (workMode) _skipWeekends(cursor);
+    }
     while (dateSet.has(cursor.toLocaleDateString('en-CA'))) {
         current++;
         cursor.setDate(cursor.getDate() - 1);
+        if (workMode) _skipWeekends(cursor);
     }
 
     const sorted = [...dateSet].sort();
     let run = 1, longest = 1;
     for (let i = 1; i < sorted.length; i++) {
-        const prev = new Date(sorted[i-1] + 'T00:00:00');
-        const curr = new Date(sorted[i]   + 'T00:00:00');
-        if ((curr - prev) / 86400000 === 1) { run++; } else { longest = Math.max(longest, run); run = 1; }
+        const consec = workMode
+            ? isNextWorkday(sorted[i-1], sorted[i])
+            : (new Date(sorted[i]+'T00:00:00') - new Date(sorted[i-1]+'T00:00:00')) / 86400000 === 1;
+        if (consec) { run++; } else { longest = Math.max(longest, run); run = 1; }
     }
     longest = Math.max(longest, run, current);
 
@@ -2179,6 +2540,7 @@ function recomputeStreak() {
 
 function toggleTask(id, evt) {
     const t=tasks.find(t=>t.id===id); if(!t) return;
+    t.updatedAt=new Date().toISOString();
     if (!t.done) {
         const open=getChildren(t).filter(c=>!c.done);
         if (open.length) {
@@ -2194,17 +2556,17 @@ function toggleTask(id, evt) {
         if (evt) fireConfetti(evt.clientX, evt.clientY);
         // Schedule recurring reset — advance both dates by the frequency period
         if (t.recurFreq) {
-            const days       = freqDays(t.recurFreq);
             const label      = freqLabel(t.recurFreq);
             const oldCreated = t.createdAt;
             const oldDue     = t.dueDate;
+            const freq       = t.recurFreq;
             setTimeout(() => {
                 const task = tasks.find(x => x.id === id);
                 if (!task || !task.done) return; // user may have un-done it
                 task.done      = false;
                 task.doneAt    = null;
-                task.createdAt = addDaysToDate(oldCreated, days);
-                task.dueDate   = oldDue ? addDaysToDate(oldDue, days) : null;
+                task.createdAt = nextRecurDate(freq, oldCreated);
+                task.dueDate   = oldDue ? nextRecurDate(freq, oldDue) : null;
                 debouncedSave(); renderTasks(); updateStats();
                 toast('↻ ' + label + ' task reset' + (task.dueDate ? ' — due ' + formatDue(task.dueDate) : ''), 3500, 'var(--purple)');
             }, 1600);
@@ -2281,6 +2643,8 @@ function saveEdit() {
     t.dueDate=document.getElementById('edit-due').value;
     t.recurFreq=document.getElementById('edit-recur').value||null;
     t.color=getSelectedColor('edit-color-swatches');
+    t.assignedTo=document.getElementById('edit-assign')?.value||t.assignedTo||'';
+    t.updatedAt=new Date().toISOString();
     closeEditModal(); debouncedSave();renderTasks();updateStats();toast('Task updated!');
 }
 
@@ -2319,6 +2683,8 @@ function getFiltered() {
     const sort=document.getElementById('sort-select').value;
     let list=tasks.filter(t=>{
         if(search&&!t.text.toLowerCase().includes(search)&&!(t.notes||'').toLowerCase().includes(search)&&!t.category.toLowerCase().includes(search))return false;
+        if(currentCategoryFilter!=='all'&&t.category!==currentCategoryFilter)return false;
+        if(typeof passesAssignFilter==='function'&&!passesAssignFilter(t))return false;
         switch(currentFilter){case'pending':return!t.done;case'done':return t.done;case'high':return t.priority==='high';case'overdue':return isOverdue(t);default:return true;}
     });
     if (sort!=='added') {
@@ -2339,16 +2705,17 @@ function renderTasks() {
     if (cb) cb.classList.toggle('active', compactView);
     const filtered = getFiltered();
     if (!filtered.length) {
-        list.innerHTML = '<div class="empty-state"><div class="icon">&#128203;</div><p>' + (currentFilter==='all'&&!document.getElementById('search-input').value ? 'No tasks yet — add one above or speak it!' : 'No matching tasks.') + '</p></div>';
+        list.innerHTML = '<div class="empty-state"><div class="icon">&#128203;</div><p>' + (currentFilter==='all'&&!document.getElementById('search-input').value ? t('emptyNoTasks') : t('emptyNoMatch')) + '</p></div>';
         return;
     }
     function taskCard(task, vi) {
         const ov     = isOverdue(task);
         const indent = task.indent || 0;
-        const due    = task.dueDate ? (ov&&!task.done ? '<span class="badge over-badge">&#9888; Overdue '+formatDue(task.dueDate)+'</span>' : '<span class="badge due-badge">&#128197; Due '+formatDue(task.dueDate)+'</span>') : '';
+        const due    = task.dueDate ? (ov&&!task.done ? '<span class="badge over-badge">&#9888; '+t('badgeOverdue')+' '+formatDue(task.dueDate)+'</span>' : '<span class="badge due-badge">&#128197; '+t('badgeDue')+' '+formatDue(task.dueDate)+'</span>') : '';
         const notes  = task.notes ? '<div class="task-notes">'+linkify(task.notes)+'</div>' : '';
         const recur  = task.recurFreq ? '<span class="badge recur-badge">&#8635; '+freqLabel(task.recurFreq)+'</span>' : '';
-        const cDue   = task.dueDate ? (ov&&!task.done ? '<span class="compact-due ovr">&#9888;</span>' : '<span class="compact-due">&#128197; '+formatDue(task.dueDate)+'</span>') : '';
+        const assign = task.assignedTo ? '<span class="badge assign-badge">&#128100; '+escHtml(task.assignedTo)+'</span>' : '';
+        const cDue   = task.dueDate ? (ov&&!task.done ? '<span class="compact-due ovr" title="'+t('badgeOverdue')+'">&#9888;</span>' : '<span class="compact-due">&#128197; '+formatDue(task.dueDate)+'</span>') : '';
         const cNote  = task.notes   ? '<span class="compact-note-icon" title="Has notes">&#128206;</span>' : '';
         const cRec   = task.recurFreq ? '<span class="compact-recur" title="'+freqLabel(task.recurFreq)+'">&#8635;</span>' : '';
         const compactInline = '<div class="compact-inline">'+cDue+cNote+cRec+'<span class="compact-prio p-'+task.priority+'"></span><span class="compact-cat">'+escHtml(task.category)+'</span></div>';
@@ -2365,7 +2732,7 @@ function renderTasks() {
             +' aria-label="'+escAttr(ariaLabel)+'"'
             +' onclick="toggleTask('+task.id+',event)"'
             +' onkeydown="if(event.key===\' \'||event.key===\'Enter\'){event.preventDefault();toggleTask('+task.id+',event);}"></div>'
-            +'<div class="task-content" onclick="toggleCompactExpand('+task.id+',event)"><div class="task-text">'+marker+escHtml(task.text)+'</div>'+compactInline+notes+'<div class="task-meta"><span class="badge p-'+task.priority+'">'+task.priority+'</span><span class="badge cat-badge">'+escHtml(task.category)+'</span>'+recur+due+'<span class="task-date">Added '+task.createdAt+'</span></div></div>'
+            +'<div class="task-content" onclick="toggleCompactExpand('+task.id+',event)"><div class="task-text">'+marker+escHtml(task.text)+'</div>'+compactInline+notes+'<div class="task-meta"><span class="badge p-'+task.priority+'">'+t('prio'+task.priority.charAt(0).toUpperCase()+task.priority.slice(1))+'</span><span class="badge cat-badge">'+escHtml(task.category)+'</span>'+recur+due+assign+'<span class="task-date">Added '+task.createdAt+'</span></div></div>'
             +'<div class="task-actions">'
             +'<button class="action-btn" onclick="openEdit('+task.id+')" title="Edit" aria-label="Edit task: '+escAttr(task.text)+'">&#9998;</button>'
             +'<button class="action-btn" onclick="deleteTask('+task.id+')" title="Delete" aria-label="Delete task: '+escAttr(task.text)+'">&#128465;</button>'
@@ -2416,6 +2783,17 @@ function populateCategorySelects() {
         const el = document.getElementById(id);
         if (el) el.innerHTML = html;
     });
+    populateCategoryFilter();
+    populateAssignSelects();
+}
+function populateAssignSelects() {
+    const members = (settings.familyMembers || '').split('\n').map(s => s.trim()).filter(Boolean);
+    const html = '<option value="">— Unassigned —</option>' +
+        members.map(m => `<option value="${escHtml(m)}">${escHtml(m)}</option>`).join('');
+    ['assign-select', 'edit-assign'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = html;
+    });
 }
 function restoreSortSelect() {
     const el = document.getElementById('sort-select');
@@ -2428,9 +2806,26 @@ function onSortChange() {
 }
 function resetFilterBar() {
     currentFilter = 'all';
+    currentCategoryFilter = 'all';
     document.querySelectorAll('.filter-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.filter === 'all');
     });
+    const cf = document.getElementById('category-filter-select');
+    if (cf) cf.value = 'all';
+}
+function onCategoryFilterChange() {
+    currentCategoryFilter = document.getElementById('category-filter-select').value;
+    renderTasks();
+}
+function populateCategoryFilter() {
+    const el = document.getElementById('category-filter-select');
+    if (!el) return;
+    const cats = activeMode === 'personal' ? PERSONAL_CATEGORIES : WORK_CATEGORIES;
+    el.innerHTML = '<option value="all">Category: All</option>' +
+        cats.map(c => `<option value="${c.value}">${c.emoji} ${c.label}</option>`).join('');
+    el.value = currentCategoryFilter !== 'all' && cats.some(c => c.value === currentCategoryFilter)
+        ? currentCategoryFilter : 'all';
+    currentCategoryFilter = el.value;
 }
 function updateModeUI() {
     document.getElementById('mode-work-btn')?.classList.toggle('active', activeMode === 'work');
@@ -2514,6 +2909,15 @@ const JQL_PRIORITIES = ['Highest','High','Medium','Low'];
 function jbSid(s) { return 'jb-s-' + s.replace(/\s+/g,'').toLowerCase(); }
 function jbPid(p) { return 'jb-p-' + p.toLowerCase(); }
 
+function switchSettingsTab(tab) {
+    ['general', 'jira', 'personal'].forEach(t => {
+        const btn   = document.getElementById('stab-' + t);
+        const panel = document.getElementById('settings-panel-' + t);
+        if (btn)   btn.classList.toggle('active', t === tab);
+        if (panel) panel.style.display = t === tab ? '' : 'none';
+    });
+}
+
 function openSettings() {
     document.getElementById('s-jira-url').value  = settings.jiraUrl || '';
     document.getElementById('s-jira-jql').value  = settings.jiraJql || '';
@@ -2530,7 +2934,10 @@ function openSettings() {
     renderThemePresets();
     syncThemeStudio();
     _syncDarkToggle((typeof settings !== 'undefined' && settings.themePreset) || 'default');
-    const cr = document.getElementById('conn-result'); cr.className = 'conn-result'; cr.textContent = '';
+    const cr = document.getElementById('conn-result'); if (cr) { cr.className = 'conn-result'; cr.textContent = ''; }
+    const preferredTab = activeMode === 'personal' ? 'personal' : 'jira';
+    const available = document.getElementById('stab-' + preferredTab) ? preferredTab : (document.getElementById('stab-jira') ? 'jira' : 'general');
+    switchSettingsTab(available);
     document.getElementById('settings-modal').style.display = 'block';
 }
 function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
@@ -2743,6 +3150,15 @@ function promoteIssue(id) {
 /* ── js/inbox.js ── */
 // inbox.js — Brain Dump capture modal, inbox panel rendering, promote/delete inbox items.
 
+function formatCapturedAt(val) {
+    if (!val) return '';
+    if (val.includes('T')) {
+        const d = new Date(val);
+        return d.toLocaleDateString('en-CA') + ' ' + d.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
+    }
+    return val; // legacy date-only string
+}
+
 // ── Brain Dump Inbox ──────────────────────────────────────────────────────────
 let inboxPanelOpen = true;
 function openCapture() {
@@ -2756,7 +3172,7 @@ function closeCapture() {
 function saveCapture() {
     const text = document.getElementById('capture-textarea').value.trim();
     if (!text) return;
-    inboxItems.push({ id: Date.now(), text, capturedAt: todayStr() });
+    inboxItems.push({ id: Date.now(), text, capturedAt: new Date().toISOString() });
     debouncedSave(); closeCapture(); renderInbox();
 }
 function renderInbox() {
@@ -2766,15 +3182,15 @@ function renderInbox() {
     if (!panel || !list) return;
     if (!inboxItems.length) { panel.style.display = 'none'; return; }
     panel.style.display = 'block';
-    label.textContent = '📥 Inbox (' + inboxItems.length + ')';
+    label.innerHTML = '&#128450; ' + t('inboxLabel') + ' (' + inboxItems.length + ')';
     if (!inboxPanelOpen) { list.style.display = 'none'; return; }
     list.style.display = 'block';
     list.innerHTML = inboxItems.map(item => `
         <div class="inbox-card">
             <div class="inbox-text">${escHtml(item.text)}</div>
-            <div class="inbox-meta">${item.capturedAt}</div>
+            <div class="inbox-meta">${formatCapturedAt(item.capturedAt)}</div>
             <div class="inbox-actions">
-                <button class="btn btn-small" onclick="promoteInboxItem(${item.id})" aria-label="Add to tasks: ${escHtml(item.text)}">&#8594; Add to Tasks</button>
+                <button class="btn btn-small" style="flex:1" onclick="promoteInboxItem(${item.id})" aria-label="Add to tasks: ${escHtml(item.text)}">${t('inboxAddBtn')}</button>
                 <button class="btn btn-small btn-danger" onclick="deleteInboxItem(${item.id})" aria-label="Delete inbox item: ${escHtml(item.text)}">&#128465;</button>
             </div>
         </div>
@@ -2792,11 +3208,286 @@ function promoteInboxItem(id) {
     document.getElementById('task-input').focus();
     deleteInboxItem(id);
     document.getElementById('tab-tasks').scrollIntoView({ behavior: 'smooth' });
-    toast('Inbox item ready to add — fill in the details above 📝');
+    toast(t('inboxPromoted'));
 }
 function deleteInboxItem(id) {
     inboxItems = inboxItems.filter(i => i.id !== id);
     debouncedSave(); renderInbox();
+}
+
+
+/* ── js/drive.js ── */
+// drive.js — Google Drive family sync: OAuth, read/write, merge, assignment filter.
+
+// ── Drive state ───────────────────────────────────────────────────────────────
+let driveUser             = null;   // { name, email }
+let driveToken            = null;   // current access token string
+let driveTokenExpiry      = 0;      // Unix ms
+let lastKnownModifiedTime = null;   // ISO string from last Drive read/write
+let currentAssignFilter   = 'all';  // 'all' | '' (unassigned) | '<name>'
+let _driveSyncing         = false;
+
+// ── Token persistence ─────────────────────────────────────────────────────────
+function loadStoredToken() {
+    const stored = window.db.get(DRIVE_TOKEN_LS_KEY);
+    if (!stored) return;
+    if (Date.now() < stored.expiresAt - 60000) {
+        driveToken       = stored.token;
+        driveTokenExpiry = stored.expiresAt;
+    }
+}
+function persistToken(token, expiresIn) {
+    driveTokenExpiry = Date.now() + expiresIn * 1000;
+    driveToken       = token;
+    window.db.set(DRIVE_TOKEN_LS_KEY, { token, expiresAt: driveTokenExpiry });
+}
+function clearToken() {
+    driveToken = null; driveTokenExpiry = 0;
+    localStorage.removeItem(DRIVE_TOKEN_LS_KEY);
+}
+function hasValidToken() {
+    return !!driveToken && Date.now() < driveTokenExpiry - 60000;
+}
+
+// ── GIS loading ───────────────────────────────────────────────────────────────
+let _gisLoaded = false;
+function loadGIS() {
+    return new Promise((resolve, reject) => {
+        if (_gisLoaded) { resolve(); return; }
+        if (document.getElementById('gis-script')) {
+            // Script tag exists but load hasn't fired yet — wait for it
+            document.getElementById('gis-script').addEventListener('load', () => { _gisLoaded = true; resolve(); });
+            return;
+        }
+        const s = document.createElement('script');
+        s.id  = 'gis-script';
+        s.src = 'https://accounts.google.com/gsi/client';
+        s.onload  = () => { _gisLoaded = true; resolve(); };
+        s.onerror = () => reject(new Error('Failed to load Google Identity Services'));
+        document.head.appendChild(s);
+    });
+}
+
+// ── OAuth token request ───────────────────────────────────────────────────────
+function requestToken() {
+    return new Promise(async (resolve, reject) => {
+        if (!settings.driveClientId) { reject(new Error('No Client ID configured')); return; }
+        try { await loadGIS(); } catch(e) { reject(e); return; }
+        const client = google.accounts.oauth2.initTokenClient({
+            client_id: settings.driveClientId,
+            scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile',
+            callback: (resp) => {
+                if (resp.error) { reject(new Error(resp.error)); return; }
+                persistToken(resp.access_token, resp.expires_in);
+                resolve(resp.access_token);
+            },
+        });
+        client.requestAccessToken({ prompt: '' });
+    });
+}
+
+// ── Ensure token (use cached or prompt) ──────────────────────────────────────
+async function ensureToken() {
+    if (hasValidToken()) return driveToken;
+    return requestToken();
+}
+
+// ── Drive API helpers ─────────────────────────────────────────────────────────
+async function driveGet(url, params) {
+    const token = await ensureToken();
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    const r  = await fetch(url + qs, { headers: { Authorization: 'Bearer ' + token } });
+    if (!r.ok) throw new Error('Drive GET failed: ' + r.status);
+    return r.json();
+}
+async function driveGetMedia(fileId) {
+    const token = await ensureToken();
+    const r = await fetch(DRIVE_API_BASE + '/files/' + fileId + '?alt=media', {
+        headers: { Authorization: 'Bearer ' + token }
+    });
+    if (!r.ok) throw new Error('Drive read failed: ' + r.status);
+    return r.json();
+}
+async function drivePatch(fileId, body) {
+    const token = await ensureToken();
+    const r = await fetch(DRIVE_UPLOAD_BASE + '/files/' + fileId + '?uploadType=media', {
+        method: 'PATCH',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error('Drive write failed: ' + r.status);
+    return r.json();
+}
+async function driveGetMeta(fileId) {
+    return driveGet(DRIVE_API_BASE + '/files/' + fileId, { fields: 'modifiedTime' });
+}
+
+// ── Merge ─────────────────────────────────────────────────────────────────────
+function mergeTasks(local, remote) {
+    const map = new Map();
+    for (const t of remote) map.set(t.id, t);
+    for (const t of local) {
+        const r = map.get(t.id);
+        if (!r || (t.updatedAt || '') >= (r.updatedAt || '')) map.set(t.id, t);
+    }
+    // Preserve local ordering; append remote-only tasks at end
+    const localIds = new Set(local.map(t => t.id));
+    const result   = local.map(t => map.get(t.id));
+    for (const [id, t] of map) {
+        if (!localIds.has(id)) result.push(t);
+    }
+    return result;
+}
+
+// ── Drive read ────────────────────────────────────────────────────────────────
+async function driveLoad() {
+    if (!settings.driveFileId || !settings.driveClientId) return false;
+    try {
+        const [data, meta] = await Promise.all([
+            driveGetMedia(settings.driveFileId),
+            driveGetMeta(settings.driveFileId)
+        ]);
+        lastKnownModifiedTime = meta.modifiedTime;
+        if (data.tasks) {
+            tasks = mergeTasks(tasks, data.tasks);
+            renderTasks(); updateStats();
+        }
+        setDriveSyncIndicator('synced');
+        return true;
+    } catch(e) {
+        console.warn('Drive load failed:', e.message);
+        setDriveSyncIndicator('error');
+        return false;
+    }
+}
+
+// ── Drive write (fetch-before-write) ─────────────────────────────────────────
+async function driveSave() {
+    if (!settings.driveFileId || !settings.driveClientId) return;
+    if (_driveSyncing) return;
+    if (!hasValidToken()) return;
+    _driveSyncing = true;
+    setDriveSyncIndicator('syncing');
+    try {
+        const meta = await driveGetMeta(settings.driveFileId);
+        if (lastKnownModifiedTime !== null && meta.modifiedTime !== lastKnownModifiedTime) {
+            // Remote changed since last sync — fetch and merge before writing
+            const remote = await driveGetMedia(settings.driveFileId);
+            if (remote.tasks) tasks = mergeTasks(tasks, remote.tasks);
+        }
+        const body   = { version: APP_VERSION, tasks, modifiedAt: new Date().toISOString() };
+        const result = await drivePatch(settings.driveFileId, body);
+        lastKnownModifiedTime = result.modifiedTime;
+        renderTasks(); updateStats();
+        setDriveSyncIndicator('synced');
+    } catch(e) {
+        console.warn('Drive save failed:', e.message);
+        setDriveSyncIndicator('error');
+    } finally {
+        _driveSyncing = false;
+    }
+}
+
+// ── Google profile ────────────────────────────────────────────────────────────
+async function fetchDriveUser() {
+    if (!hasValidToken()) return;
+    try {
+        const r = await driveGet('https://www.googleapis.com/oauth2/v2/userinfo');
+        driveUser = { name: r.name || r.email, email: r.email };
+        updateDriveUserChip();
+    } catch(e) { /* non-fatal — profile is cosmetic */ }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function initDrive() {
+    if (!settings.driveClientId || !settings.driveFileId) {
+        setDriveSyncIndicator('off');
+        renderAssignFilterPills();
+        return;
+    }
+    loadStoredToken();
+    if (hasValidToken()) {
+        await fetchDriveUser();
+        await driveLoad();
+    } else {
+        setDriveSyncIndicator('off');
+    }
+    renderAssignFilterPills();
+}
+
+// ── Sign in / out ─────────────────────────────────────────────────────────────
+async function driveSignIn() {
+    try {
+        await requestToken();
+        await fetchDriveUser();
+        await driveLoad();
+        renderAssignFilterPills();
+        toast('Signed in to Google Drive!');
+    } catch(e) {
+        toast('Sign-in failed: ' + e.message, 3000, 'var(--red)');
+    }
+}
+function driveSignOut() {
+    clearToken();
+    driveUser = null;
+    updateDriveUserChip();
+    setDriveSyncIndicator('off');
+    toast('Signed out from Google Drive.');
+}
+
+// ── Assignment filter ─────────────────────────────────────────────────────────
+function passesAssignFilter(task) {
+    if (currentAssignFilter === 'all') return true;
+    if (currentAssignFilter === '') return !task.assignedTo;
+    return task.assignedTo === currentAssignFilter;
+}
+function setAssignFilter(val) {
+    currentAssignFilter = val;
+    document.querySelectorAll('.assign-pill').forEach(b => {
+        b.classList.toggle('active', b.dataset.assign === val);
+    });
+    renderTasks();
+}
+function renderAssignFilterPills() {
+    const wrap = document.getElementById('assign-filter-wrap');
+    if (!wrap) return;
+    const members = (settings.familyMembers || '').split('\n').map(s => s.trim()).filter(Boolean);
+    if (!members.length || !settings.driveClientId) {
+        wrap.innerHTML = '';
+        return;
+    }
+    const pills = [
+        { label: 'All',        val: 'all' },
+        { label: 'Unassigned', val: ''    },
+        ...members.map(m => ({ label: m, val: m }))
+    ].map(p =>
+        `<button class="filter-btn filter-pill assign-pill${currentAssignFilter === p.val ? ' active' : ''}" data-assign="${escAttr(p.val)}" onclick="setAssignFilter(${JSON.stringify(p.val)})">${escHtml(p.label)}</button>`
+    ).join('');
+    wrap.innerHTML = '<span class="filter-divider">|</span>' + pills;
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+function setDriveSyncIndicator(state) {
+    const wrap  = document.getElementById('drive-sync-indicator');
+    const dot   = document.getElementById('drive-sync-dot');
+    const label = document.getElementById('drive-sync-label');
+    if (!dot) return;
+    const map = {
+        off:     ['',        ''],
+        syncing: ['syncing', 'Syncing…'],
+        synced:  ['synced',  'Synced'],
+        error:   ['error',   'Sync error'],
+    };
+    const [cls, text] = map[state] || map.off;
+    dot.className     = 'drive-sync-dot' + (cls ? ' ' + cls : '');
+    if (label) label.textContent = text;
+    if (wrap)  wrap.style.display = state === 'off' ? 'none' : '';
+}
+function updateDriveUserChip() {
+    const chip = document.getElementById('drive-user-chip');
+    if (!chip) return;
+    chip.textContent  = driveUser ? driveUser.name : '';
+    chip.style.display = driveUser ? '' : 'none';
 }
 
 
@@ -2866,7 +3557,6 @@ function renderHeatmap() {
     const CELL_PX    = 10;   // cell width/height in px (compact sidebar size)
     const CELL_GAP   = 2;    // gap between cells
     const LABEL_PX   = 18;   // day-label column width
-    const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
     const today = new Date();
     today.setHours(0,0,0,0);
@@ -2889,10 +3579,14 @@ function renderHeatmap() {
         weeks.push(week);
     }
 
+    const locale      = uiLang === 'fr' ? 'fr-CA' : 'en-CA';
+    const DAY_LABELS  = Array.from({length: 7}, (_, i) =>
+        new Date(2024, 0, 1 + i).toLocaleDateString(locale, { weekday: 'short' })
+    );
     const monthLabels = weeks.map((week, wi) => {
         const firstDay = week[0];
         if (wi === 0 || firstDay.getMonth() !== weeks[wi-1][0].getMonth()) {
-            return firstDay.toLocaleDateString('en-CA', { month: 'short' });
+            return firstDay.toLocaleDateString(locale, { month: 'short' });
         }
         return '';
     });
@@ -2934,7 +3628,7 @@ function renderHeatmap() {
             if (isFuture) {
                 html += '<div class="heatmap-cell heatmap-cell-future"></div>';
             } else {
-                const tip = ds + (cnt ? ' — ' + cnt + ' task' + (cnt > 1 ? 's' : '') + ' done' : ' — no completions');
+                const tip = ds + (cnt ? ' — ' + cnt + ' ' + (cnt > 1 ? t('hmTasksDone') : t('hmTaskDone')) : ' — ' + t('hmNoComp'));
                 html += '<div class="heatmap-cell" style="background:' + cellColor(cnt) + ';" title="' + tip + '"></div>';
             }
         }
@@ -2965,8 +3659,9 @@ function _computeStatsData() {
     });
 
     const dowTotals = [0,0,0,0,0,0,0];
-    const DOW_LONG  = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-    const DOW_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const locale    = uiLang === 'fr' ? 'fr-CA' : 'en-CA';
+    const DOW_LONG  = Array.from({length: 7}, (_, i) => new Date(2024, 0, 1 + i).toLocaleDateString(locale, { weekday: 'long' }));
+    const DOW_SHORT = Array.from({length: 7}, (_, i) => new Date(2024, 0, 1 + i).toLocaleDateString(locale, { weekday: 'short' }));
     Object.entries(completionLog).forEach(([ds, cnt]) => {
         dowTotals[(new Date(ds + 'T00:00:00').getDay() + 6) % 7] += cnt;
     });
@@ -2993,28 +3688,28 @@ function renderStatsCards() {
     el.innerHTML = `
         <div class="stats-card-big">
             <div class="scb-value">🔥 ${streak.current}</div>
-            <div class="scb-label">Current Streak</div>
-            <div class="scb-sub">Longest: ${streak.longest} days</div>
+            <div class="scb-label">${t('scbCurrStreak')}</div>
+            <div class="scb-sub">${tFmt('scbLongest', streak.longest)}</div>
         </div>
         <div class="stats-card-big">
             <div class="scb-value">${d.weekCount}</div>
-            <div class="scb-label">Completed This Week</div>
-            <div class="scb-sub">${d.todayCount} today · ${d.yesterdayCount} yesterday</div>
+            <div class="scb-label">${t('scbCompWeek')}</div>
+            <div class="scb-sub">${tFmt('ssbTodayYest', d.todayCount, d.yesterdayCount)}</div>
         </div>
         <div class="stats-card-big">
             <div class="scb-value">${d.monthCount}</div>
-            <div class="scb-label">Completed This Month</div>
-            <div class="scb-sub">${d.allTimeDone} all time</div>
+            <div class="scb-label">${t('scbCompMonth')}</div>
+            <div class="scb-sub">${tFmt('ssbAllTime', d.allTimeDone)}</div>
         </div>
         <div class="stats-card-big">
             <div class="scb-value">${d.compRate}%</div>
-            <div class="scb-label">Completion Rate</div>
-            <div class="scb-sub">${d.allTimeDone} done of ${d.totalTasks} created</div>
+            <div class="scb-label">${t('ssbCompRate')}</div>
+            <div class="scb-sub">${tFmt('scbDoneOf', d.allTimeDone, d.totalTasks)}</div>
         </div>
         ${d.bestDowLong ? `<div class="stats-card-big">
             <div class="scb-value" style="font-size:1.1rem">💪 ${d.bestDowLong}</div>
-            <div class="scb-label">Most Productive Day</div>
-            <div class="scb-sub">${d.bestDowCount} tasks on ${d.bestDowLong}s total</div>
+            <div class="scb-label">${t('scbMostProd')}</div>
+            <div class="scb-sub">${tFmt('scbTasksOnDay', d.bestDowCount, d.bestDowLong)}</div>
         </div>` : ''}
     `;
 }
@@ -3026,27 +3721,27 @@ function renderSidebarStats() {
     el.innerHTML = `
         <div class="ssc-card">
             <div class="ssc-value">🔥 ${streak.current}</div>
-            <div class="ssc-label">Day Streak</div>
-            <div class="ssc-sub">Longest: ${streak.longest}d</div>
+            <div class="ssc-label">${t('ssbDayStreak')}</div>
+            <div class="ssc-sub">${tFmt('ssbLongest', streak.longest)}</div>
         </div>
         <div class="ssc-card">
             <div class="ssc-value">${d.weekCount}</div>
-            <div class="ssc-label">This Week</div>
-            <div class="ssc-sub">${d.todayCount} today · ${d.yesterdayCount} yesterday</div>
+            <div class="ssc-label">${t('ssbThisWeek')}</div>
+            <div class="ssc-sub">${tFmt('ssbTodayYest', d.todayCount, d.yesterdayCount)}</div>
         </div>
         <div class="ssc-card">
             <div class="ssc-value">${d.monthCount}</div>
-            <div class="ssc-label">This Month</div>
-            <div class="ssc-sub">${d.allTimeDone} all time</div>
+            <div class="ssc-label">${t('ssbThisMonth')}</div>
+            <div class="ssc-sub">${tFmt('ssbAllTime', d.allTimeDone)}</div>
         </div>
         <div class="ssc-card">
             <div class="ssc-value">${d.compRate}%</div>
-            <div class="ssc-label">Completion Rate</div>
+            <div class="ssc-label">${t('ssbCompRate')}</div>
         </div>
         ${d.bestDowShort ? `<div class="ssc-card">
             <div class="ssc-value">💪 ${d.bestDowShort}</div>
-            <div class="ssc-label">Best Day</div>
-            <div class="ssc-sub">${d.bestDowCount} tasks total</div>
+            <div class="ssc-label">${t('ssbBestDay')}</div>
+            <div class="ssc-sub">${tFmt('ssbTasksTotal', d.bestDowCount)}</div>
         </div>` : ''}
     `;
 }

@@ -9,7 +9,8 @@ let jiraIssues        = [];
 let jiraNextPageToken = null;
 let jiraIsLoading     = false;
 let activeTab         = 'tasks';
-let currentFilter     = 'all';
+let currentFilter         = 'all';
+let currentCategoryFilter = 'all';
 let editId            = null;
 let dragSrcIdx        = null;
 let dragTargetIndent  = 0;
@@ -23,6 +24,7 @@ let isListening       = false;
 let compactView          = false;
 const expandedCompactIds = new Set();
 let activeMode           = 'work'; // 'work' | 'personal'
+let uiLang               = 'en';   // 'en' | 'fr'
 
 window.db = {
     get: k => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } },

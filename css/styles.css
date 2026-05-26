@@ -401,6 +401,17 @@ select option { background: var(--card); color: var(--text); }
 .save-dot.dirty  { background: #F59E0B; }
 .save-dot.failed { background: var(--red); }
 
+/* Drive sync indicator */
+.drive-sync-indicator { display: flex; align-items: center; gap: 5px; font-size: 0.78rem; color: var(--text-2); }
+.drive-sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+.drive-sync-dot.syncing { background: #f59e0b; animation: drive-pulse 1s ease-in-out infinite; }
+.drive-sync-dot.synced  { background: #22c55e; }
+.drive-sync-dot.error   { background: var(--red); }
+@keyframes drive-pulse { 0%,100%{opacity:1;} 50%{opacity:.4;} }
+.drive-user-chip { font-size: 0.78rem; color: var(--text-2); background: var(--purple-light); border: 1px solid var(--border); border-radius: 12px; padding: 2px 10px; white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+.badge.assign-badge { background: var(--purple-light); color: var(--purple); }
+.filter-divider { color: var(--border); font-size: 1rem; padding: 0 4px; user-select: none; }
+
 /* Streak badge */
 .streak-badge { display: none; align-items: center; gap: 4px; font-size: 0.8rem; font-weight: 600; color: var(--text); background: rgba(255,140,0,0.12); border: 1px solid rgba(255,140,0,0.3); border-radius: 12px; padding: 2px 9px; cursor: default; transition: transform 0.25s; }
 .streak-badge.visible { display: flex; }
@@ -576,7 +587,16 @@ select option { background: var(--card); color: var(--text); }
 .jql-input-row { display: flex; gap: 6px; align-items: center; }
 .jql-clear-btn { background: transparent; border: 1px solid var(--border); border-radius: var(--radius-btn); padding: 5px 10px; cursor: pointer; font-size: 0.8rem; color: var(--text-3); transition: all 0.18s; white-space: nowrap; flex-shrink: 0; line-height: 1; }
 .jql-clear-btn:hover { border-color: var(--red); color: var(--red); background: rgba(217,48,37,0.06); }
-.modal-body-scroll { max-height: 90vh; overflow-y: auto; padding: 20px; }
+.modal-body-scroll { max-height: calc(90vh - 100px); overflow-y: auto; padding: 20px; }
+
+/* ── Settings tabs ──────────────────────────────────────────────────────── */
+.settings-tabs-bar { display: flex; border-bottom: 2px solid var(--border); padding: 0 20px; background: var(--card); gap: 2px; }
+.settings-tab { background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -2px; padding: 10px 18px; font-size: 0.85rem; font-weight: 600; color: var(--text-3); cursor: pointer; transition: color 0.15s, border-color 0.15s; white-space: nowrap; letter-spacing: .2px; }
+.settings-tab:hover { color: var(--purple); }
+.settings-tab.active { color: var(--purple); border-bottom-color: var(--purple); }
+[data-theme="dark"] .settings-tab.active { color: #c084fc; border-bottom-color: #c084fc; }
+[data-theme="dark"] .settings-tab:hover  { color: #c084fc; }
+[data-theme="dark"] .settings-tabs-bar   { border-bottom-color: var(--border); }
 
 /* ── Brain Dump FAB ─────────────────────────────────────────────────────── */
 .fab-capture { position: fixed; bottom: 28px; right: 28px; width: 52px; height: 52px; border-radius: 50%; background: var(--purple); color: #fff; border: none; font-size: 1.4rem; cursor: pointer; box-shadow: 0 4px 16px rgba(75,0,130,0.35); z-index: 400; transition: transform 0.18s, box-shadow 0.18s; display: flex; align-items: center; justify-content: center; }
@@ -595,13 +615,14 @@ select option { background: var(--card); color: var(--text); }
 /* ── Inbox panel ────────────────────────────────────────────────────────── */
 .inbox-panel { margin-bottom: 14px; padding: 0; overflow: hidden; }
 .inbox-panel-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; padding: 10px 16px; }
-.inbox-panel-header:hover { background: rgba(75,0,130,0.04); }
+.inbox-panel-header:hover { filter: brightness(1.25); }
 .inbox-chevron { font-size: 0.7rem; color: var(--text-3); }
 .inbox-list { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; }
-.inbox-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; gap: 4px 10px; }
-.inbox-text { font-size: 0.875rem; color: var(--text); grid-column: 1; grid-row: 1; }
-.inbox-meta { font-size: 0.7rem; color: var(--text-3); grid-column: 1; grid-row: 2; }
-.inbox-actions { grid-column: 2; grid-row: 1 / 3; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; justify-content: center; }
+.inbox-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.inbox-text { font-size: 0.875rem; color: var(--text); line-height: 1.45; word-break: break-word; }
+.inbox-footer { display: contents; }
+.inbox-meta { font-size: 0.7rem; color: var(--text-3); }
+.inbox-actions { display: flex; gap: 6px; align-items: center; }
 .btn-small { font-size: 0.72rem; padding: 3px 9px; }
 
 /* ── Heatmap ────────────────────────────────────────────────────────────── */

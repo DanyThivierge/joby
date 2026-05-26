@@ -5,7 +5,7 @@ function addTask() {
     const input=document.getElementById('task-input');
     const text=input.value.trim();
     if (!text) { input.style.borderColor='var(--red)'; setTimeout(()=>input.style.borderColor='',1000); return; }
-    tasks.unshift({ id:Date.now(), text, notes:document.getElementById('task-notes').value.trim(), priority:document.getElementById('priority-select').value, category:document.getElementById('category-select').value, dueDate:document.getElementById('due-date').value, recurFreq:document.getElementById('recur-select').value||null, color:getSelectedColor('add-color-swatches'), indent:0, done:false, createdAt:new Date().toLocaleDateString('en-CA') });
+    tasks.unshift({ id:Date.now(), text, notes:document.getElementById('task-notes').value.trim(), priority:document.getElementById('priority-select').value, category:document.getElementById('category-select').value, dueDate:document.getElementById('due-date').value, recurFreq:document.getElementById('recur-select').value||null, color:getSelectedColor('add-color-swatches'), indent:0, done:false, createdAt:new Date().toLocaleDateString('en-CA'), createdBy:(typeof driveUser !== 'undefined' && driveUser ? driveUser.name : ''), assignedTo:document.getElementById('assign-select')?.value||'', updatedAt:new Date().toISOString() });
     input.value=''; document.getElementById('task-notes').value=''; document.getElementById('due-date').value=''; document.getElementById('recur-select').value='';
     renderColorSwatches('add-color-swatches', '');
     if (isListening) { recognition.stop(); isListening=false; updateMicBtn(); }
@@ -32,10 +32,10 @@ function logCompletion() {
     completionLog[today] = (completionLog[today] || 0) + 1;
 }
 function updateStreak() {
-    const today = todayStr();
-    const yest  = yesterdayStr();
+    const today   = todayStr();
     if (streak.lastDate === today) return;
-    if (streak.lastDate === yest) {
+    const prevDay = activeMode === 'work' ? prevWorkday(today) : yesterdayStr();
+    if (streak.lastDate === prevDay || streak.lastDate === yesterdayStr()) {
         streak.current += 1;
     } else {
         streak.current = 1;
@@ -82,25 +82,32 @@ function fireConfetti(x, y) {
     }
 }
 
+function _skipWeekends(d) { while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1); }
 function recomputeStreak() {
-    const today = todayStr();
+    const today   = todayStr();
+    const workMode = activeMode === 'work';
     const dateSet = new Set(Object.keys(completionLog).filter(ds => completionLog[ds] > 0));
     if (!dateSet.size) { streak.current = 0; streak.lastDate = ''; renderStreakBadge(); return; }
 
     let current = 0;
     let cursor  = new Date(today + 'T00:00:00');
-    if (!dateSet.has(today)) cursor.setDate(cursor.getDate() - 1);
+    if (!dateSet.has(today)) {
+        cursor.setDate(cursor.getDate() - 1);
+        if (workMode) _skipWeekends(cursor);
+    }
     while (dateSet.has(cursor.toLocaleDateString('en-CA'))) {
         current++;
         cursor.setDate(cursor.getDate() - 1);
+        if (workMode) _skipWeekends(cursor);
     }
 
     const sorted = [...dateSet].sort();
     let run = 1, longest = 1;
     for (let i = 1; i < sorted.length; i++) {
-        const prev = new Date(sorted[i-1] + 'T00:00:00');
-        const curr = new Date(sorted[i]   + 'T00:00:00');
-        if ((curr - prev) / 86400000 === 1) { run++; } else { longest = Math.max(longest, run); run = 1; }
+        const consec = workMode
+            ? isNextWorkday(sorted[i-1], sorted[i])
+            : (new Date(sorted[i]+'T00:00:00') - new Date(sorted[i-1]+'T00:00:00')) / 86400000 === 1;
+        if (consec) { run++; } else { longest = Math.max(longest, run); run = 1; }
     }
     longest = Math.max(longest, run, current);
 
@@ -112,6 +119,7 @@ function recomputeStreak() {
 
 function toggleTask(id, evt) {
     const t=tasks.find(t=>t.id===id); if(!t) return;
+    t.updatedAt=new Date().toISOString();
     if (!t.done) {
         const open=getChildren(t).filter(c=>!c.done);
         if (open.length) {
@@ -127,17 +135,17 @@ function toggleTask(id, evt) {
         if (evt) fireConfetti(evt.clientX, evt.clientY);
         // Schedule recurring reset — advance both dates by the frequency period
         if (t.recurFreq) {
-            const days       = freqDays(t.recurFreq);
             const label      = freqLabel(t.recurFreq);
             const oldCreated = t.createdAt;
             const oldDue     = t.dueDate;
+            const freq       = t.recurFreq;
             setTimeout(() => {
                 const task = tasks.find(x => x.id === id);
                 if (!task || !task.done) return; // user may have un-done it
                 task.done      = false;
                 task.doneAt    = null;
-                task.createdAt = addDaysToDate(oldCreated, days);
-                task.dueDate   = oldDue ? addDaysToDate(oldDue, days) : null;
+                task.createdAt = nextRecurDate(freq, oldCreated);
+                task.dueDate   = oldDue ? nextRecurDate(freq, oldDue) : null;
                 debouncedSave(); renderTasks(); updateStats();
                 toast('↻ ' + label + ' task reset' + (task.dueDate ? ' — due ' + formatDue(task.dueDate) : ''), 3500, 'var(--purple)');
             }, 1600);
@@ -214,6 +222,8 @@ function saveEdit() {
     t.dueDate=document.getElementById('edit-due').value;
     t.recurFreq=document.getElementById('edit-recur').value||null;
     t.color=getSelectedColor('edit-color-swatches');
+    t.assignedTo=document.getElementById('edit-assign')?.value||t.assignedTo||'';
+    t.updatedAt=new Date().toISOString();
     closeEditModal(); debouncedSave();renderTasks();updateStats();toast('Task updated!');
 }
 

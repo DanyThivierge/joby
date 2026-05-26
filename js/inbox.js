@@ -1,5 +1,14 @@
 // inbox.js — Brain Dump capture modal, inbox panel rendering, promote/delete inbox items.
 
+function formatCapturedAt(val) {
+    if (!val) return '';
+    if (val.includes('T')) {
+        const d = new Date(val);
+        return d.toLocaleDateString('en-CA') + ' ' + d.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
+    }
+    return val; // legacy date-only string
+}
+
 // ── Brain Dump Inbox ──────────────────────────────────────────────────────────
 let inboxPanelOpen = true;
 function openCapture() {
@@ -13,7 +22,7 @@ function closeCapture() {
 function saveCapture() {
     const text = document.getElementById('capture-textarea').value.trim();
     if (!text) return;
-    inboxItems.push({ id: Date.now(), text, capturedAt: todayStr() });
+    inboxItems.push({ id: Date.now(), text, capturedAt: new Date().toISOString() });
     debouncedSave(); closeCapture(); renderInbox();
 }
 function renderInbox() {
@@ -23,15 +32,15 @@ function renderInbox() {
     if (!panel || !list) return;
     if (!inboxItems.length) { panel.style.display = 'none'; return; }
     panel.style.display = 'block';
-    label.textContent = '📥 Inbox (' + inboxItems.length + ')';
+    label.innerHTML = '&#128450; ' + t('inboxLabel') + ' (' + inboxItems.length + ')';
     if (!inboxPanelOpen) { list.style.display = 'none'; return; }
     list.style.display = 'block';
     list.innerHTML = inboxItems.map(item => `
         <div class="inbox-card">
             <div class="inbox-text">${escHtml(item.text)}</div>
-            <div class="inbox-meta">${item.capturedAt}</div>
+            <div class="inbox-meta">${formatCapturedAt(item.capturedAt)}</div>
             <div class="inbox-actions">
-                <button class="btn btn-small" onclick="promoteInboxItem(${item.id})" aria-label="Add to tasks: ${escHtml(item.text)}">&#8594; Add to Tasks</button>
+                <button class="btn btn-small" style="flex:1" onclick="promoteInboxItem(${item.id})" aria-label="Add to tasks: ${escHtml(item.text)}">${t('inboxAddBtn')}</button>
                 <button class="btn btn-small btn-danger" onclick="deleteInboxItem(${item.id})" aria-label="Delete inbox item: ${escHtml(item.text)}">&#128465;</button>
             </div>
         </div>
@@ -49,7 +58,7 @@ function promoteInboxItem(id) {
     document.getElementById('task-input').focus();
     deleteInboxItem(id);
     document.getElementById('tab-tasks').scrollIntoView({ behavior: 'smooth' });
-    toast('Inbox item ready to add — fill in the details above 📝');
+    toast(t('inboxPromoted'));
 }
 function deleteInboxItem(id) {
     inboxItems = inboxItems.filter(i => i.id !== id);

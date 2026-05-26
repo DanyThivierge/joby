@@ -8,7 +8,7 @@ function currentLsKey() {
 }
 
 function payload() {
-    return { version: APP_VERSION, tasks, settings: { jiraUrl: settings.jiraUrl, jiraJql: settings.jiraJql, jiraAssigneeMe: settings.jiraAssigneeMe, jiraUnresolved: settings.jiraUnresolved, jiraStatuses: settings.jiraStatuses, jiraStatusNot: settings.jiraStatusNot, jiraPriorities: settings.jiraPriorities, jiraUpdatedDays: settings.jiraUpdatedDays, jiraProjects: settings.jiraProjects, themePreset: settings.themePreset, themeCustom: settings.themeCustom, compactView: settings.compactView, sortPreference: settings.sortPreference }, promotedJiraIds, inboxItems, completionLog, streak };
+    return { version: APP_VERSION, tasks, settings: { jiraUrl: settings.jiraUrl, jiraJql: settings.jiraJql, jiraAssigneeMe: settings.jiraAssigneeMe, jiraUnresolved: settings.jiraUnresolved, jiraStatuses: settings.jiraStatuses, jiraStatusNot: settings.jiraStatusNot, jiraPriorities: settings.jiraPriorities, jiraUpdatedDays: settings.jiraUpdatedDays, jiraProjects: settings.jiraProjects, themePreset: settings.themePreset, themeCustom: settings.themeCustom, compactView: settings.compactView, sortPreference: settings.sortPreference, driveClientId: settings.driveClientId, driveFileId: settings.driveFileId, familyMembers: settings.familyMembers }, promotedJiraIds, inboxItems, completionLog, streak };
 }
 async function opfsHandle() {
     const root = await navigator.storage.getDirectory();
@@ -48,7 +48,10 @@ function normalizeSettings(s) {
         themePreset:    (s && s.themePreset)    || 'default',
         themeCustom:    (s && s.themeCustom)    || {},
         compactView:    (s && s.compactView)    || false,
-        sortPreference: (s && s.sortPreference) || 'added'
+        sortPreference: (s && s.sortPreference) || 'added',
+        driveClientId:  (s && s.driveClientId)  || '',
+        driveFileId:    (s && s.driveFileId)    || '',
+        familyMembers:  (s && s.familyMembers)  || '',
     };
 }
 function applyData(data) {
@@ -76,6 +79,10 @@ async function initStorage() {
     updateModeUI();
     renderTasks(); updateStats(); renderStreakBadge(); renderInbox();
     setSaveIndicator('saved');
+    loadDriveSettingsUI();
+    if (typeof initDrive === 'function') initDrive();
+    try { uiLang = localStorage.getItem(LANG_LS_KEY) || 'en'; } catch {}
+    if (typeof applyLang === 'function') applyLang();
 }
 
 // ── Mode switch ───────────────────────────────────────────────────────────────
@@ -114,6 +121,7 @@ async function autoSave() {
         const opfsOk = await saveToOPFS();
         const lsOk   = writeToLS();
         setSaveIndicator((opfsOk || lsOk) ? 'saved' : 'failed');
+        if (typeof driveSave === 'function') driveSave(); // non-blocking
     } finally {
         _opfsWriting = false;
     }
@@ -168,3 +176,23 @@ async function importJSON(event) {
 }
 
 window.addEventListener('beforeunload', () => writeToLS());
+
+// ── Drive settings UI helpers ─────────────────────────────────────────────────
+function loadDriveSettingsUI() {
+    const cid = document.getElementById('s-drive-client-id');
+    const fid = document.getElementById('s-drive-file-id');
+    const fam = document.getElementById('s-family-members');
+    if (cid) cid.value = settings.driveClientId || '';
+    if (fid) fid.value = settings.driveFileId   || '';
+    if (fam) fam.value = settings.familyMembers  || '';
+}
+function saveDriveSettings() {
+    settings.driveClientId = (document.getElementById('s-drive-client-id')?.value || '').trim();
+    settings.driveFileId   = (document.getElementById('s-drive-file-id')?.value   || '').trim();
+    settings.familyMembers = (document.getElementById('s-family-members')?.value  || '').trim();
+    debouncedSave();
+    if (typeof initDrive          === 'function') initDrive();
+    if (typeof renderAssignFilterPills === 'function') renderAssignFilterPills();
+    if (typeof populateAssignSelects   === 'function') populateAssignSelects();
+    toast('Drive settings saved!');
+}

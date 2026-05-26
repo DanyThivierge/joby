@@ -21,6 +21,7 @@ A self-contained task tracker for work and personal use. Runs entirely in the br
 
 - Add tasks with priority (High / Medium / Low), category, due date, colour tag, and optional notes
 - Filter by All / Pending / Done / High Priority / Overdue
+- **Category filter** — "Category: All" dropdown beside Sort narrows tasks by type (Dev, Meeting, etc.); repopulates automatically when switching Work ↔ Personal mode
 - Search and sort (by date added, priority, due date, or A–Z)
 - Drag and drop to reorder tasks
 - **Drag right to indent** — create visual subtasks up to 3 levels deep; sort keeps subtasks with their parent; L-shaped dot connectors show the parent→child relationship
@@ -36,9 +37,11 @@ A self-contained task tracker for work and personal use. Runs entirely in the br
 
 ### Recurring Tasks
 
-- Mark any task as **Daily / Weekly / Bi-weekly / Monthly** using the repeat selector
-- On completion, the task automatically resets: both the creation date and the due date slide forward by the repeat interval, preserving the original lead-time buffer
+- Mark any task as **Daily / Weekdays (M–F) / Weekly / Bi-weekly / Monthly / Yearly** using the repeat selector
+- Day-specific repeats: **Every Monday / Tuesday / Wednesday / Thursday / Friday**
+- On completion, the task automatically resets: both the creation date and the due date advance to the next correct occurrence, preserving the original lead-time buffer
 - A ↻ badge appears on recurring task cards
+- **Work-mode streak** carries over weekends — Friday → Monday counts as consecutive; recompute also skips Sat/Sun when walking back through history
 
 ### Compact View
 
@@ -89,6 +92,7 @@ The left sidebar shows everything at a glance without switching tabs:
 - Fixed **⚡ FAB button** (bottom-right, always visible) opens a quick-capture modal
 - Press **Space** (when no input is focused) to open capture instantly
 - Captured items appear in a collapsible **📥 Inbox** panel in the sidebar
+- Multi-line card layout: text on top, timestamp below, then a full-width action row — "→ Add to Tasks" stretches across with the delete icon beside it
 - Each inbox item can be **promoted to a task** (pre-fills the add form) or deleted
 
 ### Engagement & Rewards
@@ -195,6 +199,7 @@ Task Organizer/
 │   ├── drag.js              # Drag-and-drop reorder + indent detection
 │   ├── jira.js              # Jira integration, JQL builder, proxy calls
 │   ├── inbox.js             # Brain Dump capture modal and inbox panel
+│   ├── drive.js             # Google Drive family sync (home build only)
 │   ├── stats.js             # Heatmap, sidebar stats cards, motivational taglines
 │   └── main.js              # Keyboard shortcuts + app boot
 ├── dist/
@@ -235,7 +240,7 @@ Tasks and settings are stored in OPFS — `work-tasks.json` for Work mode and `p
 
 ```json
 {
-  "version": "1.7",
+  "version": "1.8",
   "tasks": [
     {
       "id": 1234567890,
@@ -293,6 +298,17 @@ Tasks and settings are stored in OPFS — `work-tasks.json` for Work mode and `p
 ---
 
 ## Changelog
+
+### v1.8 (2026-05-26)
+
+- **Extended recurrence options** — Weekdays (M–F), Every Monday / Tuesday / Wednesday / Thursday / Friday individually, and Yearly added to the repeat selector
+- **Work-mode weekend streak** — streak no longer breaks over weekends; Friday → Monday counts as consecutive; `recomputeStreak` skips Sat/Sun when walking back through the completion log
+- **Settings 3-tab layout** — General (data export/import + themes), Jira (renamed from Work), Personal (Google Drive family sync, home build only); each build type shows only its relevant tabs
+- **Category filter dropdown** — "Category: All" select beside the Sort control narrows tasks by type; options repopulate automatically on Work ↔ Personal mode switch
+- **Inbox UI redesign** — multi-line card: text → timestamp → full-width action row; "→ Add to Tasks" stretches full width; delete icon sits beside it on the same row
+- **Edit modal improvements** — widened to 620 px; flex-column layout with scrollable field area and Save button always pinned at the bottom; 2-column field grids (Priority + Colour, Category + Due, Repeat + Assign) reduce modal height
+- **Full French i18n coverage** — sidebar stats cards, heatmap labels / legend / day names / month names / tooltips, inbox panel title and buttons, Task Zone label all translated; day/month names use `toLocaleDateString` locale switching (no hardcoded arrays); `tFmt()` helper added for parameterised translation strings; placeholder inputs now correctly decode HTML entities before assignment
+- **Inbox hover fix** — header hover uses `filter: brightness(1.25)` instead of a background replacement, keeping white text readable across all themes
 
 ### v1.7 (2026-05-25)
 

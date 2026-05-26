@@ -28,6 +28,8 @@ function getFiltered() {
     const sort=document.getElementById('sort-select').value;
     let list=tasks.filter(t=>{
         if(search&&!t.text.toLowerCase().includes(search)&&!(t.notes||'').toLowerCase().includes(search)&&!t.category.toLowerCase().includes(search))return false;
+        if(currentCategoryFilter!=='all'&&t.category!==currentCategoryFilter)return false;
+        if(typeof passesAssignFilter==='function'&&!passesAssignFilter(t))return false;
         switch(currentFilter){case'pending':return!t.done;case'done':return t.done;case'high':return t.priority==='high';case'overdue':return isOverdue(t);default:return true;}
     });
     if (sort!=='added') {
@@ -48,16 +50,17 @@ function renderTasks() {
     if (cb) cb.classList.toggle('active', compactView);
     const filtered = getFiltered();
     if (!filtered.length) {
-        list.innerHTML = '<div class="empty-state"><div class="icon">&#128203;</div><p>' + (currentFilter==='all'&&!document.getElementById('search-input').value ? 'No tasks yet — add one above or speak it!' : 'No matching tasks.') + '</p></div>';
+        list.innerHTML = '<div class="empty-state"><div class="icon">&#128203;</div><p>' + (currentFilter==='all'&&!document.getElementById('search-input').value ? t('emptyNoTasks') : t('emptyNoMatch')) + '</p></div>';
         return;
     }
     function taskCard(task, vi) {
         const ov     = isOverdue(task);
         const indent = task.indent || 0;
-        const due    = task.dueDate ? (ov&&!task.done ? '<span class="badge over-badge">&#9888; Overdue '+formatDue(task.dueDate)+'</span>' : '<span class="badge due-badge">&#128197; Due '+formatDue(task.dueDate)+'</span>') : '';
+        const due    = task.dueDate ? (ov&&!task.done ? '<span class="badge over-badge">&#9888; '+t('badgeOverdue')+' '+formatDue(task.dueDate)+'</span>' : '<span class="badge due-badge">&#128197; '+t('badgeDue')+' '+formatDue(task.dueDate)+'</span>') : '';
         const notes  = task.notes ? '<div class="task-notes">'+linkify(task.notes)+'</div>' : '';
         const recur  = task.recurFreq ? '<span class="badge recur-badge">&#8635; '+freqLabel(task.recurFreq)+'</span>' : '';
-        const cDue   = task.dueDate ? (ov&&!task.done ? '<span class="compact-due ovr">&#9888;</span>' : '<span class="compact-due">&#128197; '+formatDue(task.dueDate)+'</span>') : '';
+        const assign = task.assignedTo ? '<span class="badge assign-badge">&#128100; '+escHtml(task.assignedTo)+'</span>' : '';
+        const cDue   = task.dueDate ? (ov&&!task.done ? '<span class="compact-due ovr" title="'+t('badgeOverdue')+'">&#9888;</span>' : '<span class="compact-due">&#128197; '+formatDue(task.dueDate)+'</span>') : '';
         const cNote  = task.notes   ? '<span class="compact-note-icon" title="Has notes">&#128206;</span>' : '';
         const cRec   = task.recurFreq ? '<span class="compact-recur" title="'+freqLabel(task.recurFreq)+'">&#8635;</span>' : '';
         const compactInline = '<div class="compact-inline">'+cDue+cNote+cRec+'<span class="compact-prio p-'+task.priority+'"></span><span class="compact-cat">'+escHtml(task.category)+'</span></div>';
@@ -74,7 +77,7 @@ function renderTasks() {
             +' aria-label="'+escAttr(ariaLabel)+'"'
             +' onclick="toggleTask('+task.id+',event)"'
             +' onkeydown="if(event.key===\' \'||event.key===\'Enter\'){event.preventDefault();toggleTask('+task.id+',event);}"></div>'
-            +'<div class="task-content" onclick="toggleCompactExpand('+task.id+',event)"><div class="task-text">'+marker+escHtml(task.text)+'</div>'+compactInline+notes+'<div class="task-meta"><span class="badge p-'+task.priority+'">'+task.priority+'</span><span class="badge cat-badge">'+escHtml(task.category)+'</span>'+recur+due+'<span class="task-date">Added '+task.createdAt+'</span></div></div>'
+            +'<div class="task-content" onclick="toggleCompactExpand('+task.id+',event)"><div class="task-text">'+marker+escHtml(task.text)+'</div>'+compactInline+notes+'<div class="task-meta"><span class="badge p-'+task.priority+'">'+t('prio'+task.priority.charAt(0).toUpperCase()+task.priority.slice(1))+'</span><span class="badge cat-badge">'+escHtml(task.category)+'</span>'+recur+due+assign+'<span class="task-date">Added '+task.createdAt+'</span></div></div>'
             +'<div class="task-actions">'
             +'<button class="action-btn" onclick="openEdit('+task.id+')" title="Edit" aria-label="Edit task: '+escAttr(task.text)+'">&#9998;</button>'
             +'<button class="action-btn" onclick="deleteTask('+task.id+')" title="Delete" aria-label="Delete task: '+escAttr(task.text)+'">&#128465;</button>'
@@ -125,6 +128,17 @@ function populateCategorySelects() {
         const el = document.getElementById(id);
         if (el) el.innerHTML = html;
     });
+    populateCategoryFilter();
+    populateAssignSelects();
+}
+function populateAssignSelects() {
+    const members = (settings.familyMembers || '').split('\n').map(s => s.trim()).filter(Boolean);
+    const html = '<option value="">— Unassigned —</option>' +
+        members.map(m => `<option value="${escHtml(m)}">${escHtml(m)}</option>`).join('');
+    ['assign-select', 'edit-assign'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = html;
+    });
 }
 function restoreSortSelect() {
     const el = document.getElementById('sort-select');
@@ -137,9 +151,26 @@ function onSortChange() {
 }
 function resetFilterBar() {
     currentFilter = 'all';
+    currentCategoryFilter = 'all';
     document.querySelectorAll('.filter-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.filter === 'all');
     });
+    const cf = document.getElementById('category-filter-select');
+    if (cf) cf.value = 'all';
+}
+function onCategoryFilterChange() {
+    currentCategoryFilter = document.getElementById('category-filter-select').value;
+    renderTasks();
+}
+function populateCategoryFilter() {
+    const el = document.getElementById('category-filter-select');
+    if (!el) return;
+    const cats = activeMode === 'personal' ? PERSONAL_CATEGORIES : WORK_CATEGORIES;
+    el.innerHTML = '<option value="all">Category: All</option>' +
+        cats.map(c => `<option value="${c.value}">${c.emoji} ${c.label}</option>`).join('');
+    el.value = currentCategoryFilter !== 'all' && cats.some(c => c.value === currentCategoryFilter)
+        ? currentCategoryFilter : 'all';
+    currentCategoryFilter = el.value;
 }
 function updateModeUI() {
     document.getElementById('mode-work-btn')?.classList.toggle('active', activeMode === 'work');
