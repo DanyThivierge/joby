@@ -770,17 +770,18 @@ select option { background: var(--card); color: var(--text); }
         border-right: 1px solid var(--border) !important;
         box-shadow: 4px 0 24px rgba(0,0,0,0.2);
         transform: translateX(-105%);
-        transition: transform 0.25s ease;
+        /* transition added after first paint — prevents slide animation on load */
     }
-    .tasks-layout.sidebar-open .tasks-sidebar { transform: translateX(0); }
+    .tasks-layout.sidebar-ready .tasks-sidebar { transition: transform 0.25s ease; }
+    .tasks-layout.sidebar-open .tasks-sidebar  { transform: translateX(0); }
 
     /* Backdrop — shown when drawer is open */
     .sidebar-backdrop {
-        display: none;
+        display: none !important;
         position: fixed; inset: 0; z-index: 399;
         background: rgba(0,0,0,0.36);
     }
-    .tasks-layout.sidebar-open .sidebar-backdrop { display: block; }
+    .tasks-layout.sidebar-open .sidebar-backdrop { display: block !important; }
 
     /* ── Controls row ── */
     .controls-row   { flex-direction: column; gap: 6px; }
@@ -3163,8 +3164,9 @@ function updateModeUI() {
 
 // ── Sidebar toggle ────────────────────────────────────────────────────────────
 function toggleSidebar() {
-    const layout = document.getElementById('tab-tasks');
-    if (window.innerWidth <= 640) {
+    const layout  = document.getElementById('tab-tasks');
+    const isMobile = window.matchMedia('(max-width: 640px)').matches;
+    if (isMobile) {
         layout.classList.toggle('sidebar-open');
     } else {
         layout.classList.toggle('sidebar-hidden');
@@ -4155,6 +4157,10 @@ function closeGhostTask() {
 // ── Boot ──────────────────────────────────────────────────────────────────────
 renderColorSwatches('add-color-swatches', '');
 initStorage();
+// Enable mobile sidebar transition only after first paint to prevent slide-in on load
+requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.getElementById('tab-tasks')?.classList.add('sidebar-ready');
+}));
 
 </script>
 </body>

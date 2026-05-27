@@ -189,8 +189,9 @@ function updateModeUI() {
 
 // ── Sidebar toggle ────────────────────────────────────────────────────────────
 function toggleSidebar() {
-    const layout = document.getElementById('tab-tasks');
-    if (window.innerWidth <= 640) {
+    const layout  = document.getElementById('tab-tasks');
+    const isMobile = window.matchMedia('(max-width: 640px)').matches;
+    if (isMobile) {
         layout.classList.toggle('sidebar-open');
     } else {
         layout.classList.toggle('sidebar-hidden');

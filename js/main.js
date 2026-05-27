@@ -68,3 +68,7 @@ function closeGhostTask() {
 // ── Boot ──────────────────────────────────────────────────────────────────────
 renderColorSwatches('add-color-swatches', '');
 initStorage();
+// Enable mobile sidebar transition only after first paint to prevent slide-in on load
+requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.getElementById('tab-tasks')?.classList.add('sidebar-ready');
+}));
