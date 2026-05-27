@@ -116,6 +116,19 @@ function buildHtml(gasMode, homeMode) {
                 "const LOGO_DARK           = '" + logoDark + "';"
             );
         }
+        // Also embed Joby logos so personal mode works in GAS
+        const personalLogoLight = toDataUri('Joby_logo.png', 'image/png');
+        const personalLogoDark  = toDataUri('Joby_logo_dark.png', 'image/png') || personalLogoLight;
+        if (personalLogoLight) {
+            html = html.replace(
+                "const PERSONAL_LOGO_LIGHT = 'Joby_logo.png';",
+                "const PERSONAL_LOGO_LIGHT = '" + personalLogoLight + "';"
+            );
+            html = html.replace(
+                "const PERSONAL_LOGO_DARK  = 'Joby_logo_dark.png';",
+                "const PERSONAL_LOGO_DARK  = '" + personalLogoDark + "';"
+            );
+        }
     }
 
     // In Home mode, replace logo with Joby logo embedded as base64.
