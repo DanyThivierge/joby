@@ -95,7 +95,7 @@ function t(key) {
 function catLabel(val) {
     const key = 'cat' + val;
     const result = t(key);
-    return result === key ? val : result; // fall back to raw value if key not defined
+    return result === key ? escHtml(val) : result; // escape raw fallback; translated strings already use HTML entities
 }
 function tFmt(key, ...args) {
     let s = t(key);

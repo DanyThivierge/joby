@@ -63,7 +63,7 @@ function renderTasks() {
         const cDue   = task.dueDate ? (ov&&!task.done ? '<span class="compact-due ovr" title="'+t('badgeOverdue')+'">&#9888;</span>' : '<span class="compact-due">&#128197; '+formatDue(task.dueDate)+'</span>') : '';
         const cNote  = task.notes   ? '<span class="compact-note-icon" title="Has notes">&#128206;</span>' : '';
         const cRec   = task.recurFreq ? '<span class="compact-recur" title="'+freqLabel(task.recurFreq)+'">&#8635;</span>' : '';
-        const compactInline = '<div class="compact-inline">'+cDue+cNote+cRec+'<span class="compact-prio p-'+task.priority+'"></span><span class="compact-cat">'+escHtml(catLabel(task.category))+'</span></div>';
+        const compactInline = '<div class="compact-inline">'+cDue+cNote+cRec+'<span class="compact-prio p-'+task.priority+'"></span><span class="compact-cat">'+catLabel(task.category)+'</span></div>';
         const marker = indent > 0 ? '<span class="indent-marker" aria-hidden="true"></span>' : '';
         const mleft  = indent * INDENT_W;
         const ariaChecked = task.done ? 'true' : 'false';
@@ -77,7 +77,7 @@ function renderTasks() {
             +' aria-label="'+escAttr(ariaLabel)+'"'
             +' onclick="toggleTask('+task.id+',event)"'
             +' onkeydown="if(event.key===\' \'||event.key===\'Enter\'){event.preventDefault();toggleTask('+task.id+',event);}"></div>'
-            +'<div class="task-content" onclick="toggleCompactExpand('+task.id+',event)"><div class="task-text">'+marker+escHtml(task.text)+'</div>'+compactInline+notes+'<div class="task-meta"><span class="badge p-'+task.priority+'">'+t('prio'+task.priority.charAt(0).toUpperCase()+task.priority.slice(1))+'</span><span class="badge cat-badge">'+escHtml(catLabel(task.category))+'</span>'+recur+due+assign+'<span class="task-date">'+t('taskDateAdded')+task.createdAt+'</span></div></div>'
+            +'<div class="task-content" onclick="toggleCompactExpand('+task.id+',event)"><div class="task-text">'+marker+escHtml(task.text)+'</div>'+compactInline+notes+'<div class="task-meta"><span class="badge p-'+task.priority+'">'+t('prio'+task.priority.charAt(0).toUpperCase()+task.priority.slice(1))+'</span><span class="badge cat-badge">'+catLabel(task.category)+'</span>'+recur+due+assign+'<span class="task-date">'+t('taskDateAdded')+task.createdAt+'</span></div></div>'
             +'<div class="task-actions">'
             +'<button class="action-btn" onclick="openEdit('+task.id+')" title="Edit" aria-label="Edit task: '+escAttr(task.text)+'">&#9998;</button>'
             +'<button class="action-btn" onclick="deleteTask('+task.id+')" title="Delete" aria-label="Delete task: '+escAttr(task.text)+'">&#128465;</button>'
