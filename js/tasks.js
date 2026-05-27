@@ -118,6 +118,7 @@ function recomputeStreak() {
 }
 
 function toggleTask(id, evt) {
+    if (selectionMode) { toggleSelection(id, evt); return; }
     const t=tasks.find(t=>t.id===id); if(!t) return;
     t.updatedAt=new Date().toISOString();
     if (!t.done) {
@@ -226,6 +227,74 @@ function saveEdit() {
     t.assignedTo=document.getElementById('edit-assign')?.value||t.assignedTo||'';
     t.updatedAt=new Date().toISOString();
     closeEditModal(); debouncedSave();renderTasks();updateStats();toast(t('toastTaskUpdated'));
+}
+
+// ── Bulk selection ────────────────────────────────────────────────────────────
+function toggleSelectionMode() {
+    selectionMode = !selectionMode;
+    if (!selectionMode) selectedIds.clear();
+    document.getElementById('task-list')?.classList.toggle('selection-mode', selectionMode);
+    const btn = document.getElementById('select-mode-btn');
+    if (btn) btn.classList.toggle('active', selectionMode);
+    updateBulkBar();
+    renderTasks();
+}
+function exitSelectionMode() {
+    if (!selectionMode) return;
+    selectionMode = false;
+    selectedIds.clear();
+    document.getElementById('task-list')?.classList.remove('selection-mode');
+    const btn = document.getElementById('select-mode-btn');
+    if (btn) btn.classList.remove('active');
+    updateBulkBar();
+    renderTasks();
+}
+function toggleSelection(id, evt) {
+    if (selectedIds.has(id)) selectedIds.delete(id);
+    else selectedIds.add(id);
+    const card = document.querySelector(`.task-item[data-id="${id}"]`);
+    if (card) card.classList.toggle('selected', selectedIds.has(id));
+    updateBulkBar();
+}
+function updateBulkBar() {
+    const bar = document.getElementById('bulk-action-bar');
+    if (!bar) return;
+    const n = selectedIds.size;
+    bar.style.display = selectionMode ? '' : 'none';
+    const countEl = bar.querySelector('.bulk-count');
+    if (countEl) countEl.textContent = tFmt('bulkSelected', n);
+    const completeBtn = bar.querySelector('#bulk-complete-btn');
+    const deleteBtn   = bar.querySelector('#bulk-delete-btn');
+    if (completeBtn) completeBtn.disabled = n === 0;
+    if (deleteBtn)   deleteBtn.disabled   = n === 0;
+}
+function bulkComplete() {
+    const ids = [...selectedIds];
+    if (!ids.length) return;
+    let count = 0;
+    ids.forEach(id => {
+        const task = tasks.find(t => t.id === id);
+        if (task && !task.done) {
+            task.done      = true;
+            task.doneAt    = todayStr();
+            task.updatedAt = new Date().toISOString();
+            logCompletion();
+            count++;
+        }
+    });
+    if (count) updateStreak();
+    exitSelectionMode();
+    debouncedSave(); renderTasks(); updateStats();
+    toast(tFmt('toastBulkCompleted', count));
+}
+function bulkDelete() {
+    const ids = [...selectedIds];
+    if (!ids.length) return;
+    if (!confirm(tFmt('confirmBulkDelete', ids.length))) return;
+    tasks = tasks.filter(t => !selectedIds.has(t.id));
+    exitSelectionMode();
+    debouncedSave(); renderTasks(); updateStats();
+    toast(tFmt('toastBulkDeleted', ids.length));
 }
 
 // ── Filter / sort ─────────────────────────────────────────────────────────────

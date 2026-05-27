@@ -69,9 +69,11 @@ function renderTasks() {
         const ariaChecked = task.done ? 'true' : 'false';
         const ariaLabel   = (task.done ? 'Mark incomplete' : 'Mark complete') + ': ' + task.text;
         const isExpanded = expandedCompactIds.has(task.id);
-        return '<div class="task-item'+(task.done?' done':'')+(ov&&!task.done?' overdue':'')+(task.color?' tc-'+task.color:'')+(isExpanded?' compact-expanded':'')+'"'
+        const isSelected = selectedIds.has(task.id);
+        return '<div class="task-item'+(task.done?' done':'')+(ov&&!task.done?' overdue':'')+(task.color?' tc-'+task.color:'')+(isExpanded?' compact-expanded':'')+(selectionMode?' selectable':'')+(isSelected?' selected':'')+'"'
             +' draggable="true" data-id="'+task.id+'" data-vis="'+vi+'" data-indent="'+indent+'"'
             +' style="margin-left:'+mleft+'px">'
+            +'<div class="sel-indicator" onclick="toggleSelection('+task.id+',event)" aria-hidden="true"></div>'
             +'<div class="task-check'+(task.done?' checked':'')+'"'
             +' role="checkbox" aria-checked="'+ariaChecked+'" tabindex="0"'
             +' aria-label="'+escAttr(ariaLabel)+'"'
@@ -86,6 +88,7 @@ function renderTasks() {
     }
     list.innerHTML = filtered.map((t,i)=>taskCard(t,i)).join('');
     attachDrag();
+    if (typeof updateBulkBar === 'function') updateBulkBar();
 }
 
 // ── Stats bar ─────────────────────────────────────────────────────────────────
@@ -112,6 +115,7 @@ function toggleCompact() {
     renderTasks();
 }
 function toggleCompactExpand(id, event) {
+    if (selectionMode) { toggleSelection(id, event); return; }
     if (!compactView) return;
     if (event && event.target.closest('a, button')) return;
     if (expandedCompactIds.has(id)) expandedCompactIds.delete(id);

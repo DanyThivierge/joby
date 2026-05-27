@@ -696,6 +696,50 @@ select option { background: var(--card); color: var(--text); }
 .studio-color { width: 32px; height: 28px; border: 1px solid var(--border); border-radius: 4px; padding: 1px; cursor: pointer; background: none; }
 .studio-reset { font-size: 0.78rem; padding: 4px 10px; margin-left: auto; }
 
+/* ── Bulk selection ───────────────────────────────────────────────────────────── */
+.bulk-action-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--purple-light);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-btn);
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+.bulk-count {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--purple);
+    margin-right: auto;
+}
+.task-item.selectable { cursor: pointer; }
+.task-item.selected { background: var(--purple-light) !important; border-left: 3px solid var(--purple); }
+.sel-indicator {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-right: 6px;
+    transition: all 0.15s;
+    cursor: pointer;
+    align-self: center;
+}
+.selection-mode .sel-indicator { display: flex; }
+.task-item.selected .sel-indicator {
+    background: var(--purple);
+    border-color: var(--purple);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1 5l3 3 7-7' stroke='%23fff' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 10px;
+}
+.selection-mode .task-check { pointer-events: none; opacity: 0.4; }
+.selection-mode .task-actions { display: none; }
+
 </style>
 </head>
 <body>
@@ -840,9 +884,16 @@ select option { background: var(--card); color: var(--text); }
                 </select>
             </div>
             <div class="controls-right">
+                <button id="select-mode-btn" class="btn btn-outline" onclick="toggleSelectionMode()" title="Select tasks" data-i18n="selectModeBtn">&#9745; Select</button>
                 <button id="compact-btn" class="btn btn-outline" onclick="toggleCompact()" title="Toggle compact view" data-i18n="compactBtn">&#8801; Compact</button>
                 <button class="btn btn-danger" onclick="clearDone()" data-i18n="clearDoneBtn">&#128465; Clear Done</button>
             </div>
+        </div>
+        <div id="bulk-action-bar" class="bulk-action-bar" style="display:none">
+            <span class="bulk-count"></span>
+            <button id="bulk-complete-btn" class="btn btn-outline" onclick="bulkComplete()" disabled data-i18n="bulkComplete">&#10003; Complete</button>
+            <button id="bulk-delete-btn" class="btn btn-danger" onclick="bulkDelete()" disabled data-i18n="bulkDelete">&#128465; Delete</button>
+            <button class="btn btn-outline" onclick="exitSelectionMode()" data-i18n="bulkCancel">&#10005; Cancel</button>
         </div>
         <div class="task-zone-label"><span data-i18n="taskZone">&#10022; Task Zone &#10022;</span></div>
         <div class="task-list" id="task-list">
@@ -1294,6 +1345,14 @@ const STRINGS = {
         addedToday:            'Today',
         addedYesterday:        'Yesterday',
         addedDaysAgo:          '{0} days ago',
+        selectModeBtn:         '&#9745; Select',
+        bulkSelected:          '{0} selected',
+        bulkComplete:          '&#10003; Complete',
+        bulkDelete:            'Delete',
+        bulkCancel:            'Cancel',
+        confirmBulkDelete:     'Delete {0} selected task(s)?',
+        toastBulkCompleted:    '{0} task(s) marked complete.',
+        toastBulkDeleted:      '{0} task(s) deleted.',
     },
     fr: {
         tabTasks:        '&#128203; Mes t&#226;ches',
@@ -1425,6 +1484,14 @@ const STRINGS = {
         addedToday:            'Aujourd&#8217;hui',
         addedYesterday:        'Hier',
         addedDaysAgo:          'Il y a {0}&#160;j',
+        selectModeBtn:         '&#9745; S&#233;lect.',
+        bulkSelected:          '{0} s&#233;lectionn&#233;(s)',
+        bulkComplete:          '&#10003; Terminer',
+        bulkDelete:            'Supprimer',
+        bulkCancel:            'Annuler',
+        confirmBulkDelete:     'Supprimer {0} t&#226;che(s) s&#233;lectionn&#233;e(s)&#160;?',
+        toastBulkCompleted:    '{0} t&#226;che(s) marqu&#233;e(s) termin&#233;e(s).',
+        toastBulkDeleted:      '{0} t&#226;che(s) supprim&#233;e(s).',
     },
 };
 
@@ -1481,6 +1548,8 @@ let compactView          = false;
 const expandedCompactIds = new Set();
 let activeMode           = 'work'; // 'work' | 'personal'
 let uiLang               = 'en';   // 'en' | 'fr'
+let selectionMode        = false;
+const selectedIds        = new Set();
 
 window.db = {
     get: k => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } },
@@ -2649,6 +2718,7 @@ function recomputeStreak() {
 }
 
 function toggleTask(id, evt) {
+    if (selectionMode) { toggleSelection(id, evt); return; }
     const t=tasks.find(t=>t.id===id); if(!t) return;
     t.updatedAt=new Date().toISOString();
     if (!t.done) {
@@ -2759,6 +2829,74 @@ function saveEdit() {
     closeEditModal(); debouncedSave();renderTasks();updateStats();toast(t('toastTaskUpdated'));
 }
 
+// ── Bulk selection ────────────────────────────────────────────────────────────
+function toggleSelectionMode() {
+    selectionMode = !selectionMode;
+    if (!selectionMode) selectedIds.clear();
+    document.getElementById('task-list')?.classList.toggle('selection-mode', selectionMode);
+    const btn = document.getElementById('select-mode-btn');
+    if (btn) btn.classList.toggle('active', selectionMode);
+    updateBulkBar();
+    renderTasks();
+}
+function exitSelectionMode() {
+    if (!selectionMode) return;
+    selectionMode = false;
+    selectedIds.clear();
+    document.getElementById('task-list')?.classList.remove('selection-mode');
+    const btn = document.getElementById('select-mode-btn');
+    if (btn) btn.classList.remove('active');
+    updateBulkBar();
+    renderTasks();
+}
+function toggleSelection(id, evt) {
+    if (selectedIds.has(id)) selectedIds.delete(id);
+    else selectedIds.add(id);
+    const card = document.querySelector(`.task-item[data-id="${id}"]`);
+    if (card) card.classList.toggle('selected', selectedIds.has(id));
+    updateBulkBar();
+}
+function updateBulkBar() {
+    const bar = document.getElementById('bulk-action-bar');
+    if (!bar) return;
+    const n = selectedIds.size;
+    bar.style.display = selectionMode ? '' : 'none';
+    const countEl = bar.querySelector('.bulk-count');
+    if (countEl) countEl.textContent = tFmt('bulkSelected', n);
+    const completeBtn = bar.querySelector('#bulk-complete-btn');
+    const deleteBtn   = bar.querySelector('#bulk-delete-btn');
+    if (completeBtn) completeBtn.disabled = n === 0;
+    if (deleteBtn)   deleteBtn.disabled   = n === 0;
+}
+function bulkComplete() {
+    const ids = [...selectedIds];
+    if (!ids.length) return;
+    let count = 0;
+    ids.forEach(id => {
+        const task = tasks.find(t => t.id === id);
+        if (task && !task.done) {
+            task.done      = true;
+            task.doneAt    = todayStr();
+            task.updatedAt = new Date().toISOString();
+            logCompletion();
+            count++;
+        }
+    });
+    if (count) updateStreak();
+    exitSelectionMode();
+    debouncedSave(); renderTasks(); updateStats();
+    toast(tFmt('toastBulkCompleted', count));
+}
+function bulkDelete() {
+    const ids = [...selectedIds];
+    if (!ids.length) return;
+    if (!confirm(tFmt('confirmBulkDelete', ids.length))) return;
+    tasks = tasks.filter(t => !selectedIds.has(t.id));
+    exitSelectionMode();
+    debouncedSave(); renderTasks(); updateStats();
+    toast(tFmt('toastBulkDeleted', ids.length));
+}
+
 // ── Filter / sort ─────────────────────────────────────────────────────────────
 function setFilter(f,btn) { currentFilter=f; document.querySelectorAll('.filter-pill').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderTasks(); }
 
@@ -2835,9 +2973,11 @@ function renderTasks() {
         const ariaChecked = task.done ? 'true' : 'false';
         const ariaLabel   = (task.done ? 'Mark incomplete' : 'Mark complete') + ': ' + task.text;
         const isExpanded = expandedCompactIds.has(task.id);
-        return '<div class="task-item'+(task.done?' done':'')+(ov&&!task.done?' overdue':'')+(task.color?' tc-'+task.color:'')+(isExpanded?' compact-expanded':'')+'"'
+        const isSelected = selectedIds.has(task.id);
+        return '<div class="task-item'+(task.done?' done':'')+(ov&&!task.done?' overdue':'')+(task.color?' tc-'+task.color:'')+(isExpanded?' compact-expanded':'')+(selectionMode?' selectable':'')+(isSelected?' selected':'')+'"'
             +' draggable="true" data-id="'+task.id+'" data-vis="'+vi+'" data-indent="'+indent+'"'
             +' style="margin-left:'+mleft+'px">'
+            +'<div class="sel-indicator" onclick="toggleSelection('+task.id+',event)" aria-hidden="true"></div>'
             +'<div class="task-check'+(task.done?' checked':'')+'"'
             +' role="checkbox" aria-checked="'+ariaChecked+'" tabindex="0"'
             +' aria-label="'+escAttr(ariaLabel)+'"'
@@ -2852,6 +2992,7 @@ function renderTasks() {
     }
     list.innerHTML = filtered.map((t,i)=>taskCard(t,i)).join('');
     attachDrag();
+    if (typeof updateBulkBar === 'function') updateBulkBar();
 }
 
 // ── Stats bar ─────────────────────────────────────────────────────────────────
@@ -2878,6 +3019,7 @@ function toggleCompact() {
     renderTasks();
 }
 function toggleCompactExpand(id, event) {
+    if (selectionMode) { toggleSelection(id, event); return; }
     if (!compactView) return;
     if (event && event.target.closest('a, button')) return;
     if (expandedCompactIds.has(id)) expandedCompactIds.delete(id);
@@ -3617,7 +3759,20 @@ const STATIC_TAGLINES = [
     'All your tasks. One place.',
     'Get it done.',
     'On it.',
-    'Keep moving.'
+    'Keep moving.',
+    'Look at you, being all organized.',
+    'Your second brain has booted up.',
+    'Future you will thank you for this.',
+    'Don\'t Panic. It\'s on the list.',
+    'Make it so.',
+    'Engage execution mode.',
+    'Do or do not. There is no try.',
+    'This is the way. The to-do way.',
+    'Teamwork makes the chore work.',
+    'The domestic command center.',
+    'Commit your intent. Push your progress.',
+    'Build the momentum. Protect the streak.',
+    'Zero dependencies. Maximum productivity.'
 ];
 let _taglineStaticIdx = Math.floor(Math.random() * STATIC_TAGLINES.length);
 function getMotivationalTagline() {
@@ -3868,7 +4023,7 @@ document.addEventListener('keydown', e => {
     const notInInput = !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName);
     if (e.key === ' ' && notInInput) { e.preventDefault(); openCapture(); }
     if (e.key === 'n' && notInInput) { e.preventDefault(); openGhostTask(); }
-    if (e.key === 'Escape') { closeCapture(); closeGhostTask(); }
+    if (e.key === 'Escape') { closeCapture(); closeGhostTask(); if (typeof exitSelectionMode === 'function' && selectionMode) exitSelectionMode(); }
 });
 
 // ── Task keyboard navigation ───────────────────────────────────────────────────

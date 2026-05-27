@@ -25,6 +25,8 @@ let compactView          = false;
 const expandedCompactIds = new Set();
 let activeMode           = 'work'; // 'work' | 'personal'
 let uiLang               = 'en';   // 'en' | 'fr'
+let selectionMode        = false;
+const selectedIds        = new Set();
 
 window.db = {
     get: k => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } },

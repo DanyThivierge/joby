@@ -162,9 +162,16 @@
                 </select>
             </div>
             <div class="controls-right">
+                <button id="select-mode-btn" class="btn btn-outline" onclick="toggleSelectionMode()" title="Select tasks" data-i18n="selectModeBtn">&#9745; Select</button>
                 <button id="compact-btn" class="btn btn-outline" onclick="toggleCompact()" title="Toggle compact view" data-i18n="compactBtn">&#8801; Compact</button>
                 <button class="btn btn-danger" onclick="clearDone()" data-i18n="clearDoneBtn">&#128465; Clear Done</button>
             </div>
+        </div>
+        <div id="bulk-action-bar" class="bulk-action-bar" style="display:none">
+            <span class="bulk-count"></span>
+            <button id="bulk-complete-btn" class="btn btn-outline" onclick="bulkComplete()" disabled data-i18n="bulkComplete">&#10003; Complete</button>
+            <button id="bulk-delete-btn" class="btn btn-danger" onclick="bulkDelete()" disabled data-i18n="bulkDelete">&#128465; Delete</button>
+            <button class="btn btn-outline" onclick="exitSelectionMode()" data-i18n="bulkCancel">&#10005; Cancel</button>
         </div>
         <div class="task-zone-label"><span data-i18n="taskZone">&#10022; Task Zone &#10022;</span></div>
         <div class="task-list" id="task-list">

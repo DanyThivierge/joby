@@ -687,3 +687,47 @@ select option { background: var(--card); color: var(--text); }
 .studio-val { font-size: 0.72rem; color: var(--text-3); min-width: 28px; }
 .studio-color { width: 32px; height: 28px; border: 1px solid var(--border); border-radius: 4px; padding: 1px; cursor: pointer; background: none; }
 .studio-reset { font-size: 0.78rem; padding: 4px 10px; margin-left: auto; }
+
+/* ── Bulk selection ───────────────────────────────────────────────────────────── */
+.bulk-action-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--purple-light);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-btn);
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+.bulk-count {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--purple);
+    margin-right: auto;
+}
+.task-item.selectable { cursor: pointer; }
+.task-item.selected { background: var(--purple-light) !important; border-left: 3px solid var(--purple); }
+.sel-indicator {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-right: 6px;
+    transition: all 0.15s;
+    cursor: pointer;
+    align-self: center;
+}
+.selection-mode .sel-indicator { display: flex; }
+.task-item.selected .sel-indicator {
+    background: var(--purple);
+    border-color: var(--purple);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1 5l3 3 7-7' stroke='%23fff' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 10px;
+}
+.selection-mode .task-check { pointer-events: none; opacity: 0.4; }
+.selection-mode .task-actions { display: none; }

@@ -11,7 +11,7 @@ document.addEventListener('keydown', e => {
     const notInInput = !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName);
     if (e.key === ' ' && notInInput) { e.preventDefault(); openCapture(); }
     if (e.key === 'n' && notInInput) { e.preventDefault(); openGhostTask(); }
-    if (e.key === 'Escape') { closeCapture(); closeGhostTask(); }
+    if (e.key === 'Escape') { closeCapture(); closeGhostTask(); if (typeof exitSelectionMode === 'function' && selectionMode) exitSelectionMode(); }
 });
 
 // ── Task keyboard navigation ───────────────────────────────────────────────────

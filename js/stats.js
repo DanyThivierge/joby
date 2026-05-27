@@ -12,7 +12,20 @@ const STATIC_TAGLINES = [
     'All your tasks. One place.',
     'Get it done.',
     'On it.',
-    'Keep moving.'
+    'Keep moving.',
+    'Look at you, being all organized.',
+    'Your second brain has booted up.',
+    'Future you will thank you for this.',
+    'Don\'t Panic. It\'s on the list.',
+    'Make it so.',
+    'Engage execution mode.',
+    'Do or do not. There is no try.',
+    'This is the way. The to-do way.',
+    'Teamwork makes the chore work.',
+    'The domestic command center.',
+    'Commit your intent. Push your progress.',
+    'Build the momentum. Protect the streak.',
+    'Zero dependencies. Maximum productivity.'
 ];
 let _taglineStaticIdx = Math.floor(Math.random() * STATIC_TAGLINES.length);
 function getMotivationalTagline() {
