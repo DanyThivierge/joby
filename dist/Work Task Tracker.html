@@ -1257,6 +1257,34 @@ const STRINGS = {
         catHealth:       'Health',   catFinance:  'Finance',   catFamily:   'Family',
         catCar:          'Car',      catStudy:    'Study',     catGarden:   'Garden',
         catErrands:      'Errands',  catPersonal: 'Personal',
+        toastTaskAdded:        'Task added!',
+        toastTaskUpdated:      'Task updated!',
+        toastTaskDeleted:      'Task deleted.',
+        toastUndo:             'Undo',
+        toastSubtaskBlock:     'Cannot delete — has {0} subtask(s). Remove subtasks first.',
+        toastTaskReset:        'Task reset for next {0}.',
+        toastTaskResetDue:     'Task due {0} — marked pending.',
+        toastTaskRestored:     'Task restored.',
+        toastDeletionsPending: '{0} deletion(s) pending…',
+        confirmClearDone:      'Clear {0} completed task(s)?',
+        toastNoCleared:        'No completed tasks to clear.',
+        toastTasksCleared:     '{0} completed task(s) cleared.',
+        toastCsvExported:      'Tasks exported to CSV!',
+        toastBackupExported:   'Backup exported!',
+        toastBackupDownloaded: 'Backup downloaded.',
+        toastExportFailed:     'Export failed: {0}',
+        toastInvalidBackup:    'Invalid backup file.',
+        toastImported:         '{0} task(s) imported.',
+        toastImportFailed:     'Import failed: {0}',
+        confirmImport:         'Import {0} task(s) from “{1}”? This will replace current tasks.',
+        toastDriveSettingsSaved: 'Drive settings saved!',
+        toastSettingsSaved:    'Settings saved!',
+        toastJiraAdded:        '{0} added to My Tasks!',
+        toastDriveSignedIn:    'Signed in to Google Drive!',
+        toastDriveSignedOut:   'Signed out from Google Drive.',
+        toastDriveSignInFail:  'Sign-in failed: {0}',
+        unassigned:            '— Unassigned —',
+        taskDateAdded:         'Added ',
     },
     fr: {
         tabTasks:        '&#128203; Mes t&#226;ches',
@@ -1354,6 +1382,34 @@ const STRINGS = {
         catHealth:       'Sant&#233;', catFinance: 'Finances',  catFamily:   'Famille',
         catCar:          'Voiture',  catStudy:    '&#201;tudes',  catGarden:   'Jardin',
         catErrands:      'Courses',  catPersonal: 'Personnel',
+        toastTaskAdded:        'T&#226;che ajout&#233;e&#160;!',
+        toastTaskUpdated:      'T&#226;che mise &#224; jour&#160;!',
+        toastTaskDeleted:      'T&#226;che supprim&#233;e.',
+        toastUndo:             'Annuler',
+        toastSubtaskBlock:     'Suppression impossible — {0} sous-t&#226;che(s). Supprimez-les d&#8217;abord.',
+        toastTaskReset:        'T&#226;che r&#233;initialis&#233;e pour {0}.',
+        toastTaskResetDue:     'T&#226;che pr&#233;vue le {0} — marqu&#233;e en cours.',
+        toastTaskRestored:     'T&#226;che restaur&#233;e.',
+        toastDeletionsPending: '{0} suppression(s) en attente&#8230;',
+        confirmClearDone:      'Effacer {0} t&#226;che(s) termin&#233;e(s)&#160;?',
+        toastNoCleared:        'Aucune t&#226;che termin&#233;e &#224; effacer.',
+        toastTasksCleared:     '{0} t&#226;che(s) termin&#233;e(s) effac&#233;e(s).',
+        toastCsvExported:      'T&#226;ches export&#233;es en CSV&#160;!',
+        toastBackupExported:   'Sauvegarde export&#233;e&#160;!',
+        toastBackupDownloaded: 'Sauvegarde t&#233;l&#233;charg&#233;e.',
+        toastExportFailed:     'Exportation &#233;chou&#233;e&#160;: {0}',
+        toastInvalidBackup:    'Fichier de sauvegarde invalide.',
+        toastImported:         '{0} t&#226;che(s) import&#233;e(s).',
+        toastImportFailed:     'Importation &#233;chou&#233;e&#160;: {0}',
+        confirmImport:         'Importer {0} t&#226;che(s) depuis &#171;&#160;{1}&#160;&#187;&#160;? Cela remplacera les t&#226;ches actuelles.',
+        toastDriveSettingsSaved: 'Param&#232;tres Drive enregistr&#233;s&#160;!',
+        toastSettingsSaved:    'Param&#232;tres enregistr&#233;s&#160;!',
+        toastJiraAdded:        '{0} ajout&#233; &#224; Mes t&#226;ches&#160;!',
+        toastDriveSignedIn:    'Connect&#233; &#224; Google Drive&#160;!',
+        toastDriveSignedOut:   'D&#233;connect&#233; de Google Drive.',
+        toastDriveSignInFail:  '&#201;chec de connexion&#160;: {0}',
+        unassigned:            '— Non assign&#233;(e) —',
+        taskDateAdded:         'Ajout&#233; ',
     },
 };
 
@@ -2391,15 +2447,15 @@ async function exportJSON() {
             const w = await fh.createWritable();
             await w.write(JSON.stringify(payload(), null, 2));
             await w.close();
-            toast('Backup exported!');
-        } catch(e) { if (e.name !== 'AbortError') toast('Export failed: ' + e.message); }
+            toast(t('toastBackupExported'));
+        } catch(e) { if (e.name !== 'AbortError') toast(tFmt('toastExportFailed', e.message)); }
     } else {
         const blob = new Blob([JSON.stringify(payload(), null, 2)], { type: 'application/json' });
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
         a.href = url; a.download = 'work-tasks-backup-' + new Date().toISOString().slice(0,10) + '.json';
         a.click(); URL.revokeObjectURL(url);
-        toast('Backup downloaded!');
+        toast(t('toastBackupDownloaded'));
     }
 }
 async function importJSON(event) {
@@ -2408,13 +2464,13 @@ async function importJSON(event) {
     event.target.value = '';
     try {
         const data = JSON.parse(await file.text());
-        if (!data.tasks) { toast('Invalid backup file — no tasks found.'); return; }
-        if (!confirm('Import ' + (data.tasks.length) + ' tasks from "' + file.name + '"? This will replace your current tasks.')) return;
+        if (!data.tasks) { toast(t('toastInvalidBackup')); return; }
+        if (!confirm(tFmt('confirmImport', data.tasks.length, file.name))) return;
         applyData(data);
         await autoSave();
         renderTasks(); updateStats();
-        toast(data.tasks.length + ' tasks imported!');
-    } catch(e) { toast('Import failed: ' + e.message); }
+        toast(tFmt('toastImported', data.tasks.length));
+    } catch(e) { toast(tFmt('toastImportFailed', e.message)); }
 }
 
 window.addEventListener('beforeunload', () => writeToLS());
@@ -2436,7 +2492,7 @@ function saveDriveSettings() {
     if (typeof initDrive          === 'function') initDrive();
     if (typeof renderAssignFilterPills === 'function') renderAssignFilterPills();
     if (typeof populateAssignSelects   === 'function') populateAssignSelects();
-    toast('Drive settings saved!');
+    toast(t('toastDriveSettingsSaved'));
 }
 
 
@@ -2452,7 +2508,7 @@ function addTask() {
     input.value=''; document.getElementById('task-notes').value=''; document.getElementById('due-date').value=''; document.getElementById('recur-select').value='';
     renderColorSwatches('add-color-swatches', '');
     if (isListening) { recognition.stop(); isListening=false; updateMicBtn(); }
-    debouncedSave(); renderTasks(); updateStats(); toast('Task added!');
+    debouncedSave(); renderTasks(); updateStats(); toast(t('toastTaskAdded'));
     closeGhostTask();
 }
 
@@ -2567,7 +2623,7 @@ function toggleTask(id, evt) {
         const open=getChildren(t).filter(c=>!c.done);
         if (open.length) {
             const n=open.length;
-            toast(`Almost there! Wrap up the ${n} open subtask${n>1?'s':''} below this one first 💪`, 3500, 'var(--red)');
+            toast(tFmt('toastSubtaskBlock', n), 3500, 'var(--red)');
             return;
         }
     }
@@ -2590,7 +2646,8 @@ function toggleTask(id, evt) {
                 task.createdAt = nextRecurDate(freq, oldCreated);
                 task.dueDate   = oldDue ? nextRecurDate(freq, oldDue) : null;
                 debouncedSave(); renderTasks(); updateStats();
-                toast('↻ ' + label + ' task reset' + (task.dueDate ? ' — due ' + formatDue(task.dueDate) : ''), 3500, 'var(--purple)');
+                const msg = task.dueDate ? tFmt('toastTaskResetDue', formatDue(task.dueDate)) : tFmt('toastTaskReset', label);
+                toast('↻ ' + msg, 3500, 'var(--purple)');
             }, 1600);
         }
     } else {
@@ -2622,7 +2679,7 @@ function deleteTask(id) {
     }, DELETE_UNDO_MS);
     _pendingDeletes.push(entry);
 
-    toastWithAction('Task deleted', 'Undo', undoDelete);
+    toastWithAction(t('toastTaskDeleted'), t('toastUndo'), undoDelete);
 }
 
 function undoDelete() {
@@ -2632,14 +2689,14 @@ function undoDelete() {
     tasks.splice(Math.min(entry.idx, tasks.length), 0, entry.task);
     debouncedSave(); renderTasks(); updateStats();
     const remaining = _pendingDeletes.length;
-    toast('Task restored ✓' + (remaining ? ' — ' + remaining + ' more deletion' + (remaining > 1 ? 's' : '') + ' pending' : ''));
+    toast(t('toastTaskRestored') + (remaining ? ' ' + tFmt('toastDeletionsPending', remaining) : ''));
 }
 
 function clearDone() {
     const n=tasks.filter(t=>t.done).length;
-    if(!n){toast('No completed tasks to clear.');return;}
-    if(!confirm('Remove all '+n+' completed task(s)?'))return;
-    tasks=tasks.filter(t=>!t.done); debouncedSave();renderTasks();updateStats();toast(n+' task(s) cleared.');
+    if(!n){toast(t('toastNoCleared'));return;}
+    if(!confirm(tFmt('confirmClearDone', n)))return;
+    tasks=tasks.filter(t=>!t.done); debouncedSave();renderTasks();updateStats();toast(tFmt('toastTasksCleared', n));
 }
 
 // ── Edit modal ────────────────────────────────────────────────────────────────
@@ -2667,7 +2724,7 @@ function saveEdit() {
     t.color=getSelectedColor('edit-color-swatches');
     t.assignedTo=document.getElementById('edit-assign')?.value||t.assignedTo||'';
     t.updatedAt=new Date().toISOString();
-    closeEditModal(); debouncedSave();renderTasks();updateStats();toast('Task updated!');
+    closeEditModal(); debouncedSave();renderTasks();updateStats();toast(t('toastTaskUpdated'));
 }
 
 // ── Filter / sort ─────────────────────────────────────────────────────────────
@@ -2754,7 +2811,7 @@ function renderTasks() {
             +' aria-label="'+escAttr(ariaLabel)+'"'
             +' onclick="toggleTask('+task.id+',event)"'
             +' onkeydown="if(event.key===\' \'||event.key===\'Enter\'){event.preventDefault();toggleTask('+task.id+',event);}"></div>'
-            +'<div class="task-content" onclick="toggleCompactExpand('+task.id+',event)"><div class="task-text">'+marker+escHtml(task.text)+'</div>'+compactInline+notes+'<div class="task-meta"><span class="badge p-'+task.priority+'">'+t('prio'+task.priority.charAt(0).toUpperCase()+task.priority.slice(1))+'</span><span class="badge cat-badge">'+escHtml(catLabel(task.category))+'</span>'+recur+due+assign+'<span class="task-date">Added '+task.createdAt+'</span></div></div>'
+            +'<div class="task-content" onclick="toggleCompactExpand('+task.id+',event)"><div class="task-text">'+marker+escHtml(task.text)+'</div>'+compactInline+notes+'<div class="task-meta"><span class="badge p-'+task.priority+'">'+t('prio'+task.priority.charAt(0).toUpperCase()+task.priority.slice(1))+'</span><span class="badge cat-badge">'+escHtml(catLabel(task.category))+'</span>'+recur+due+assign+'<span class="task-date">'+t('taskDateAdded')+task.createdAt+'</span></div></div>'
             +'<div class="task-actions">'
             +'<button class="action-btn" onclick="openEdit('+task.id+')" title="Edit" aria-label="Edit task: '+escAttr(task.text)+'">&#9998;</button>'
             +'<button class="action-btn" onclick="deleteTask('+task.id+')" title="Delete" aria-label="Delete task: '+escAttr(task.text)+'">&#128465;</button>'
@@ -2810,7 +2867,7 @@ function populateCategorySelects() {
 }
 function populateAssignSelects() {
     const members = (settings.familyMembers || '').split('\n').map(s => s.trim()).filter(Boolean);
-    const html = '<option value="">— Unassigned —</option>' +
+    const html = '<option value="">' + t('unassigned') + '</option>' +
         members.map(m => `<option value="${escHtml(m)}">${escHtml(m)}</option>`).join('');
     ['assign-select', 'edit-assign'].forEach(id => {
         const el = document.getElementById(id);
@@ -2872,7 +2929,7 @@ function exportTasks() {
     const blob=new Blob([rows.join('\n')],{type:'text/csv'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a'); a.href=url; a.download='tasks-'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
-    URL.revokeObjectURL(url); toast('Tasks exported to CSV!');
+    URL.revokeObjectURL(url); toast(t('toastCsvExported'));
 }
 
 
@@ -2973,7 +3030,7 @@ function saveSettings() {
     settings.jiraPriorities = JQL_PRIORITIES.filter(p => { const el = document.getElementById(jbPid(p));   return el && el.checked; }).join(',');
     settings.jiraUpdatedDays = document.getElementById('jb-updated').value;
     settings.jiraProjects    = document.getElementById('jb-projects').value.trim();
-    closeSettings(); debouncedSave(); toast('Settings saved!');
+    closeSettings(); debouncedSave(); toast(t('toastSettingsSaved'));
 }
 
 // ── JQL build helpers ─────────────────────────────────────────────────────────
@@ -3165,7 +3222,7 @@ function promoteIssue(id) {
     tasks.unshift({ id:Date.now(), text:'['+key+'] '+(f.summary||''), notes:settings.jiraUrl+'/browse/'+key, priority:mapPrio(f.priority?.name), category:'JIRA', dueDate:f.duedate||'', done:false, createdAt:new Date().toLocaleDateString('en-CA') });
     promotedJiraIds.push(id);
     debouncedSave(); renderTasks(); updateStats(); renderJiraIssues();
-    toast('['+key+'] added to My Tasks!');
+    toast(tFmt('toastJiraAdded', '['+key+']'));
 }
 
 
@@ -3444,9 +3501,9 @@ async function driveSignIn() {
         await fetchDriveUser();
         await driveLoad();
         renderAssignFilterPills();
-        toast('Signed in to Google Drive!');
+        toast(t('toastDriveSignedIn'));
     } catch(e) {
-        toast('Sign-in failed: ' + e.message, 3000, 'var(--red)');
+        toast(tFmt('toastDriveSignInFail', e.message), 3000, 'var(--red)');
     }
 }
 function driveSignOut() {
@@ -3454,7 +3511,7 @@ function driveSignOut() {
     driveUser = null;
     updateDriveUserChip();
     setDriveSyncIndicator('off');
-    toast('Signed out from Google Drive.');
+    toast(t('toastDriveSignedOut'));
 }
 
 // ── Assignment filter ─────────────────────────────────────────────────────────

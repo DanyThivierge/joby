@@ -9,7 +9,7 @@ function addTask() {
     input.value=''; document.getElementById('task-notes').value=''; document.getElementById('due-date').value=''; document.getElementById('recur-select').value='';
     renderColorSwatches('add-color-swatches', '');
     if (isListening) { recognition.stop(); isListening=false; updateMicBtn(); }
-    debouncedSave(); renderTasks(); updateStats(); toast('Task added!');
+    debouncedSave(); renderTasks(); updateStats(); toast(t('toastTaskAdded'));
     closeGhostTask();
 }
 
@@ -124,7 +124,7 @@ function toggleTask(id, evt) {
         const open=getChildren(t).filter(c=>!c.done);
         if (open.length) {
             const n=open.length;
-            toast(`Almost there! Wrap up the ${n} open subtask${n>1?'s':''} below this one first 💪`, 3500, 'var(--red)');
+            toast(tFmt('toastSubtaskBlock', n), 3500, 'var(--red)');
             return;
         }
     }
@@ -147,7 +147,8 @@ function toggleTask(id, evt) {
                 task.createdAt = nextRecurDate(freq, oldCreated);
                 task.dueDate   = oldDue ? nextRecurDate(freq, oldDue) : null;
                 debouncedSave(); renderTasks(); updateStats();
-                toast('↻ ' + label + ' task reset' + (task.dueDate ? ' — due ' + formatDue(task.dueDate) : ''), 3500, 'var(--purple)');
+                const msg = task.dueDate ? tFmt('toastTaskResetDue', formatDue(task.dueDate)) : tFmt('toastTaskReset', label);
+                toast('↻ ' + msg, 3500, 'var(--purple)');
             }, 1600);
         }
     } else {
@@ -179,7 +180,7 @@ function deleteTask(id) {
     }, DELETE_UNDO_MS);
     _pendingDeletes.push(entry);
 
-    toastWithAction('Task deleted', 'Undo', undoDelete);
+    toastWithAction(t('toastTaskDeleted'), t('toastUndo'), undoDelete);
 }
 
 function undoDelete() {
@@ -189,14 +190,14 @@ function undoDelete() {
     tasks.splice(Math.min(entry.idx, tasks.length), 0, entry.task);
     debouncedSave(); renderTasks(); updateStats();
     const remaining = _pendingDeletes.length;
-    toast('Task restored ✓' + (remaining ? ' — ' + remaining + ' more deletion' + (remaining > 1 ? 's' : '') + ' pending' : ''));
+    toast(t('toastTaskRestored') + (remaining ? ' ' + tFmt('toastDeletionsPending', remaining) : ''));
 }
 
 function clearDone() {
     const n=tasks.filter(t=>t.done).length;
-    if(!n){toast('No completed tasks to clear.');return;}
-    if(!confirm('Remove all '+n+' completed task(s)?'))return;
-    tasks=tasks.filter(t=>!t.done); debouncedSave();renderTasks();updateStats();toast(n+' task(s) cleared.');
+    if(!n){toast(t('toastNoCleared'));return;}
+    if(!confirm(tFmt('confirmClearDone', n)))return;
+    tasks=tasks.filter(t=>!t.done); debouncedSave();renderTasks();updateStats();toast(tFmt('toastTasksCleared', n));
 }
 
 // ── Edit modal ────────────────────────────────────────────────────────────────
@@ -224,7 +225,7 @@ function saveEdit() {
     t.color=getSelectedColor('edit-color-swatches');
     t.assignedTo=document.getElementById('edit-assign')?.value||t.assignedTo||'';
     t.updatedAt=new Date().toISOString();
-    closeEditModal(); debouncedSave();renderTasks();updateStats();toast('Task updated!');
+    closeEditModal(); debouncedSave();renderTasks();updateStats();toast(t('toastTaskUpdated'));
 }
 
 // ── Filter / sort ─────────────────────────────────────────────────────────────

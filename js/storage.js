@@ -149,15 +149,15 @@ async function exportJSON() {
             const w = await fh.createWritable();
             await w.write(JSON.stringify(payload(), null, 2));
             await w.close();
-            toast('Backup exported!');
-        } catch(e) { if (e.name !== 'AbortError') toast('Export failed: ' + e.message); }
+            toast(t('toastBackupExported'));
+        } catch(e) { if (e.name !== 'AbortError') toast(tFmt('toastExportFailed', e.message)); }
     } else {
         const blob = new Blob([JSON.stringify(payload(), null, 2)], { type: 'application/json' });
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
         a.href = url; a.download = 'work-tasks-backup-' + new Date().toISOString().slice(0,10) + '.json';
         a.click(); URL.revokeObjectURL(url);
-        toast('Backup downloaded!');
+        toast(t('toastBackupDownloaded'));
     }
 }
 async function importJSON(event) {
@@ -166,13 +166,13 @@ async function importJSON(event) {
     event.target.value = '';
     try {
         const data = JSON.parse(await file.text());
-        if (!data.tasks) { toast('Invalid backup file — no tasks found.'); return; }
-        if (!confirm('Import ' + (data.tasks.length) + ' tasks from "' + file.name + '"? This will replace your current tasks.')) return;
+        if (!data.tasks) { toast(t('toastInvalidBackup')); return; }
+        if (!confirm(tFmt('confirmImport', data.tasks.length, file.name))) return;
         applyData(data);
         await autoSave();
         renderTasks(); updateStats();
-        toast(data.tasks.length + ' tasks imported!');
-    } catch(e) { toast('Import failed: ' + e.message); }
+        toast(tFmt('toastImported', data.tasks.length));
+    } catch(e) { toast(tFmt('toastImportFailed', e.message)); }
 }
 
 window.addEventListener('beforeunload', () => writeToLS());
@@ -194,5 +194,5 @@ function saveDriveSettings() {
     if (typeof initDrive          === 'function') initDrive();
     if (typeof renderAssignFilterPills === 'function') renderAssignFilterPills();
     if (typeof populateAssignSelects   === 'function') populateAssignSelects();
-    toast('Drive settings saved!');
+    toast(t('toastDriveSettingsSaved'));
 }

@@ -203,9 +203,9 @@ async function driveSignIn() {
         await fetchDriveUser();
         await driveLoad();
         renderAssignFilterPills();
-        toast('Signed in to Google Drive!');
+        toast(t('toastDriveSignedIn'));
     } catch(e) {
-        toast('Sign-in failed: ' + e.message, 3000, 'var(--red)');
+        toast(tFmt('toastDriveSignInFail', e.message), 3000, 'var(--red)');
     }
 }
 function driveSignOut() {
@@ -213,7 +213,7 @@ function driveSignOut() {
     driveUser = null;
     updateDriveUserChip();
     setDriveSyncIndicator('off');
-    toast('Signed out from Google Drive.');
+    toast(t('toastDriveSignedOut'));
 }
 
 // ── Assignment filter ─────────────────────────────────────────────────────────

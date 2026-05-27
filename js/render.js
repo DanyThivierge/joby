@@ -77,7 +77,7 @@ function renderTasks() {
             +' aria-label="'+escAttr(ariaLabel)+'"'
             +' onclick="toggleTask('+task.id+',event)"'
             +' onkeydown="if(event.key===\' \'||event.key===\'Enter\'){event.preventDefault();toggleTask('+task.id+',event);}"></div>'
-            +'<div class="task-content" onclick="toggleCompactExpand('+task.id+',event)"><div class="task-text">'+marker+escHtml(task.text)+'</div>'+compactInline+notes+'<div class="task-meta"><span class="badge p-'+task.priority+'">'+t('prio'+task.priority.charAt(0).toUpperCase()+task.priority.slice(1))+'</span><span class="badge cat-badge">'+escHtml(catLabel(task.category))+'</span>'+recur+due+assign+'<span class="task-date">Added '+task.createdAt+'</span></div></div>'
+            +'<div class="task-content" onclick="toggleCompactExpand('+task.id+',event)"><div class="task-text">'+marker+escHtml(task.text)+'</div>'+compactInline+notes+'<div class="task-meta"><span class="badge p-'+task.priority+'">'+t('prio'+task.priority.charAt(0).toUpperCase()+task.priority.slice(1))+'</span><span class="badge cat-badge">'+escHtml(catLabel(task.category))+'</span>'+recur+due+assign+'<span class="task-date">'+t('taskDateAdded')+task.createdAt+'</span></div></div>'
             +'<div class="task-actions">'
             +'<button class="action-btn" onclick="openEdit('+task.id+')" title="Edit" aria-label="Edit task: '+escAttr(task.text)+'">&#9998;</button>'
             +'<button class="action-btn" onclick="deleteTask('+task.id+')" title="Delete" aria-label="Delete task: '+escAttr(task.text)+'">&#128465;</button>'
@@ -133,7 +133,7 @@ function populateCategorySelects() {
 }
 function populateAssignSelects() {
     const members = (settings.familyMembers || '').split('\n').map(s => s.trim()).filter(Boolean);
-    const html = '<option value="">— Unassigned —</option>' +
+    const html = '<option value="">' + t('unassigned') + '</option>' +
         members.map(m => `<option value="${escHtml(m)}">${escHtml(m)}</option>`).join('');
     ['assign-select', 'edit-assign'].forEach(id => {
         const el = document.getElementById(id);
@@ -195,5 +195,5 @@ function exportTasks() {
     const blob=new Blob([rows.join('\n')],{type:'text/csv'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a'); a.href=url; a.download='tasks-'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
-    URL.revokeObjectURL(url); toast('Tasks exported to CSV!');
+    URL.revokeObjectURL(url); toast(t('toastCsvExported'));
 }

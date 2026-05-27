@@ -48,7 +48,7 @@ function saveSettings() {
     settings.jiraPriorities = JQL_PRIORITIES.filter(p => { const el = document.getElementById(jbPid(p));   return el && el.checked; }).join(',');
     settings.jiraUpdatedDays = document.getElementById('jb-updated').value;
     settings.jiraProjects    = document.getElementById('jb-projects').value.trim();
-    closeSettings(); debouncedSave(); toast('Settings saved!');
+    closeSettings(); debouncedSave(); toast(t('toastSettingsSaved'));
 }
 
 // ── JQL build helpers ─────────────────────────────────────────────────────────
@@ -240,5 +240,5 @@ function promoteIssue(id) {
     tasks.unshift({ id:Date.now(), text:'['+key+'] '+(f.summary||''), notes:settings.jiraUrl+'/browse/'+key, priority:mapPrio(f.priority?.name), category:'JIRA', dueDate:f.duedate||'', done:false, createdAt:new Date().toLocaleDateString('en-CA') });
     promotedJiraIds.push(id);
     debouncedSave(); renderTasks(); updateStats(); renderJiraIssues();
-    toast('['+key+'] added to My Tasks!');
+    toast(tFmt('toastJiraAdded', '['+key+']'));
 }
