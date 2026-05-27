@@ -81,6 +81,23 @@ function prevWorkday(dateStr) {
     do { d.setDate(d.getDate() - 1); } while (d.getDay() === 0 || d.getDay() === 6);
     return d.toLocaleDateString('en-CA');
 }
+function relativeDue(dateStr) {
+    const today = todayStr();
+    if (dateStr === today) return t('dueDateToday');
+    const diff = Math.round((new Date(dateStr + 'T00:00:00') - new Date(today + 'T00:00:00')) / 86400000);
+    if (diff === 1) return t('dueDateTomorrow');
+    if (diff >= 2 && diff <= 6) return tFmt('dueDateInDays', diff);
+    return formatDue(dateStr);
+}
+function relativeAdded(dateStr) {
+    if (!dateStr) return '';
+    const today = todayStr();
+    if (dateStr === today) return t('addedToday');
+    const diff = Math.round((new Date(today + 'T00:00:00') - new Date(dateStr + 'T00:00:00')) / 86400000);
+    if (diff === 1) return t('addedYesterday');
+    if (diff >= 2 && diff <= 6) return tFmt('addedDaysAgo', diff);
+    return t('taskDateAdded') + formatDue(dateStr);
+}
 function isNextWorkday(aStr, bStr) {
     const a = new Date(aStr + 'T00:00:00');
     do { a.setDate(a.getDate() + 1); } while (a.getDay() === 0 || a.getDay() === 6);

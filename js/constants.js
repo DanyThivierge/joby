@@ -158,6 +158,12 @@ const STRINGS = {
         toastDriveSignInFail:  'Sign-in failed: {0}',
         unassigned:            '— Unassigned —',
         taskDateAdded:         'Added ',
+        dueDateToday:          'today',
+        dueDateTomorrow:       'tomorrow',
+        dueDateInDays:         'in {0} days',
+        addedToday:            'Today',
+        addedYesterday:        'Yesterday',
+        addedDaysAgo:          '{0} days ago',
     },
     fr: {
         tabTasks:        '&#128203; Mes t&#226;ches',
@@ -283,6 +289,12 @@ const STRINGS = {
         toastDriveSignInFail:  '&#201;chec de connexion&#160;: {0}',
         unassigned:            '— Non assign&#233;(e) —',
         taskDateAdded:         'Ajout&#233; ',
+        dueDateToday:          'aujourd&#8217;hui',
+        dueDateTomorrow:       'demain',
+        dueDateInDays:         'dans {0}&#160;j',
+        addedToday:            'Aujourd&#8217;hui',
+        addedYesterday:        'Hier',
+        addedDaysAgo:          'Il y a {0}&#160;j',
     },
 };
 
