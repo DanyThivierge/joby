@@ -764,8 +764,7 @@ select option { background: var(--card); color: var(--text); }
         transform: translateX(-105%);
         transition: transform 0.25s ease;
     }
-    .tasks-layout:not(.sidebar-hidden) .tasks-sidebar { transform: translateX(0); }
-    .tasks-layout.sidebar-hidden .tasks-sidebar      { transform: translateX(-105%); }
+    .tasks-layout.sidebar-open .tasks-sidebar { transform: translateX(0); }
 
     /* Backdrop — shown when drawer is open */
     .sidebar-backdrop {
@@ -773,7 +772,7 @@ select option { background: var(--card); color: var(--text); }
         position: fixed; inset: 0; z-index: 399;
         background: rgba(0,0,0,0.36);
     }
-    .tasks-layout:not(.sidebar-hidden) .sidebar-backdrop { display: block; }
+    .tasks-layout.sidebar-open .sidebar-backdrop { display: block; }
 
     /* ── Controls row ── */
     .controls-row   { flex-direction: column; gap: 6px; }

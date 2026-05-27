@@ -189,7 +189,12 @@ function updateModeUI() {
 
 // ── Sidebar toggle ────────────────────────────────────────────────────────────
 function toggleSidebar() {
-    document.getElementById('tab-tasks').classList.toggle('sidebar-hidden');
+    const layout = document.getElementById('tab-tasks');
+    if (window.innerWidth <= 640) {
+        layout.classList.toggle('sidebar-open');
+    } else {
+        layout.classList.toggle('sidebar-hidden');
+    }
 }
 
 // ── Export CSV ────────────────────────────────────────────────────────────────
