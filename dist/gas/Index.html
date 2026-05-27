@@ -132,7 +132,19 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
     border-right: 1px solid var(--border);
     position: sticky; top: 0; align-self: flex-start;
     min-height: 100%;
+    transition: width 0.22s, min-width 0.22s, padding 0.22s, opacity 0.15s;
+    overflow: hidden;
 }
+.tasks-layout.sidebar-hidden .tasks-sidebar {
+    width: 0; min-width: 0; padding: 0; opacity: 0; border-right: none;
+}
+.sidebar-toggle-btn {
+    background: none; border: 1px solid var(--border); cursor: pointer;
+    color: var(--text-2); font-size: 0.85rem; padding: 3px 9px; line-height: 1.6;
+    border-radius: var(--radius-btn); flex-shrink: 0;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.sidebar-toggle-btn:hover { background: var(--purple-light); color: var(--purple); border-color: var(--purple); }
 .stats-sidebar { display: flex; flex-direction: column; gap: 4px; }
 .tasks-sidebar .stat-card {
     display: flex; align-items: center; gap: 12px;
@@ -397,6 +409,17 @@ select option { background: var(--card); color: var(--text); }
 .save-dot.dirty  { background: #F59E0B; }
 .save-dot.failed { background: var(--red); }
 
+/* Drive sync indicator */
+.drive-sync-indicator { display: flex; align-items: center; gap: 5px; font-size: 0.78rem; color: var(--text-2); }
+.drive-sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+.drive-sync-dot.syncing { background: #f59e0b; animation: drive-pulse 1s ease-in-out infinite; }
+.drive-sync-dot.synced  { background: #22c55e; }
+.drive-sync-dot.error   { background: var(--red); }
+@keyframes drive-pulse { 0%,100%{opacity:1;} 50%{opacity:.4;} }
+.drive-user-chip { font-size: 0.78rem; color: var(--text-2); background: var(--purple-light); border: 1px solid var(--border); border-radius: 12px; padding: 2px 10px; white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+.badge.assign-badge { background: var(--purple-light); color: var(--purple); }
+.filter-divider { color: var(--border); font-size: 1rem; padding: 0 4px; user-select: none; }
+
 /* Streak badge */
 .streak-badge { display: none; align-items: center; gap: 4px; font-size: 0.8rem; font-weight: 600; color: var(--text); background: rgba(255,140,0,0.12); border: 1px solid rgba(255,140,0,0.3); border-radius: 12px; padding: 2px 9px; cursor: default; transition: transform 0.25s; }
 .streak-badge.visible { display: flex; }
@@ -572,7 +595,16 @@ select option { background: var(--card); color: var(--text); }
 .jql-input-row { display: flex; gap: 6px; align-items: center; }
 .jql-clear-btn { background: transparent; border: 1px solid var(--border); border-radius: var(--radius-btn); padding: 5px 10px; cursor: pointer; font-size: 0.8rem; color: var(--text-3); transition: all 0.18s; white-space: nowrap; flex-shrink: 0; line-height: 1; }
 .jql-clear-btn:hover { border-color: var(--red); color: var(--red); background: rgba(217,48,37,0.06); }
-.modal-body-scroll { max-height: 90vh; overflow-y: auto; padding: 20px; }
+.modal-body-scroll { max-height: calc(90vh - 100px); overflow-y: auto; padding: 20px; }
+
+/* ── Settings tabs ──────────────────────────────────────────────────────── */
+.settings-tabs-bar { display: flex; border-bottom: 2px solid var(--border); padding: 0 20px; background: var(--card); gap: 2px; }
+.settings-tab { background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -2px; padding: 10px 18px; font-size: 0.85rem; font-weight: 600; color: var(--text-3); cursor: pointer; transition: color 0.15s, border-color 0.15s; white-space: nowrap; letter-spacing: .2px; }
+.settings-tab:hover { color: var(--purple); }
+.settings-tab.active { color: var(--purple); border-bottom-color: var(--purple); }
+[data-theme="dark"] .settings-tab.active { color: #c084fc; border-bottom-color: #c084fc; }
+[data-theme="dark"] .settings-tab:hover  { color: #c084fc; }
+[data-theme="dark"] .settings-tabs-bar   { border-bottom-color: var(--border); }
 
 /* ── Brain Dump FAB ─────────────────────────────────────────────────────── */
 .fab-capture { position: fixed; bottom: 28px; right: 28px; width: 52px; height: 52px; border-radius: 50%; background: var(--purple); color: #fff; border: none; font-size: 1.4rem; cursor: pointer; box-shadow: 0 4px 16px rgba(75,0,130,0.35); z-index: 400; transition: transform 0.18s, box-shadow 0.18s; display: flex; align-items: center; justify-content: center; }
@@ -591,13 +623,14 @@ select option { background: var(--card); color: var(--text); }
 /* ── Inbox panel ────────────────────────────────────────────────────────── */
 .inbox-panel { margin-bottom: 14px; padding: 0; overflow: hidden; }
 .inbox-panel-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; padding: 10px 16px; }
-.inbox-panel-header:hover { background: rgba(75,0,130,0.04); }
+.inbox-panel-header:hover { filter: brightness(1.25); }
 .inbox-chevron { font-size: 0.7rem; color: var(--text-3); }
 .inbox-list { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; }
-.inbox-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; gap: 4px 10px; }
-.inbox-text { font-size: 0.875rem; color: var(--text); grid-column: 1; grid-row: 1; }
-.inbox-meta { font-size: 0.7rem; color: var(--text-3); grid-column: 1; grid-row: 2; }
-.inbox-actions { grid-column: 2; grid-row: 1 / 3; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; justify-content: center; }
+.inbox-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.inbox-text { font-size: 0.875rem; color: var(--text); line-height: 1.45; word-break: break-word; }
+.inbox-footer { display: contents; }
+.inbox-meta { font-size: 0.7rem; color: var(--text-3); }
+.inbox-actions { display: flex; gap: 6px; align-items: center; }
 .btn-small { font-size: 0.72rem; padding: 3px 9px; }
 
 /* ── Heatmap ────────────────────────────────────────────────────────────── */
@@ -682,8 +715,9 @@ select option { background: var(--card); color: var(--text); }
             <button class="mode-btn active" id="mode-work-btn" onclick="switchMode('work')" title="Work mode">&#128203;</button>
             <button class="mode-btn" id="mode-personal-btn" onclick="switchMode('personal')" title="Personal / Home mode">&#127807;</button>
         </div>
-        <button id="dark-toggle-btn" class="hdr-btn" onclick="toggleDarkMode()">&#127769; Dark</button>
-        <button class="hdr-btn primary" onclick="openSettings()">&#9881;&#65039; Settings</button>
+        <button id="lang-btn" class="hdr-btn" onclick="toggleLang()" title="Switch language / Changer de langue">FR</button>
+        <button id="dark-toggle-btn" class="hdr-btn" onclick="toggleDarkMode()" data-i18n="darkBtnLabel">&#127769; Dark</button>
+        <button class="hdr-btn primary" onclick="openSettings()" data-i18n="settingsBtnLabel">&#9881;&#65039; Settings</button>
     </div>
 </header>
 
@@ -691,7 +725,7 @@ select option { background: var(--card); color: var(--text); }
 
 <!-- Tabs -->
 <div class="tabs-bar">
-    <button class="tab-btn active" onclick="switchTab('tasks',this)">&#128203; My Tasks</button>
+    <button class="tab-btn active" onclick="switchTab('tasks',this)" data-i18n="tabTasks">&#128203; My Tasks</button>
     <button id="jira-tab-btn" class="tab-btn" onclick="switchTab('jira',this)">&#127919; Jira</button>
 </div>
 
@@ -699,13 +733,13 @@ select option { background: var(--card); color: var(--text); }
 <div class="tasks-layout" id="tab-tasks">
 
     <!-- Left sidebar: stats + progress + inbox -->
-    <aside class="tasks-sidebar">
+    <aside class="tasks-sidebar" id="tasks-sidebar">
         <div class="stats-sidebar">
-            <div class="stat-card"><div class="number" id="stat-total">0</div><div class="label">Total</div></div>
-            <div class="stat-card"><div class="number" id="stat-pending">0</div><div class="label">Pending</div></div>
-            <div class="stat-card"><div class="number" id="stat-done">0</div><div class="label">Completed</div></div>
-            <div class="stat-card"><div class="number" id="stat-high">0</div><div class="label">High Priority</div></div>
-            <div class="stat-card"><div class="number" id="stat-overdue">0</div><div class="label">Overdue</div></div>
+            <div class="stat-card"><div class="number" id="stat-total">0</div><div class="label" data-i18n="statTotal">Total</div></div>
+            <div class="stat-card"><div class="number" id="stat-pending">0</div><div class="label" data-i18n="statPending">Pending</div></div>
+            <div class="stat-card"><div class="number" id="stat-done">0</div><div class="label" data-i18n="statDone">Completed</div></div>
+            <div class="stat-card"><div class="number" id="stat-high">0</div><div class="label" data-i18n="statHigh">High Priority</div></div>
+            <div class="stat-card"><div class="number" id="stat-overdue">0</div><div class="label" data-i18n="statOverdue">Overdue</div></div>
         </div>
         <div class="progress-wrap sidebar-progress"><div class="progress-fill" id="progress-bar" style="width:0%"></div></div>
         <!-- Productivity stats -->
@@ -714,17 +748,17 @@ select option { background: var(--card); color: var(--text); }
         <!-- Activity heatmap -->
         <div class="sidebar-section-divider"></div>
         <div class="sidebar-heatmap">
-            <div class="sidebar-section-label">&#128202; Activity</div>
+            <div class="sidebar-section-label" data-i18n="heatmapAct">&#128202; Activity</div>
             <div id="heatmap-month-labels" class="heatmap-months"></div>
             <div id="heatmap-grid" class="heatmap-grid"></div>
             <div class="heatmap-legend" style="margin-top:6px">
-                <span class="heatmap-legend-label">Less</span>
+                <span class="heatmap-legend-label" data-i18n="heatmapLess">Less</span>
                 <div class="heatmap-cell" style="background:var(--border)"></div>
                 <div class="heatmap-cell" style="background:rgba(75,0,130,0.2)"></div>
                 <div class="heatmap-cell" style="background:rgba(75,0,130,0.5)"></div>
                 <div class="heatmap-cell" style="background:rgba(75,0,130,0.8)"></div>
                 <div class="heatmap-cell" style="background:var(--purple)"></div>
-                <span class="heatmap-legend-label">More</span>
+                <span class="heatmap-legend-label" data-i18n="heatmapMore">More</span>
             </div>
         </div>
         <!-- Inbox panel -->
@@ -743,7 +777,7 @@ select option { background: var(--card); color: var(--text); }
         <!-- Ghost row: collapses to a placeholder line, expands inline on click / 'n' key -->
         <div id="ghost-task-row" class="ghost-task-row" onclick="openGhostTask()" role="button" tabindex="0"
              aria-label="Add a new task" onkeydown="if(event.key==='Enter')openGhostTask();">
-            <div class="ghost-placeholder">&#43; Add a task&#8230;</div>
+            <div class="ghost-placeholder" data-i18n="ghostPlaceholder">&#43; Add a task&#8230;</div>
             <div class="ghost-expand-wrap">
                 <div class="ghost-expand-inner">
                     <div class="input-row" style="margin-top:4px">
@@ -752,25 +786,32 @@ select option { background: var(--card); color: var(--text); }
                             <button id="mic-btn" class="mic-btn" onclick="event.stopPropagation();toggleSpeech()" title="Speak to add task" aria-label="Speak to add task">&#127908;</button>
                         </div>
                         <select id="priority-select" onclick="event.stopPropagation()">
-                            <option value="high">&#128308; High</option>
-                            <option value="medium" selected>&#128993; Medium</option>
-                            <option value="low">&#128994; Low</option>
+                            <option value="high" data-i18n="prioHighOpt">&#128308; High</option>
+                            <option value="medium" selected data-i18n="prioMediumOpt">&#128993; Medium</option>
+                            <option value="low" data-i18n="prioLowOpt">&#128994; Low</option>
                         </select>
                         <select id="category-select" onclick="event.stopPropagation()"></select>
                     </div>
                     <div class="input-row2" style="margin-top:8px">
                         <input type="date" id="due-date" onclick="event.stopPropagation()" />
                         <select id="recur-select" onclick="event.stopPropagation()" title="Repeat frequency">
-                            <option value="">&#128260; No repeat</option>
-                            <option value="daily">&#8635; Daily</option>
-                            <option value="weekly">&#8635; Weekly</option>
-                            <option value="biweekly">&#8635; Bi-weekly</option>
-                            <option value="monthly">&#8635; Monthly</option>
+                            <option value="" data-i18n="recurNoneOpt">&#128260; No repeat</option>
+                            <option value="daily" data-i18n="recurDailyOpt">&#8635; Daily</option>
+                            <option value="weekdays" data-i18n="recurWeekdaysOpt">&#8635; Weekdays (M&#8211;F)</option>
+                            <option value="weekly-mon" data-i18n="recurEveryMonOpt">&#8635; Every Monday</option>
+                            <option value="weekly-tue" data-i18n="recurEveryTueOpt">&#8635; Every Tuesday</option>
+                            <option value="weekly-wed" data-i18n="recurEveryWedOpt">&#8635; Every Wednesday</option>
+                            <option value="weekly-thu" data-i18n="recurEveryThuOpt">&#8635; Every Thursday</option>
+                            <option value="weekly-fri" data-i18n="recurEveryFriOpt">&#8635; Every Friday</option>
+                            <option value="weekly" data-i18n="recurWeeklyOpt">&#8635; Weekly</option>
+                            <option value="biweekly" data-i18n="recurBiweeklyOpt">&#8635; Bi-weekly</option>
+                            <option value="monthly" data-i18n="recurMonthlyOpt">&#8635; Monthly</option>
+                            <option value="yearly" data-i18n="recurYearlyOpt">&#8635; Yearly</option>
                         </select>
                         <div id="add-color-swatches" class="color-swatches"></div>
                         <input type="text" id="task-notes" placeholder="Notes (optional)&#8230;" onclick="event.stopPropagation()" />
-                        <button class="btn btn-green" onclick="event.stopPropagation();addTask()">&#43; Add Task</button>
-                        <button class="btn btn-outline" onclick="event.stopPropagation();closeGhostTask()">Cancel</button>
+                        <button class="btn btn-green" onclick="event.stopPropagation();addTask()" data-i18n="addTaskBtn">&#43; Add Task</button>
+                        <button class="btn btn-outline" onclick="event.stopPropagation();closeGhostTask()" data-i18n="cancelBtn">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -778,28 +819,32 @@ select option { background: var(--card); color: var(--text); }
 
         <div class="controls-row">
             <div class="controls-left">
-                <button class="filter-btn filter-pill active" data-filter="all" onclick="setFilter('all',this)">All</button>
-                <button class="filter-btn filter-pill" data-filter="pending" onclick="setFilter('pending',this)">Pending</button>
-                <button class="filter-btn filter-pill" data-filter="done" onclick="setFilter('done',this)">Done</button>
-                <button class="filter-btn filter-pill" data-filter="high" onclick="setFilter('high',this)">&#128308; High</button>
-                <button class="filter-btn filter-pill" data-filter="overdue" onclick="setFilter('overdue',this)">&#9203; Overdue</button>
+                <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle sidebar">&#9776;</button>
+                <button class="filter-btn filter-pill active" data-filter="all" onclick="setFilter('all',this)" data-i18n="filterAll">All</button>
+                <button class="filter-btn filter-pill" data-filter="pending" onclick="setFilter('pending',this)" data-i18n="filterPending">Pending</button>
+                <button class="filter-btn filter-pill" data-filter="done" onclick="setFilter('done',this)" data-i18n="filterDone">Done</button>
+                <button class="filter-btn filter-pill" data-filter="high" onclick="setFilter('high',this)" data-i18n="filterHigh">&#128308; High</button>
+                <button class="filter-btn filter-pill" data-filter="overdue" onclick="setFilter('overdue',this)" data-i18n="filterOverdue">&#9203; Overdue</button>
                 <div class="search-wrap">
                     <span class="search-icon">&#128269;</span>
                     <input type="text" id="search-input" placeholder="Search tasks..." oninput="renderTasks()" />
                 </div>
                 <select class="sort-select" id="sort-select" onchange="onSortChange()">
-                    <option value="added">Sort: Added</option>
-                    <option value="priority">Sort: Priority</option>
-                    <option value="due">Sort: Due Date</option>
-                    <option value="alpha">Sort: A–Z</option>
+                    <option value="added" data-i18n="sortAdded">Sort: Added</option>
+                    <option value="priority" data-i18n="sortPriority">Sort: Priority</option>
+                    <option value="due" data-i18n="sortDue">Sort: Due Date</option>
+                    <option value="alpha" data-i18n="sortAlpha">Sort: A–Z</option>
+                </select>
+                <select class="sort-select" id="category-filter-select" onchange="onCategoryFilterChange()">
+                    <option value="all">Category: All</option>
                 </select>
             </div>
             <div class="controls-right">
-                <button id="compact-btn" class="btn btn-outline" onclick="toggleCompact()" title="Toggle compact view">&#8801; Compact</button>
-                <button class="btn btn-danger" onclick="clearDone()">&#128465; Clear Done</button>
+                <button id="compact-btn" class="btn btn-outline" onclick="toggleCompact()" title="Toggle compact view" data-i18n="compactBtn">&#8801; Compact</button>
+                <button class="btn btn-danger" onclick="clearDone()" data-i18n="clearDoneBtn">&#128465; Clear Done</button>
             </div>
         </div>
-        <div class="task-zone-label"><span>&#10022; Task Zone &#10022;</span></div>
+        <div class="task-zone-label"><span data-i18n="taskZone">&#10022; Task Zone &#10022;</span></div>
         <div class="task-list" id="task-list">
             <div class="empty-state"><div class="icon">&#128203;</div><p>No tasks yet — add one above or speak it!</p></div>
         </div>
@@ -850,138 +895,158 @@ select option { background: var(--card); color: var(--text); }
 <div id="settings-modal" style="display:none">
     <div class="overlay" onclick="if(event.target===this)closeSettings()">
         <div class="modal" style="max-width:700px" onclick="event.stopPropagation()">
-            <div class="modal-header">&#9881;&#65039; Settings — Jira Integration</div>
+            <div class="modal-header">&#9881;&#65039; Settings</div>
+            <div class="settings-tabs-bar">
+                <button class="settings-tab active" id="stab-general" onclick="switchSettingsTab('general')" data-i18n="stTabGeneral">&#127775; General</button>
+                <!-- jira-settings-start -->
+                <button class="settings-tab" id="stab-jira" onclick="switchSettingsTab('jira')" data-i18n="stTabJira">&#127919; Jira</button>
+                <!-- jira-settings-end -->
+            </div>
             <div class="modal-body-scroll">
-                <div style="margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border);">
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        <button class="btn btn-outline" onclick="exportJSON()" style="flex:1;min-width:130px">&#128229; Export Backup</button>
-                        <label class="btn btn-outline" style="flex:1;min-width:130px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:5px">&#128194; Import Backup<input type="file" accept=".json" onchange="importJSON(event);closeSettings()" style="display:none"></label>
-                        <button class="btn btn-outline" onclick="exportTasks()" style="flex:1;min-width:130px">&#128202; Export CSV</button>
-                    </div>
-                </div>
-                <p style="font-size:0.8rem;color:var(--text-3);margin-bottom:16px;">Requires the local proxy running in a terminal: <code style="background:var(--purple-light);color:var(--purple);padding:1px 5px;border-radius:3px;">python jira-proxy.py</code></p>
 
-                <div class="field">
-                    <label>Jira Session Cookie</label>
-                    <details class="cookie-how">
-                        <summary>&#9654; How to get your cookie (click to expand)</summary>
-                        <ol class="cookie-steps">
-                            <li>Open <strong>telushealth.atlassian.net</strong> in your browser (log in if asked)</li>
-                            <li>Press <strong>F12</strong> to open DevTools &rarr; click the <strong>Network</strong> tab</li>
-                            <li>Click any request in the list (e.g. the first one)</li>
-                            <li>In the right panel scroll to <strong>Request Headers</strong></li>
-                            <li>Find the <strong>cookie:</strong> row &rarr; right-click it &rarr; <strong>Copy value</strong></li>
-                            <li>Paste below and click <strong>Update Cookie</strong></li>
-                        </ol>
-                    </details>
-                    <textarea id="s-cookie" placeholder="Paste your Jira session cookie here..."></textarea>
-                    <p class="field-note">Cookies expire after ~24 hours — come back here to refresh when Jira stops loading.</p>
-                </div>
-                <div id="cookie-result" class="conn-result"></div>
-
-                <div class="field">
-                    <label>Jira Base URL</label>
-                    <input type="text" id="s-jira-url" placeholder="https://yourcompany.atlassian.net" />
-                    <p class="field-note">Used for issue links — no trailing slash</p>
-                </div>
-
-                <div class="field">
-                    <label>JQL Filter Builder</label>
-                    <div class="jql-builder" id="jql-builder">
-                        <div class="jql-row" style="margin-bottom:10px;">
-                            <label class="jql-check"><input type="checkbox" id="jb-assignee" onchange="updateJqlPreview()"> Assigned to me</label>
-                            <label class="jql-check"><input type="checkbox" id="jb-unresolved" onchange="updateJqlPreview()"> Unresolved only</label>
+                <!-- ── General panel ── -->
+                <div id="settings-panel-general" class="settings-panel">
+                    <div style="margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+                        <div style="font-weight:700;font-size:0.85rem;color:var(--text-1);margin-bottom:12px;letter-spacing:.5px">&#128190; Data</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button class="btn btn-outline" onclick="exportJSON()" style="flex:1;min-width:130px">&#128229; Export Backup</button>
+                            <label class="btn btn-outline" style="flex:1;min-width:130px;cursor:pointer;text-align:center;display:flex;align-items:center;justify-content:center;gap:5px">&#128194; Import Backup<input type="file" accept=".json" onchange="importJSON(event);closeSettings()" style="display:none"></label>
+                            <button class="btn btn-outline" onclick="exportTasks()" style="flex:1;min-width:130px">&#128202; Export CSV</button>
                         </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 20px;">
-                            <div>
-                                <div class="jql-group-label">Status <label class="jql-not-toggle"><input type="checkbox" id="jb-status-not" onchange="updateJqlPreview()"> NOT</label></div>
-                                <div class="jql-row">
-                                    <label class="jql-check"><input type="checkbox" id="jb-s-inprogress" onchange="updateJqlPreview()"> In Progress</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-s-todo" onchange="updateJqlPreview()"> To Do</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-s-inreview" onchange="updateJqlPreview()"> In Review</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-s-blocked" onchange="updateJqlPreview()"> Blocked</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-s-closed" onchange="updateJqlPreview()"> Closed</label>
+                    </div>
+                    <div>
+                        <div style="font-weight:700;font-size:0.85rem;color:var(--text-1);margin-bottom:12px;letter-spacing:.5px">&#127912; Theme &amp; Appearance</div>
+                        <div class="field" style="margin-bottom:14px;">
+                            <label style="display:flex;align-items:center;justify-content:space-between">
+                                Preset Themes
+                                <button id="active-theme-btn" class="btn btn-outline theme-active-pill" onclick="applyPreset('default');syncThemeStudio();" style="display:none;font-size:0.72rem;padding:3px 10px" title="Remove theme and return to default">&#10005; Remove theme</button>
+                            </label>
+                            <div id="theme-preset-grid" class="theme-preset-grid"></div>
+                        </div>
+                        <div class="field">
+                            <label style="display:flex;align-items:center;justify-content:space-between">
+                                Custom Studio
+                                <button class="btn btn-outline" style="font-size:0.72rem;padding:3px 10px;" onclick="resetThemeStudio()">&#8635; Reset to preset</button>
+                            </label>
+                            <div class="theme-studio">
+                                <div class="studio-row">
+                                    <span class="studio-lbl">Corner rounding</span>
+                                    <input id="studio-radius-slider" class="studio-slider" type="range" min="0" max="24" value="6" oninput="adjustGeometry(this.value)">
+                                    <span id="studio-radius-val" class="studio-val">6px</span>
                                 </div>
-                            </div>
-                            <div>
-                                <div class="jql-group-label">Priority <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem">(blank = any)</span></div>
-                                <div class="jql-row">
-                                    <label class="jql-check"><input type="checkbox" id="jb-p-highest" onchange="updateJqlPreview()"> Highest</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-p-high" onchange="updateJqlPreview()"> High</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-p-medium" onchange="updateJqlPreview()"> Medium</label>
-                                    <label class="jql-check"><input type="checkbox" id="jb-p-low" onchange="updateJqlPreview()"> Low</label>
-                                </div>
-                                <div class="jql-group-label" style="margin-top:10px;">Updated</div>
-                                <div class="jql-row">
-                                    <select id="jb-updated" onchange="updateJqlPreview()" style="font-size:0.82rem;padding:5px 8px;width:auto;">
-                                        <option value="">Any time</option>
-                                        <option value="7">Last 7 days</option>
-                                        <option value="30">Last 30 days</option>
-                                        <option value="90">Last 90 days</option>
-                                    </select>
-                                </div>
-                                <div class="jql-group-label" style="margin-top:10px;">Projects <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem">(e.g. HBMADJ, CRM)</span></div>
-                                <div class="jql-row">
-                                    <input type="text" id="jb-projects" placeholder="Blank = all" oninput="updateJqlPreview()" style="flex:1;min-width:0;font-size:0.82rem;padding:5px 8px;" />
+                                <div class="studio-row">
+                                    <span class="studio-lbl">Background</span>
+                                    <input id="studio-bg-color" class="studio-color" type="color" oninput="adjustColors()" title="Background colour">
+                                    <span class="studio-lbl" style="min-width:56px">Card</span>
+                                    <input id="studio-card-color" class="studio-color" type="color" oninput="adjustColors()" title="Card colour">
+                                    <span class="studio-lbl" style="min-width:52px">Accent</span>
+                                    <input id="studio-accent-color" class="studio-color" type="color" oninput="adjustColors()" title="Accent / highlight colour">
                                 </div>
                             </div>
                         </div>
-                        <div class="jql-preview-wrap">
-                            <div class="jql-preview-label">Generated JQL</div>
-                            <div class="jql-preview" id="jql-preview"></div>
-                        </div>
                     </div>
                 </div>
 
-                <div class="field">
-                    <label>Custom JQL Override <span style="font-weight:400;text-transform:none;font-size:0.72rem">(optional)</span></label>
-                    <div class="jql-input-row">
-                        <input type="text" id="s-jira-jql" placeholder="e.g. project = MYPROJ AND status != Closed ORDER BY updated DESC" oninput="updateJqlPreview()" style="flex:1;" />
-                        <button class="jql-clear-btn" onclick="clearCustomJql()" title="Clear custom JQL">&#10005; remove</button>
+                <!-- ── Jira panel ── -->
+                <!-- jira-settings-start -->
+                <div id="settings-panel-jira" class="settings-panel" style="display:none">
+                    <p style="font-size:0.8rem;color:var(--text-3);margin-bottom:16px;">Requires the local proxy running in a terminal: <code style="background:var(--purple-light);color:var(--purple);padding:1px 5px;border-radius:3px;">python jira-proxy.py</code></p>
+
+                    <div class="field">
+                        <label>Jira Session Cookie</label>
+                        <details class="cookie-how">
+                            <summary>&#9654; How to get your cookie (click to expand)</summary>
+                            <ol class="cookie-steps">
+                                <li>Open <strong>telushealth.atlassian.net</strong> in your browser (log in if asked)</li>
+                                <li>Press <strong>F12</strong> to open DevTools &rarr; click the <strong>Network</strong> tab</li>
+                                <li>Click any request in the list (e.g. the first one)</li>
+                                <li>In the right panel scroll to <strong>Request Headers</strong></li>
+                                <li>Find the <strong>cookie:</strong> row &rarr; right-click it &rarr; <strong>Copy value</strong></li>
+                                <li>Paste below and click <strong>Update Cookie</strong></li>
+                            </ol>
+                        </details>
+                        <textarea id="s-cookie" placeholder="Paste your Jira session cookie here..."></textarea>
+                        <p class="field-note">Cookies expire after ~24 hours — come back here to refresh when Jira stops loading.</p>
                     </div>
-                    <p class="field-note">Overrides the builder above entirely when filled. Leave blank to use the builder.</p>
-                </div>
+                    <div id="cookie-result" class="conn-result"></div>
 
-                <div id="conn-result" class="conn-result"></div>
-
-                <!-- ── Theme & Appearance ───────────────────────────────── -->
-                <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border);">
-                    <div style="font-weight:700;font-size:0.85rem;color:var(--text-1);margin-bottom:12px;letter-spacing:.5px">&#127912; Theme &amp; Appearance</div>
-
-                    <div class="field" style="margin-bottom:14px;">
-                        <label style="display:flex;align-items:center;justify-content:space-between">
-                            Preset Themes
-                            <button id="active-theme-btn" class="btn btn-outline theme-active-pill" onclick="applyPreset('default');syncThemeStudio();" style="display:none;font-size:0.72rem;padding:3px 10px" title="Remove theme and return to default">&#10005; Remove theme</button>
-                        </label>
-                        <div id="theme-preset-grid" class="theme-preset-grid"></div>
+                    <div class="field">
+                        <label>Jira Base URL</label>
+                        <input type="text" id="s-jira-url" placeholder="https://yourcompany.atlassian.net" />
+                        <p class="field-note">Used for issue links — no trailing slash</p>
                     </div>
 
                     <div class="field">
-                        <label style="display:flex;align-items:center;justify-content:space-between">
-                            Custom Studio
-                            <button class="btn btn-outline" style="font-size:0.72rem;padding:3px 10px;" onclick="resetThemeStudio()">&#8635; Reset to preset</button>
-                        </label>
-                        <div class="theme-studio">
-                            <div class="studio-row">
-                                <span class="studio-lbl">Corner rounding</span>
-                                <input id="studio-radius-slider" class="studio-slider" type="range" min="0" max="24" value="6" oninput="adjustGeometry(this.value)">
-                                <span id="studio-radius-val" class="studio-val">6px</span>
+                        <label>JQL Filter Builder</label>
+                        <div class="jql-builder" id="jql-builder">
+                            <div class="jql-row" style="margin-bottom:10px;">
+                                <label class="jql-check"><input type="checkbox" id="jb-assignee" onchange="updateJqlPreview()"> Assigned to me</label>
+                                <label class="jql-check"><input type="checkbox" id="jb-unresolved" onchange="updateJqlPreview()"> Unresolved only</label>
                             </div>
-                            <div class="studio-row">
-                                <span class="studio-lbl">Background</span>
-                                <input id="studio-bg-color" class="studio-color" type="color" oninput="adjustColors()" title="Background colour">
-                                <span class="studio-lbl" style="min-width:56px">Card</span>
-                                <input id="studio-card-color" class="studio-color" type="color" oninput="adjustColors()" title="Card colour">
-                                <span class="studio-lbl" style="min-width:52px">Accent</span>
-                                <input id="studio-accent-color" class="studio-color" type="color" oninput="adjustColors()" title="Accent / highlight colour">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 20px;">
+                                <div>
+                                    <div class="jql-group-label">Status <label class="jql-not-toggle"><input type="checkbox" id="jb-status-not" onchange="updateJqlPreview()"> NOT</label></div>
+                                    <div class="jql-row">
+                                        <label class="jql-check"><input type="checkbox" id="jb-s-inprogress" onchange="updateJqlPreview()"> In Progress</label>
+                                        <label class="jql-check"><input type="checkbox" id="jb-s-todo" onchange="updateJqlPreview()"> To Do</label>
+                                        <label class="jql-check"><input type="checkbox" id="jb-s-inreview" onchange="updateJqlPreview()"> In Review</label>
+                                        <label class="jql-check"><input type="checkbox" id="jb-s-blocked" onchange="updateJqlPreview()"> Blocked</label>
+                                        <label class="jql-check"><input type="checkbox" id="jb-s-closed" onchange="updateJqlPreview()"> Closed</label>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="jql-group-label">Priority <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem">(blank = any)</span></div>
+                                    <div class="jql-row">
+                                        <label class="jql-check"><input type="checkbox" id="jb-p-highest" onchange="updateJqlPreview()"> Highest</label>
+                                        <label class="jql-check"><input type="checkbox" id="jb-p-high" onchange="updateJqlPreview()"> High</label>
+                                        <label class="jql-check"><input type="checkbox" id="jb-p-medium" onchange="updateJqlPreview()"> Medium</label>
+                                        <label class="jql-check"><input type="checkbox" id="jb-p-low" onchange="updateJqlPreview()"> Low</label>
+                                    </div>
+                                    <div class="jql-group-label" style="margin-top:10px;">Updated</div>
+                                    <div class="jql-row">
+                                        <select id="jb-updated" onchange="updateJqlPreview()" style="font-size:0.82rem;padding:5px 8px;width:auto;">
+                                            <option value="">Any time</option>
+                                            <option value="7">Last 7 days</option>
+                                            <option value="30">Last 30 days</option>
+                                            <option value="90">Last 90 days</option>
+                                        </select>
+                                    </div>
+                                    <div class="jql-group-label" style="margin-top:10px;">Projects <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem">(e.g. HBMADJ, CRM)</span></div>
+                                    <div class="jql-row">
+                                        <input type="text" id="jb-projects" placeholder="Blank = all" oninput="updateJqlPreview()" style="flex:1;min-width:0;font-size:0.82rem;padding:5px 8px;" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="jql-preview-wrap">
+                                <div class="jql-preview-label">Generated JQL</div>
+                                <div class="jql-preview" id="jql-preview"></div>
                             </div>
                         </div>
                     </div>
+
+                    <div class="field">
+                        <label>Custom JQL Override <span style="font-weight:400;text-transform:none;font-size:0.72rem">(optional)</span></label>
+                        <div class="jql-input-row">
+                            <input type="text" id="s-jira-jql" placeholder="e.g. project = MYPROJ AND status != Closed ORDER BY updated DESC" oninput="updateJqlPreview()" style="flex:1;" />
+                            <button class="jql-clear-btn" onclick="clearCustomJql()" title="Clear custom JQL">&#10005; remove</button>
+                        </div>
+                        <p class="field-note">Overrides the builder above entirely when filled. Leave blank to use the builder.</p>
+                    </div>
+
+                    <div id="conn-result" class="conn-result"></div>
+
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;">
+                        <!-- jira-modal-actions-start -->
+                        <button class="btn btn-purple" onclick="updateCookie()">&#8593; Update Cookie</button>
+                        <button class="btn btn-outline" onclick="testConnection()">&#128268; Test Proxy</button>
+                        <!-- jira-modal-actions-end -->
+                    </div>
                 </div>
+                <!-- jira-settings-end -->
+
+                <!-- ── Personal panel (home-only) ── -->
 
                 <div class="modal-actions">
-                    <button class="btn btn-purple" onclick="updateCookie()">&#8593; Update Cookie</button>
-                    <button class="btn btn-outline" onclick="testConnection()">&#128268; Test Proxy</button>
                     <button class="btn btn-outline" onclick="closeSettings()">Cancel</button>
                     <button class="btn btn-green" onclick="saveSettings()">Save Settings</button>
                 </div>
@@ -993,36 +1058,49 @@ select option { background: var(--card); color: var(--text); }
 <!-- ─── EDIT MODAL ────────────────────────────────────────────────────────────── -->
 <div id="edit-modal" style="display:none">
     <div class="overlay" onclick="if(event.target===this)closeEditModal()">
-        <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal" style="max-width:620px;max-height:90vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
             <div class="modal-header">&#9998; Edit Task</div>
-            <div class="modal-body">
+            <div class="modal-body" style="overflow-y:auto;flex:1;padding:14px 20px;">
                 <div class="field"><label>Task</label><input type="text" id="edit-text" /></div>
-                <div class="field"><label>Notes</label><textarea id="edit-notes"></textarea></div>
-                <div class="field"><label>Priority</label>
-                    <select id="edit-priority">
-                        <option value="high">&#128308; High</option>
-                        <option value="medium">&#128993; Medium</option>
-                        <option value="low">&#128994; Low</option>
-                    </select>
+                <div class="field"><label>Notes</label><textarea id="edit-notes" style="height:52px;"></textarea></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
+                    <div class="field"><label>Priority</label>
+                        <select id="edit-priority">
+                            <option value="high" data-i18n="prioHighOpt">&#128308; High</option>
+                            <option value="medium" data-i18n="prioMediumOpt">&#128993; Medium</option>
+                            <option value="low" data-i18n="prioLowOpt">&#128994; Low</option>
+                        </select>
+                    </div>
+                    <div class="field"><label>Color</label><div id="edit-color-swatches" class="color-swatches"></div></div>
                 </div>
-                <div class="field"><label>Color</label><div id="edit-color-swatches" class="color-swatches"></div></div>
-                <div class="field"><label>Category</label>
-                    <select id="edit-category"></select>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
+                    <div class="field"><label>Category</label>
+                        <select id="edit-category"></select>
+                    </div>
+                    <div class="field"><label>Due Date</label><input type="date" id="edit-due" /></div>
                 </div>
-                <div class="field"><label>Due Date</label><input type="date" id="edit-due" /></div>
-                <div class="field"><label>Repeat</label>
-                    <select id="edit-recur">
-                        <option value="">&#128260; No repeat</option>
-                        <option value="daily">&#8635; Daily</option>
-                        <option value="weekly">&#8635; Weekly</option>
-                        <option value="biweekly">&#8635; Bi-weekly</option>
-                        <option value="monthly">&#8635; Monthly</option>
-                    </select>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px;">
+                    <div class="field"><label>Repeat</label>
+                        <select id="edit-recur">
+                            <option value="" data-i18n="recurNoneOpt">&#128260; No repeat</option>
+                            <option value="daily" data-i18n="recurDailyOpt">&#8635; Daily</option>
+                            <option value="weekdays" data-i18n="recurWeekdaysOpt">&#8635; Weekdays (M&#8211;F)</option>
+                            <option value="weekly-mon" data-i18n="recurEveryMonOpt">&#8635; Every Monday</option>
+                            <option value="weekly-tue" data-i18n="recurEveryTueOpt">&#8635; Every Tuesday</option>
+                            <option value="weekly-wed" data-i18n="recurEveryWedOpt">&#8635; Every Wednesday</option>
+                            <option value="weekly-thu" data-i18n="recurEveryThuOpt">&#8635; Every Thursday</option>
+                            <option value="weekly-fri" data-i18n="recurEveryFriOpt">&#8635; Every Friday</option>
+                            <option value="weekly" data-i18n="recurWeeklyOpt">&#8635; Weekly</option>
+                            <option value="biweekly" data-i18n="recurBiweeklyOpt">&#8635; Bi-weekly</option>
+                            <option value="monthly" data-i18n="recurMonthlyOpt">&#8635; Monthly</option>
+                            <option value="yearly" data-i18n="recurYearlyOpt">&#8635; Yearly</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="modal-actions">
-                    <button class="btn btn-outline" onclick="closeEditModal()">Cancel</button>
-                    <button class="btn btn-purple" onclick="saveEdit()">Save Changes</button>
-                </div>
+            </div>
+            <div class="modal-actions" style="margin:0;padding:12px 20px;">
+                <button class="btn btn-outline" onclick="closeEditModal()" data-i18n="cancelBtn">Cancel</button>
+                <button class="btn btn-purple" onclick="saveEdit()">Save Changes</button>
             </div>
         </div>
     </div>
@@ -1041,7 +1119,7 @@ select option { background: var(--card); color: var(--text); }
             <button class="btn" onclick="closeCapture()">Cancel</button>
             <button class="btn btn-green" onclick="saveCapture()">&#10003; Capture</button>
         </div>
-        <div class="capture-hint">Press Enter twice or click Capture · Esc to close</div>
+        <div class="capture-hint">Space to open · click Capture · Esc to cancel</div>
     </div>
 </div>
 
@@ -1052,7 +1130,7 @@ const GAS_MODE = true;
 /* ── js/constants.js ── */
 // constants.js — App-wide configuration values and magic strings/numbers.
 
-const APP_VERSION         = '1.7';
+const APP_VERSION         = '1.8';
 const OPFS_FILENAME       = 'work-tasks.json';
 const LS_KEY              = 'work_tasks';
 const LS_THEME_KEY        = 'wtt-theme';
@@ -1060,6 +1138,8 @@ const LS_USER_THEME_KEY   = 'wtt-user-theme'; // user's own light/dark toggle (s
 
 const LOGO_LIGHT          = 'data:image/png;base64,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';
 const LOGO_DARK           = 'data:image/png;base64,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';
+const PERSONAL_LOGO_LIGHT = 'Joby_logo.png';
+const PERSONAL_LOGO_DARK  = 'Joby_logo_dark.png';
 
 const PROXY_ORIGIN        = 'http://localhost:3333';
 const JIRA_DEFAULT_URL    = 'https://telushealth.atlassian.net';
@@ -1076,6 +1156,277 @@ const HEATMAP_DAYS        = 7;
 const PERSONAL_OPFS_FILENAME = 'personal-tasks.json';
 const PERSONAL_LS_KEY        = 'personal_tasks';
 const ACTIVE_MODE_LS_KEY     = 'joby-active-mode';
+
+const DRIVE_TOKEN_LS_KEY = 'joby-drive-token';
+const DRIVE_API_BASE     = 'https://www.googleapis.com/drive/v3';
+const DRIVE_UPLOAD_BASE  = 'https://www.googleapis.com/upload/drive/v3';
+
+const LANG_LS_KEY = 'joby-lang';
+
+const STRINGS = {
+    en: {
+        tabTasks:        '&#128203; My Tasks',
+        filterAll:       'All',
+        filterPending:   'Pending',
+        filterDone:      'Done',
+        filterHigh:      '&#128308; High',
+        filterOverdue:   '&#9203; Overdue',
+        sortAdded:       'Sort: Added',
+        sortPriority:    'Sort: Priority',
+        sortDue:         'Sort: Due Date',
+        sortAlpha:       'Sort: A–Z',
+        statTotal:       'Total',
+        statPending:     'Pending',
+        statDone:        'Completed',
+        statHigh:        'High Priority',
+        statOverdue:     'Overdue',
+        addTaskBtn:      '&#43; Add Task',
+        clearDoneBtn:    '&#128465; Clear Done',
+        compactBtn:      '&#8801; Compact',
+        searchPlaceholder: 'Search tasks…',
+        settingsBtnLabel: '&#9881;&#65039; Settings',
+        darkBtnLabel:    '&#127769; Dark',
+        stTabGeneral:    '&#127775; General',
+        stTabJira:       '&#127919; Jira',
+        stTabPersonal:   '&#128100; Personal',
+        prioHigh:        'high',
+        prioMedium:      'medium',
+        prioLow:         'low',
+        badgeDue:        'Due',
+        badgeOverdue:    'Overdue',
+        recurDaily:      'Daily',
+        recurWeekdays:   'Weekdays (M–F)',
+        recurWeekly:     'Weekly',
+        recurBiweekly:   'Bi-weekly',
+        recurMonthly:    'Monthly',
+        recurYearly:     'Yearly',
+        recurEveryMon:   'Every Monday',
+        recurEveryTue:   'Every Tuesday',
+        recurEveryWed:   'Every Wednesday',
+        recurEveryThu:   'Every Thursday',
+        recurEveryFri:   'Every Friday',
+        ghostPlaceholder: '&#43; Add a task&#8230;',
+        taskPlaceholder:  'Describe your task — or tap &#127908; to speak&#8230;',
+        notesPlaceholder: 'Notes (optional)&#8230;',
+        cancelBtn:        'Cancel',
+        prioHighOpt:      '&#128308; High',
+        prioMediumOpt:    '&#128993; Medium',
+        prioLowOpt:       '&#128994; Low',
+        recurNoneOpt:       '&#128260; No repeat',
+        recurDailyOpt:      '&#8635; Daily',
+        recurWeekdaysOpt:   '&#8635; Weekdays (M&#8211;F)',
+        recurWeeklyOpt:     '&#8635; Weekly',
+        recurBiweeklyOpt:   '&#8635; Bi-weekly',
+        recurMonthlyOpt:    '&#8635; Monthly',
+        recurYearlyOpt:     '&#8635; Yearly',
+        recurEveryMonOpt:   '&#8635; Every Monday',
+        recurEveryTueOpt:   '&#8635; Every Tuesday',
+        recurEveryWedOpt:   '&#8635; Every Wednesday',
+        recurEveryThuOpt:   '&#8635; Every Thursday',
+        recurEveryFriOpt:   '&#8635; Every Friday',
+        emptyNoTasks:    'No tasks yet — add one above or speak it!',
+        emptyNoMatch:    'No matching tasks.',
+        ssbDayStreak:    'Day Streak',
+        ssbLongest:      'Longest: {0}d',
+        ssbThisWeek:     'This Week',
+        ssbTodayYest:    '{0} today &middot; {1} yesterday',
+        ssbThisMonth:    'This Month',
+        ssbAllTime:      '{0} all time',
+        ssbCompRate:     'Completion Rate',
+        ssbBestDay:      'Best Day',
+        ssbTasksTotal:   '{0} tasks total',
+        scbCurrStreak:   'Current Streak',
+        scbLongest:      'Longest: {0} days',
+        scbCompWeek:     'Completed This Week',
+        scbCompMonth:    'Completed This Month',
+        scbDoneOf:       '{0} done of {1} created',
+        scbMostProd:     'Most Productive Day',
+        scbTasksOnDay:   '{0} tasks on {1}s total',
+        heatmapAct:      '&#128202; Activity',
+        heatmapLess:     'Less',
+        heatmapMore:     'More',
+        taskZone:        '&#10022; Task Zone &#10022;',
+        hmNoComp:        'no completions',
+        hmTaskDone:      'task done',
+        hmTasksDone:     'tasks done',
+        inboxLabel:      'Inbox',
+        inboxAddBtn:     '&#8594; Add to Tasks',
+        inboxPromoted:   'Inbox item ready to add — fill in the details above &#128221;',
+        catAll:          'Category: All',
+        catWork:         'Work',     catDev:      'Dev',       catMeeting:  'Meeting',
+        catReview:       'Review',   catAdmin:    'Admin',     catJira:     'Jira',
+        catOther:        'Other',
+        catHome:         'Home',     catChores:   'Chores',    catShopping: 'Shopping',
+        catHealth:       'Health',   catFinance:  'Finance',   catFamily:   'Family',
+        catCar:          'Car',      catStudy:    'Study',     catGarden:   'Garden',
+        catErrands:      'Errands',  catPersonal: 'Personal',
+        toastTaskAdded:        'Task added!',
+        toastTaskUpdated:      'Task updated!',
+        toastTaskDeleted:      'Task deleted.',
+        toastUndo:             'Undo',
+        toastSubtaskBlock:     'Cannot delete — has {0} subtask(s). Remove subtasks first.',
+        toastTaskReset:        'Task reset for next {0}.',
+        toastTaskResetDue:     'Task due {0} — marked pending.',
+        toastTaskRestored:     'Task restored.',
+        toastDeletionsPending: '{0} deletion(s) pending…',
+        confirmClearDone:      'Clear {0} completed task(s)?',
+        toastNoCleared:        'No completed tasks to clear.',
+        toastTasksCleared:     '{0} completed task(s) cleared.',
+        toastCsvExported:      'Tasks exported to CSV!',
+        toastBackupExported:   'Backup exported!',
+        toastBackupDownloaded: 'Backup downloaded.',
+        toastExportFailed:     'Export failed: {0}',
+        toastInvalidBackup:    'Invalid backup file.',
+        toastImported:         '{0} task(s) imported.',
+        toastImportFailed:     'Import failed: {0}',
+        confirmImport:         'Import {0} task(s) from “{1}”? This will replace current tasks.',
+        toastDriveSettingsSaved: 'Drive settings saved!',
+        toastSettingsSaved:    'Settings saved!',
+        toastJiraAdded:        '{0} added to My Tasks!',
+        toastDriveSignedIn:    'Signed in to Google Drive!',
+        toastDriveSignedOut:   'Signed out from Google Drive.',
+        toastDriveSignInFail:  'Sign-in failed: {0}',
+        unassigned:            '— Unassigned —',
+        taskDateAdded:         'Added ',
+        dueDateToday:          'today',
+        dueDateTomorrow:       'tomorrow',
+        dueDateInDays:         'in {0} days',
+        addedToday:            'Today',
+        addedYesterday:        'Yesterday',
+        addedDaysAgo:          '{0} days ago',
+    },
+    fr: {
+        tabTasks:        '&#128203; Mes t&#226;ches',
+        filterAll:       'Tout',
+        filterPending:   'En cours',
+        filterDone:      'Termin&#233;',
+        filterHigh:      '&#128308; Urgent',
+        filterOverdue:   '&#9203; En retard',
+        sortAdded:       'Tri: Ajout&#233;',
+        sortPriority:    'Tri: Priorit&#233;',
+        sortDue:         'Tri: &#201;ch&#233;ance',
+        sortAlpha:       'Tri: A–Z',
+        statTotal:       'Total',
+        statPending:     'En cours',
+        statDone:        'Termin&#233;',
+        statHigh:        'Urgent',
+        statOverdue:     'En retard',
+        addTaskBtn:      '&#43; Ajouter',
+        clearDoneBtn:    '&#128465; Effacer',
+        compactBtn:      '&#8801; Compact',
+        searchPlaceholder: 'Rechercher…',
+        settingsBtnLabel: '&#9881;&#65039; R&#233;glages',
+        darkBtnLabel:    '&#127769; Sombre',
+        stTabGeneral:    '&#127775; G&#233;n&#233;ral',
+        stTabJira:       '&#127919; Jira',
+        stTabPersonal:   '&#128100; Personnel',
+        prioHigh:        'urgent',
+        prioMedium:      'moyen',
+        prioLow:         'bas',
+        badgeDue:        '&#201;ch&#233;ance',
+        badgeOverdue:    'En retard',
+        recurDaily:      'Quotidien',
+        recurWeekdays:   'Jours ouvrables (L&#8211;V)',
+        recurWeekly:     'Hebdo.',
+        recurBiweekly:   'Bimensuel',
+        recurMonthly:    'Mensuel',
+        recurYearly:     'Annuel',
+        recurEveryMon:   'Chaque lundi',
+        recurEveryTue:   'Chaque mardi',
+        recurEveryWed:   'Chaque mercredi',
+        recurEveryThu:   'Chaque jeudi',
+        recurEveryFri:   'Chaque vendredi',
+        ghostPlaceholder: '&#43; Ajouter une t&#226;che&#8230;',
+        taskPlaceholder:  'D&#233;crivez votre t&#226;che — ou appuyez sur &#127908; pour parler&#8230;',
+        notesPlaceholder: 'Notes (optionnel)&#8230;',
+        cancelBtn:        'Annuler',
+        prioHighOpt:      '&#128308; Urgent',
+        prioMediumOpt:    '&#128993; Moyen',
+        prioLowOpt:       '&#128994; Bas',
+        recurNoneOpt:       '&#128260; Pas de r&#233;p&#233;tition',
+        recurDailyOpt:      '&#8635; Quotidien',
+        recurWeekdaysOpt:   '&#8635; Jours ouvrables (L&#8211;V)',
+        recurWeeklyOpt:     '&#8635; Hebdo.',
+        recurBiweeklyOpt:   '&#8635; Bimensuel',
+        recurMonthlyOpt:    '&#8635; Mensuel',
+        recurYearlyOpt:     '&#8635; Annuel',
+        recurEveryMonOpt:   '&#8635; Chaque lundi',
+        recurEveryTueOpt:   '&#8635; Chaque mardi',
+        recurEveryWedOpt:   '&#8635; Chaque mercredi',
+        recurEveryThuOpt:   '&#8635; Chaque jeudi',
+        recurEveryFriOpt:   '&#8635; Chaque vendredi',
+        emptyNoTasks:    'Aucune t&#226;che — ajoutez-en une ci-dessus!',
+        emptyNoMatch:    'Aucune t&#226;che correspondante.',
+        ssbDayStreak:    'Jours cons&#233;cutifs',
+        ssbLongest:      'Record&#160;: {0}j',
+        ssbThisWeek:     'Cette semaine',
+        ssbTodayYest:    '{0} auj. &middot; {1} hier',
+        ssbThisMonth:    'Ce mois',
+        ssbAllTime:      '{0} au total',
+        ssbCompRate:     "Taux d'ach&#232;vement",
+        ssbBestDay:      'Meilleur jour',
+        ssbTasksTotal:   '{0} t&#226;ches au total',
+        scbCurrStreak:   'S&#233;rie actuelle',
+        scbLongest:      'Record&#160;: {0} jours',
+        scbCompWeek:     'Termin&#233; cette semaine',
+        scbCompMonth:    'Termin&#233; ce mois',
+        scbDoneOf:       '{0} termin&#233;(s) sur {1} cr&#233;&#233;(s)',
+        scbMostProd:     'Jour le plus productif',
+        scbTasksOnDay:   '{0} t&#226;ches les {1}s au total',
+        heatmapAct:      '&#128202; Activit&#233;',
+        heatmapLess:     'Moins',
+        heatmapMore:     'Plus',
+        taskZone:        '&#10022; Zone de t&#226;ches &#10022;',
+        hmNoComp:        'aucune compl&#233;tion',
+        hmTaskDone:      't&#226;che termin&#233;e',
+        hmTasksDone:     't&#226;ches termin&#233;es',
+        inboxLabel:      'R&#233;ception',
+        inboxAddBtn:     '&#8594; Ajouter aux t&#226;ches',
+        inboxPromoted:   'Saisie pr&#234;te &#224; ajouter — compl&#233;tez les d&#233;tails ci-dessus &#128221;',
+        catAll:          'Cat&#233;gorie : Tout',
+        catWork:         'Travail',  catDev:      'D&#233;v',  catMeeting:  'R&#233;union',
+        catReview:       'R&#233;vision', catAdmin: 'Admin',   catJira:     'Jira',
+        catOther:        'Autre',
+        catHome:         'Maison',   catChores:   'M&#233;nage',  catShopping: 'Magasinage',
+        catHealth:       'Sant&#233;', catFinance: 'Finances',  catFamily:   'Famille',
+        catCar:          'Voiture',  catStudy:    '&#201;tudes',  catGarden:   'Jardin',
+        catErrands:      'Courses',  catPersonal: 'Personnel',
+        toastTaskAdded:        'T&#226;che ajout&#233;e&#160;!',
+        toastTaskUpdated:      'T&#226;che mise &#224; jour&#160;!',
+        toastTaskDeleted:      'T&#226;che supprim&#233;e.',
+        toastUndo:             'Annuler',
+        toastSubtaskBlock:     'Suppression impossible — {0} sous-t&#226;che(s). Supprimez-les d&#8217;abord.',
+        toastTaskReset:        'T&#226;che r&#233;initialis&#233;e pour {0}.',
+        toastTaskResetDue:     'T&#226;che pr&#233;vue le {0} — marqu&#233;e en cours.',
+        toastTaskRestored:     'T&#226;che restaur&#233;e.',
+        toastDeletionsPending: '{0} suppression(s) en attente&#8230;',
+        confirmClearDone:      'Effacer {0} t&#226;che(s) termin&#233;e(s)&#160;?',
+        toastNoCleared:        'Aucune t&#226;che termin&#233;e &#224; effacer.',
+        toastTasksCleared:     '{0} t&#226;che(s) termin&#233;e(s) effac&#233;e(s).',
+        toastCsvExported:      'T&#226;ches export&#233;es en CSV&#160;!',
+        toastBackupExported:   'Sauvegarde export&#233;e&#160;!',
+        toastBackupDownloaded: 'Sauvegarde t&#233;l&#233;charg&#233;e.',
+        toastExportFailed:     'Exportation &#233;chou&#233;e&#160;: {0}',
+        toastInvalidBackup:    'Fichier de sauvegarde invalide.',
+        toastImported:         '{0} t&#226;che(s) import&#233;e(s).',
+        toastImportFailed:     'Importation &#233;chou&#233;e&#160;: {0}',
+        confirmImport:         'Importer {0} t&#226;che(s) depuis &#171;&#160;{1}&#160;&#187;&#160;? Cela remplacera les t&#226;ches actuelles.',
+        toastDriveSettingsSaved: 'Param&#232;tres Drive enregistr&#233;s&#160;!',
+        toastSettingsSaved:    'Param&#232;tres enregistr&#233;s&#160;!',
+        toastJiraAdded:        '{0} ajout&#233; &#224; Mes t&#226;ches&#160;!',
+        toastDriveSignedIn:    'Connect&#233; &#224; Google Drive&#160;!',
+        toastDriveSignedOut:   'D&#233;connect&#233; de Google Drive.',
+        toastDriveSignInFail:  '&#201;chec de connexion&#160;: {0}',
+        unassigned:            '— Non assign&#233;(e) —',
+        taskDateAdded:         'Ajout&#233; ',
+        dueDateToday:          'aujourd&#8217;hui',
+        dueDateTomorrow:       'demain',
+        dueDateInDays:         'dans {0}&#160;j',
+        addedToday:            'Aujourd&#8217;hui',
+        addedYesterday:        'Hier',
+        addedDaysAgo:          'Il y a {0}&#160;j',
+    },
+};
 
 const WORK_CATEGORIES = [
     { value: 'Work',    emoji: '💼', label: 'Work'    },
@@ -1114,7 +1465,8 @@ let jiraIssues        = [];
 let jiraNextPageToken = null;
 let jiraIsLoading     = false;
 let activeTab         = 'tasks';
-let currentFilter     = 'all';
+let currentFilter         = 'all';
+let currentCategoryFilter = 'all';
 let editId            = null;
 let dragSrcIdx        = null;
 let dragTargetIndent  = 0;
@@ -1128,6 +1480,7 @@ let isListening       = false;
 let compactView          = false;
 const expandedCompactIds = new Set();
 let activeMode           = 'work'; // 'work' | 'personal'
+let uiLang               = 'en';   // 'en' | 'fr'
 
 window.db = {
     get: k => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } },
@@ -1196,10 +1549,109 @@ function addDaysToDate(dateStr, n) {
     return d.toLocaleDateString('en-CA');
 }
 function freqDays(freq) {
-    return freq === 'daily' ? 1 : freq === 'weekly' ? 7 : freq === 'biweekly' ? 14 : freq === 'monthly' ? 30 : 0;
+    return freq === 'daily' ? 1 : freq === 'weekly' ? 7 : freq === 'biweekly' ? 14 : freq === 'monthly' ? 30 : freq === 'yearly' ? 365 : 0;
 }
 function freqLabel(freq) {
-    return freq === 'daily' ? 'Daily' : freq === 'weekly' ? 'Weekly' : freq === 'biweekly' ? 'Bi-weekly' : freq === 'monthly' ? 'Monthly' : '';
+    const map = {
+        daily: 'recurDaily', weekdays: 'recurWeekdays',
+        weekly: 'recurWeekly', biweekly: 'recurBiweekly',
+        monthly: 'recurMonthly', yearly: 'recurYearly',
+        'weekly-mon': 'recurEveryMon', 'weekly-tue': 'recurEveryTue',
+        'weekly-wed': 'recurEveryWed', 'weekly-thu': 'recurEveryThu',
+        'weekly-fri': 'recurEveryFri',
+    };
+    return (freq && map[freq]) ? t(map[freq]) : '';
+}
+
+// ── Recurrence next-date helpers ──────────────────────────────────────────────
+const _DOW_MAP = { 'weekly-mon': 1, 'weekly-tue': 2, 'weekly-wed': 3, 'weekly-thu': 4, 'weekly-fri': 5 };
+function nextRecurDate(freq, fromDateStr) {
+    const d = new Date(fromDateStr + 'T00:00:00');
+    if (freq === 'daily')    { d.setDate(d.getDate() + 1); return d.toLocaleDateString('en-CA'); }
+    if (freq === 'weekdays') { do { d.setDate(d.getDate() + 1); } while (d.getDay() === 0 || d.getDay() === 6); return d.toLocaleDateString('en-CA'); }
+    if (freq === 'weekly')   { d.setDate(d.getDate() + 7);  return d.toLocaleDateString('en-CA'); }
+    if (freq === 'biweekly') { d.setDate(d.getDate() + 14); return d.toLocaleDateString('en-CA'); }
+    if (freq === 'monthly')  { d.setMonth(d.getMonth() + 1); return d.toLocaleDateString('en-CA'); }
+    if (freq === 'yearly')   { d.setFullYear(d.getFullYear() + 1); return d.toLocaleDateString('en-CA'); }
+    const target = _DOW_MAP[freq];
+    if (target !== undefined) { do { d.setDate(d.getDate() + 1); } while (d.getDay() !== target); return d.toLocaleDateString('en-CA'); }
+    const days = freqDays(freq);
+    if (days > 0) d.setDate(d.getDate() + days);
+    return d.toLocaleDateString('en-CA');
+}
+function prevWorkday(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    do { d.setDate(d.getDate() - 1); } while (d.getDay() === 0 || d.getDay() === 6);
+    return d.toLocaleDateString('en-CA');
+}
+function relativeDue(dateStr) {
+    const today = todayStr();
+    if (dateStr === today) return t('dueDateToday');
+    const diff = Math.round((new Date(dateStr + 'T00:00:00') - new Date(today + 'T00:00:00')) / 86400000);
+    if (diff === 1) return t('dueDateTomorrow');
+    if (diff >= 2 && diff <= 6) return tFmt('dueDateInDays', diff);
+    return formatDue(dateStr);
+}
+function relativeAdded(dateStr) {
+    if (!dateStr) return '';
+    const today = todayStr();
+    if (dateStr === today) return t('addedToday');
+    const diff = Math.round((new Date(today + 'T00:00:00') - new Date(dateStr + 'T00:00:00')) / 86400000);
+    if (diff === 1) return t('addedYesterday');
+    if (diff >= 2 && diff <= 6) return tFmt('addedDaysAgo', diff);
+    return t('taskDateAdded') + formatDue(dateStr);
+}
+function isNextWorkday(aStr, bStr) {
+    const a = new Date(aStr + 'T00:00:00');
+    do { a.setDate(a.getDate() + 1); } while (a.getDay() === 0 || a.getDay() === 6);
+    return a.toLocaleDateString('en-CA') === bStr;
+}
+
+// ── i18n ──────────────────────────────────────────────────────────────────────
+function t(key) {
+    const s = STRINGS[uiLang];
+    return (s && s[key] !== undefined) ? s[key] : (STRINGS.en[key] || key);
+}
+function catLabel(val) {
+    const key = 'cat' + val;
+    const result = t(key);
+    return result === key ? escHtml(val) : result; // escape raw fallback; translated strings already use HTML entities
+}
+function tFmt(key, ...args) {
+    let s = t(key);
+    args.forEach((v, i) => { s = s.replace('{' + i + '}', v); });
+    return s;
+}
+function _decodeHtml(str) {
+    const d = document.createElement('div');
+    d.innerHTML = str;
+    return d.textContent;
+}
+function applyLang(lang) {
+    if (lang) uiLang = lang;
+    const s = STRINGS[uiLang];
+    if (!s) return;
+    document.documentElement.lang = uiLang;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const val = s[el.dataset.i18n];
+        if (val !== undefined) el.innerHTML = val;
+    });
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) searchInput.placeholder = _decodeHtml(s.searchPlaceholder || '');
+    const taskInput = document.getElementById('task-input');
+    if (taskInput) taskInput.placeholder = _decodeHtml(s.taskPlaceholder || '');
+    const notesInput = document.getElementById('task-notes');
+    if (notesInput) notesInput.placeholder = _decodeHtml(s.notesPlaceholder || '');
+    const langBtn = document.getElementById('lang-btn');
+    if (langBtn) langBtn.textContent = uiLang === 'en' ? 'FR' : 'EN';
+    try { localStorage.setItem(LANG_LS_KEY, uiLang); } catch {}
+    if (typeof populateCategorySelects === 'function') populateCategorySelects();
+    if (typeof renderTasks  === 'function') renderTasks();
+    if (typeof updateStats  === 'function') updateStats();
+    if (typeof renderInbox  === 'function') renderInbox();
+}
+function toggleLang() {
+    applyLang(uiLang === 'en' ? 'fr' : 'en');
 }
 
 
@@ -1262,7 +1714,7 @@ const THEME_PRESETS = {
             '--radius-pill':  '4px',
             '--radius-check': '2px',
             '--radius-btn':   '2px',
-            '--logo-filter':  'brightness(0.9) sepia(0.2)'
+            '--logo-filter':  'brightness(1.05) drop-shadow(0 0 6px rgba(255,255,255,0.5))'
         }
     },
 
@@ -1379,7 +1831,7 @@ const THEME_PRESETS = {
             '--radius-pill':  '99px',
             '--radius-check': '50%',
             '--radius-btn':   '6px',
-            '--logo-filter':  'hue-rotate(280deg) brightness(1.2)'
+            '--logo-filter':  'brightness(1.05) drop-shadow(0 0 6px rgba(255,255,255,0.5))'
         }
     },
 
@@ -1550,7 +2002,7 @@ const THEME_PRESETS = {
             '--radius-pill':  '16px',
             '--radius-check': '50%',
             '--radius-btn':   '4px',
-            '--logo-filter':  'hue-rotate(170deg) brightness(0.9)'
+            '--logo-filter':  'brightness(1.05) drop-shadow(0 0 6px rgba(255,255,255,0.5))'
         }
     },
 
@@ -1573,7 +2025,7 @@ const THEME_PRESETS = {
             '--radius-pill':  '16px',
             '--radius-check': '50%',
             '--radius-btn':   '4px',
-            '--logo-filter':  'hue-rotate(240deg) brightness(0.9) saturate(1.2)'
+            '--logo-filter':  'brightness(1.05) drop-shadow(0 0 6px rgba(255,255,255,0.5))'
         }
     },
 
@@ -1619,7 +2071,7 @@ const THEME_PRESETS = {
             '--radius-pill':  '24px',
             '--radius-check': '50%',
             '--radius-btn':   '6px',
-            '--logo-filter':  'hue-rotate(190deg) saturate(1.5) brightness(0.85)'
+            '--logo-filter':  'brightness(1.05) drop-shadow(0 0 6px rgba(255,255,255,0.5))'
         }
     }
 };
@@ -1808,8 +2260,11 @@ function applyTheme(t) {
     const logo = document.getElementById('logo-img');
     if (btn)  btn.innerHTML = t === 'dark' ? '&#9728;&#65039; Light' : '&#127769; Dark';
     if (logo) {
-        logo.src = t === 'dark' ? LOGO_DARK : LOGO_LIGHT;
-        logo.onerror = () => { logo.src = LOGO_LIGHT; logo.onerror = null; };
+        const isPersonal = typeof activeMode !== 'undefined' && activeMode === 'personal';
+        const light = isPersonal ? PERSONAL_LOGO_LIGHT : LOGO_LIGHT;
+        const dark  = isPersonal ? PERSONAL_LOGO_DARK  : LOGO_DARK;
+        logo.src = t === 'dark' ? dark : light;
+        logo.onerror = () => { logo.src = light; logo.onerror = null; };
     }
 }
 
@@ -1883,7 +2338,7 @@ function currentLsKey() {
 }
 
 function payload() {
-    return { version: APP_VERSION, tasks, settings: { jiraUrl: settings.jiraUrl, jiraJql: settings.jiraJql, jiraAssigneeMe: settings.jiraAssigneeMe, jiraUnresolved: settings.jiraUnresolved, jiraStatuses: settings.jiraStatuses, jiraStatusNot: settings.jiraStatusNot, jiraPriorities: settings.jiraPriorities, jiraUpdatedDays: settings.jiraUpdatedDays, jiraProjects: settings.jiraProjects, themePreset: settings.themePreset, themeCustom: settings.themeCustom, compactView: settings.compactView, sortPreference: settings.sortPreference }, promotedJiraIds, inboxItems, completionLog, streak };
+    return { version: APP_VERSION, tasks, settings: { jiraUrl: settings.jiraUrl, jiraJql: settings.jiraJql, jiraAssigneeMe: settings.jiraAssigneeMe, jiraUnresolved: settings.jiraUnresolved, jiraStatuses: settings.jiraStatuses, jiraStatusNot: settings.jiraStatusNot, jiraPriorities: settings.jiraPriorities, jiraUpdatedDays: settings.jiraUpdatedDays, jiraProjects: settings.jiraProjects, themePreset: settings.themePreset, themeCustom: settings.themeCustom, compactView: settings.compactView, sortPreference: settings.sortPreference, driveClientId: settings.driveClientId, driveFileId: settings.driveFileId, familyMembers: settings.familyMembers }, promotedJiraIds, inboxItems, completionLog, streak };
 }
 async function opfsHandle() {
     const root = await navigator.storage.getDirectory();
@@ -1923,7 +2378,10 @@ function normalizeSettings(s) {
         themePreset:    (s && s.themePreset)    || 'default',
         themeCustom:    (s && s.themeCustom)    || {},
         compactView:    (s && s.compactView)    || false,
-        sortPreference: (s && s.sortPreference) || 'added'
+        sortPreference: (s && s.sortPreference) || 'added',
+        driveClientId:  (s && s.driveClientId)  || '',
+        driveFileId:    (s && s.driveFileId)    || '',
+        familyMembers:  (s && s.familyMembers)  || '',
     };
 }
 function applyData(data) {
@@ -1951,6 +2409,10 @@ async function initStorage() {
     updateModeUI();
     renderTasks(); updateStats(); renderStreakBadge(); renderInbox();
     setSaveIndicator('saved');
+    loadDriveSettingsUI();
+    if (typeof initDrive === 'function') initDrive();
+    try { uiLang = localStorage.getItem(LANG_LS_KEY) || 'en'; } catch {}
+    if (typeof applyLang === 'function') applyLang();
 }
 
 // ── Mode switch ───────────────────────────────────────────────────────────────
@@ -1989,6 +2451,7 @@ async function autoSave() {
         const opfsOk = await saveToOPFS();
         const lsOk   = writeToLS();
         setSaveIndicator((opfsOk || lsOk) ? 'saved' : 'failed');
+        if (typeof driveSave === 'function') driveSave(); // non-blocking
     } finally {
         _opfsWriting = false;
     }
@@ -2016,15 +2479,15 @@ async function exportJSON() {
             const w = await fh.createWritable();
             await w.write(JSON.stringify(payload(), null, 2));
             await w.close();
-            toast('Backup exported!');
-        } catch(e) { if (e.name !== 'AbortError') toast('Export failed: ' + e.message); }
+            toast(t('toastBackupExported'));
+        } catch(e) { if (e.name !== 'AbortError') toast(tFmt('toastExportFailed', e.message)); }
     } else {
         const blob = new Blob([JSON.stringify(payload(), null, 2)], { type: 'application/json' });
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
         a.href = url; a.download = 'work-tasks-backup-' + new Date().toISOString().slice(0,10) + '.json';
         a.click(); URL.revokeObjectURL(url);
-        toast('Backup downloaded!');
+        toast(t('toastBackupDownloaded'));
     }
 }
 async function importJSON(event) {
@@ -2033,16 +2496,36 @@ async function importJSON(event) {
     event.target.value = '';
     try {
         const data = JSON.parse(await file.text());
-        if (!data.tasks) { toast('Invalid backup file — no tasks found.'); return; }
-        if (!confirm('Import ' + (data.tasks.length) + ' tasks from "' + file.name + '"? This will replace your current tasks.')) return;
+        if (!data.tasks) { toast(t('toastInvalidBackup')); return; }
+        if (!confirm(tFmt('confirmImport', data.tasks.length, file.name))) return;
         applyData(data);
         await autoSave();
         renderTasks(); updateStats();
-        toast(data.tasks.length + ' tasks imported!');
-    } catch(e) { toast('Import failed: ' + e.message); }
+        toast(tFmt('toastImported', data.tasks.length));
+    } catch(e) { toast(tFmt('toastImportFailed', e.message)); }
 }
 
 window.addEventListener('beforeunload', () => writeToLS());
+
+// ── Drive settings UI helpers ─────────────────────────────────────────────────
+function loadDriveSettingsUI() {
+    const cid = document.getElementById('s-drive-client-id');
+    const fid = document.getElementById('s-drive-file-id');
+    const fam = document.getElementById('s-family-members');
+    if (cid) cid.value = settings.driveClientId || '';
+    if (fid) fid.value = settings.driveFileId   || '';
+    if (fam) fam.value = settings.familyMembers  || '';
+}
+function saveDriveSettings() {
+    settings.driveClientId = (document.getElementById('s-drive-client-id')?.value || '').trim();
+    settings.driveFileId   = (document.getElementById('s-drive-file-id')?.value   || '').trim();
+    settings.familyMembers = (document.getElementById('s-family-members')?.value  || '').trim();
+    debouncedSave();
+    if (typeof initDrive          === 'function') initDrive();
+    if (typeof renderAssignFilterPills === 'function') renderAssignFilterPills();
+    if (typeof populateAssignSelects   === 'function') populateAssignSelects();
+    toast(t('toastDriveSettingsSaved'));
+}
 
 
 /* ── js/tasks.js ── */
@@ -2053,11 +2536,11 @@ function addTask() {
     const input=document.getElementById('task-input');
     const text=input.value.trim();
     if (!text) { input.style.borderColor='var(--red)'; setTimeout(()=>input.style.borderColor='',1000); return; }
-    tasks.unshift({ id:Date.now(), text, notes:document.getElementById('task-notes').value.trim(), priority:document.getElementById('priority-select').value, category:document.getElementById('category-select').value, dueDate:document.getElementById('due-date').value, recurFreq:document.getElementById('recur-select').value||null, color:getSelectedColor('add-color-swatches'), indent:0, done:false, createdAt:new Date().toLocaleDateString('en-CA') });
+    tasks.unshift({ id:Date.now(), text, notes:document.getElementById('task-notes').value.trim(), priority:document.getElementById('priority-select').value, category:document.getElementById('category-select').value, dueDate:document.getElementById('due-date').value, recurFreq:document.getElementById('recur-select').value||null, color:getSelectedColor('add-color-swatches'), indent:0, done:false, createdAt:new Date().toLocaleDateString('en-CA'), createdBy:(typeof driveUser !== 'undefined' && driveUser ? driveUser.name : ''), assignedTo:document.getElementById('assign-select')?.value||'', updatedAt:new Date().toISOString() });
     input.value=''; document.getElementById('task-notes').value=''; document.getElementById('due-date').value=''; document.getElementById('recur-select').value='';
     renderColorSwatches('add-color-swatches', '');
     if (isListening) { recognition.stop(); isListening=false; updateMicBtn(); }
-    debouncedSave(); renderTasks(); updateStats(); toast('Task added!');
+    debouncedSave(); renderTasks(); updateStats(); toast(t('toastTaskAdded'));
     closeGhostTask();
 }
 
@@ -2080,10 +2563,10 @@ function logCompletion() {
     completionLog[today] = (completionLog[today] || 0) + 1;
 }
 function updateStreak() {
-    const today = todayStr();
-    const yest  = yesterdayStr();
+    const today   = todayStr();
     if (streak.lastDate === today) return;
-    if (streak.lastDate === yest) {
+    const prevDay = activeMode === 'work' ? prevWorkday(today) : yesterdayStr();
+    if (streak.lastDate === prevDay || streak.lastDate === yesterdayStr()) {
         streak.current += 1;
     } else {
         streak.current = 1;
@@ -2130,25 +2613,32 @@ function fireConfetti(x, y) {
     }
 }
 
+function _skipWeekends(d) { while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1); }
 function recomputeStreak() {
-    const today = todayStr();
+    const today   = todayStr();
+    const workMode = activeMode === 'work';
     const dateSet = new Set(Object.keys(completionLog).filter(ds => completionLog[ds] > 0));
     if (!dateSet.size) { streak.current = 0; streak.lastDate = ''; renderStreakBadge(); return; }
 
     let current = 0;
     let cursor  = new Date(today + 'T00:00:00');
-    if (!dateSet.has(today)) cursor.setDate(cursor.getDate() - 1);
+    if (!dateSet.has(today)) {
+        cursor.setDate(cursor.getDate() - 1);
+        if (workMode) _skipWeekends(cursor);
+    }
     while (dateSet.has(cursor.toLocaleDateString('en-CA'))) {
         current++;
         cursor.setDate(cursor.getDate() - 1);
+        if (workMode) _skipWeekends(cursor);
     }
 
     const sorted = [...dateSet].sort();
     let run = 1, longest = 1;
     for (let i = 1; i < sorted.length; i++) {
-        const prev = new Date(sorted[i-1] + 'T00:00:00');
-        const curr = new Date(sorted[i]   + 'T00:00:00');
-        if ((curr - prev) / 86400000 === 1) { run++; } else { longest = Math.max(longest, run); run = 1; }
+        const consec = workMode
+            ? isNextWorkday(sorted[i-1], sorted[i])
+            : (new Date(sorted[i]+'T00:00:00') - new Date(sorted[i-1]+'T00:00:00')) / 86400000 === 1;
+        if (consec) { run++; } else { longest = Math.max(longest, run); run = 1; }
     }
     longest = Math.max(longest, run, current);
 
@@ -2160,11 +2650,12 @@ function recomputeStreak() {
 
 function toggleTask(id, evt) {
     const t=tasks.find(t=>t.id===id); if(!t) return;
+    t.updatedAt=new Date().toISOString();
     if (!t.done) {
         const open=getChildren(t).filter(c=>!c.done);
         if (open.length) {
             const n=open.length;
-            toast(`Almost there! Wrap up the ${n} open subtask${n>1?'s':''} below this one first 💪`, 3500, 'var(--red)');
+            toast(tFmt('toastSubtaskBlock', n), 3500, 'var(--red)');
             return;
         }
     }
@@ -2175,19 +2666,20 @@ function toggleTask(id, evt) {
         if (evt) fireConfetti(evt.clientX, evt.clientY);
         // Schedule recurring reset — advance both dates by the frequency period
         if (t.recurFreq) {
-            const days       = freqDays(t.recurFreq);
             const label      = freqLabel(t.recurFreq);
             const oldCreated = t.createdAt;
             const oldDue     = t.dueDate;
+            const freq       = t.recurFreq;
             setTimeout(() => {
                 const task = tasks.find(x => x.id === id);
                 if (!task || !task.done) return; // user may have un-done it
                 task.done      = false;
                 task.doneAt    = null;
-                task.createdAt = addDaysToDate(oldCreated, days);
-                task.dueDate   = oldDue ? addDaysToDate(oldDue, days) : null;
+                task.createdAt = nextRecurDate(freq, oldCreated);
+                task.dueDate   = oldDue ? nextRecurDate(freq, oldDue) : null;
                 debouncedSave(); renderTasks(); updateStats();
-                toast('↻ ' + label + ' task reset' + (task.dueDate ? ' — due ' + formatDue(task.dueDate) : ''), 3500, 'var(--purple)');
+                const msg = task.dueDate ? tFmt('toastTaskResetDue', formatDue(task.dueDate)) : tFmt('toastTaskReset', label);
+                toast('↻ ' + msg, 3500, 'var(--purple)');
             }, 1600);
         }
     } else {
@@ -2219,7 +2711,7 @@ function deleteTask(id) {
     }, DELETE_UNDO_MS);
     _pendingDeletes.push(entry);
 
-    toastWithAction('Task deleted', 'Undo', undoDelete);
+    toastWithAction(t('toastTaskDeleted'), t('toastUndo'), undoDelete);
 }
 
 function undoDelete() {
@@ -2229,14 +2721,14 @@ function undoDelete() {
     tasks.splice(Math.min(entry.idx, tasks.length), 0, entry.task);
     debouncedSave(); renderTasks(); updateStats();
     const remaining = _pendingDeletes.length;
-    toast('Task restored ✓' + (remaining ? ' — ' + remaining + ' more deletion' + (remaining > 1 ? 's' : '') + ' pending' : ''));
+    toast(t('toastTaskRestored') + (remaining ? ' ' + tFmt('toastDeletionsPending', remaining) : ''));
 }
 
 function clearDone() {
     const n=tasks.filter(t=>t.done).length;
-    if(!n){toast('No completed tasks to clear.');return;}
-    if(!confirm('Remove all '+n+' completed task(s)?'))return;
-    tasks=tasks.filter(t=>!t.done); debouncedSave();renderTasks();updateStats();toast(n+' task(s) cleared.');
+    if(!n){toast(t('toastNoCleared'));return;}
+    if(!confirm(tFmt('confirmClearDone', n)))return;
+    tasks=tasks.filter(t=>!t.done); debouncedSave();renderTasks();updateStats();toast(tFmt('toastTasksCleared', n));
 }
 
 // ── Edit modal ────────────────────────────────────────────────────────────────
@@ -2262,7 +2754,9 @@ function saveEdit() {
     t.dueDate=document.getElementById('edit-due').value;
     t.recurFreq=document.getElementById('edit-recur').value||null;
     t.color=getSelectedColor('edit-color-swatches');
-    closeEditModal(); debouncedSave();renderTasks();updateStats();toast('Task updated!');
+    t.assignedTo=document.getElementById('edit-assign')?.value||t.assignedTo||'';
+    t.updatedAt=new Date().toISOString();
+    closeEditModal(); debouncedSave();renderTasks();updateStats();toast(t('toastTaskUpdated'));
 }
 
 // ── Filter / sort ─────────────────────────────────────────────────────────────
@@ -2300,6 +2794,8 @@ function getFiltered() {
     const sort=document.getElementById('sort-select').value;
     let list=tasks.filter(t=>{
         if(search&&!t.text.toLowerCase().includes(search)&&!(t.notes||'').toLowerCase().includes(search)&&!t.category.toLowerCase().includes(search))return false;
+        if(currentCategoryFilter!=='all'&&t.category!==currentCategoryFilter)return false;
+        if(typeof passesAssignFilter==='function'&&!passesAssignFilter(t))return false;
         switch(currentFilter){case'pending':return!t.done;case'done':return t.done;case'high':return t.priority==='high';case'overdue':return isOverdue(t);default:return true;}
     });
     if (sort!=='added') {
@@ -2320,19 +2816,20 @@ function renderTasks() {
     if (cb) cb.classList.toggle('active', compactView);
     const filtered = getFiltered();
     if (!filtered.length) {
-        list.innerHTML = '<div class="empty-state"><div class="icon">&#128203;</div><p>' + (currentFilter==='all'&&!document.getElementById('search-input').value ? 'No tasks yet — add one above or speak it!' : 'No matching tasks.') + '</p></div>';
+        list.innerHTML = '<div class="empty-state"><div class="icon">&#128203;</div><p>' + (currentFilter==='all'&&!document.getElementById('search-input').value ? t('emptyNoTasks') : t('emptyNoMatch')) + '</p></div>';
         return;
     }
     function taskCard(task, vi) {
         const ov     = isOverdue(task);
         const indent = task.indent || 0;
-        const due    = task.dueDate ? (ov&&!task.done ? '<span class="badge over-badge">&#9888; Overdue '+formatDue(task.dueDate)+'</span>' : '<span class="badge due-badge">&#128197; Due '+formatDue(task.dueDate)+'</span>') : '';
+        const due    = task.dueDate ? (ov&&!task.done ? '<span class="badge over-badge">&#9888; '+t('badgeOverdue')+' '+formatDue(task.dueDate)+'</span>' : '<span class="badge due-badge" title="'+formatDue(task.dueDate)+'">&#128197; '+t('badgeDue')+' '+relativeDue(task.dueDate)+'</span>') : '';
         const notes  = task.notes ? '<div class="task-notes">'+linkify(task.notes)+'</div>' : '';
         const recur  = task.recurFreq ? '<span class="badge recur-badge">&#8635; '+freqLabel(task.recurFreq)+'</span>' : '';
-        const cDue   = task.dueDate ? (ov&&!task.done ? '<span class="compact-due ovr">&#9888;</span>' : '<span class="compact-due">&#128197; '+formatDue(task.dueDate)+'</span>') : '';
+        const assign = task.assignedTo ? '<span class="badge assign-badge">&#128100; '+escHtml(task.assignedTo)+'</span>' : '';
+        const cDue   = task.dueDate ? (ov&&!task.done ? '<span class="compact-due ovr" title="'+t('badgeOverdue')+' '+formatDue(task.dueDate)+'">&#9888;</span>' : '<span class="compact-due" title="'+formatDue(task.dueDate)+'">&#128197; '+relativeDue(task.dueDate)+'</span>') : '';
         const cNote  = task.notes   ? '<span class="compact-note-icon" title="Has notes">&#128206;</span>' : '';
         const cRec   = task.recurFreq ? '<span class="compact-recur" title="'+freqLabel(task.recurFreq)+'">&#8635;</span>' : '';
-        const compactInline = '<div class="compact-inline">'+cDue+cNote+cRec+'<span class="compact-prio p-'+task.priority+'"></span><span class="compact-cat">'+escHtml(task.category)+'</span></div>';
+        const compactInline = '<div class="compact-inline">'+cDue+cNote+cRec+'<span class="compact-prio p-'+task.priority+'"></span><span class="compact-cat">'+catLabel(task.category)+'</span></div>';
         const marker = indent > 0 ? '<span class="indent-marker" aria-hidden="true"></span>' : '';
         const mleft  = indent * INDENT_W;
         const ariaChecked = task.done ? 'true' : 'false';
@@ -2346,7 +2843,7 @@ function renderTasks() {
             +' aria-label="'+escAttr(ariaLabel)+'"'
             +' onclick="toggleTask('+task.id+',event)"'
             +' onkeydown="if(event.key===\' \'||event.key===\'Enter\'){event.preventDefault();toggleTask('+task.id+',event);}"></div>'
-            +'<div class="task-content" onclick="toggleCompactExpand('+task.id+',event)"><div class="task-text">'+marker+escHtml(task.text)+'</div>'+compactInline+notes+'<div class="task-meta"><span class="badge p-'+task.priority+'">'+task.priority+'</span><span class="badge cat-badge">'+escHtml(task.category)+'</span>'+recur+due+'<span class="task-date">Added '+task.createdAt+'</span></div></div>'
+            +'<div class="task-content" onclick="toggleCompactExpand('+task.id+',event)"><div class="task-text">'+marker+escHtml(task.text)+'</div>'+compactInline+notes+'<div class="task-meta"><span class="badge p-'+task.priority+'">'+t('prio'+task.priority.charAt(0).toUpperCase()+task.priority.slice(1))+'</span><span class="badge cat-badge">'+catLabel(task.category)+'</span>'+recur+due+assign+'<span class="task-date" title="'+task.createdAt+'">'+relativeAdded(task.createdAt)+'</span></div></div>'
             +'<div class="task-actions">'
             +'<button class="action-btn" onclick="openEdit('+task.id+')" title="Edit" aria-label="Edit task: '+escAttr(task.text)+'">&#9998;</button>'
             +'<button class="action-btn" onclick="deleteTask('+task.id+')" title="Delete" aria-label="Delete task: '+escAttr(task.text)+'">&#128465;</button>'
@@ -2392,8 +2889,19 @@ function toggleCompactExpand(id, event) {
 // ── Mode UI helpers ───────────────────────────────────────────────────────────
 function populateCategorySelects() {
     const cats = activeMode === 'personal' ? PERSONAL_CATEGORIES : WORK_CATEGORIES;
-    const html  = cats.map(c => `<option value="${c.value}">${c.emoji} ${c.label}</option>`).join('');
+    const html  = cats.map(c => `<option value="${c.value}">${c.emoji} ${catLabel(c.value)}</option>`).join('');
     ['category-select', 'edit-category'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = html;
+    });
+    populateCategoryFilter();
+    populateAssignSelects();
+}
+function populateAssignSelects() {
+    const members = (settings.familyMembers || '').split('\n').map(s => s.trim()).filter(Boolean);
+    const html = '<option value="">' + t('unassigned') + '</option>' +
+        members.map(m => `<option value="${escHtml(m)}">${escHtml(m)}</option>`).join('');
+    ['assign-select', 'edit-assign'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = html;
     });
@@ -2409,9 +2917,26 @@ function onSortChange() {
 }
 function resetFilterBar() {
     currentFilter = 'all';
+    currentCategoryFilter = 'all';
     document.querySelectorAll('.filter-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.filter === 'all');
     });
+    const cf = document.getElementById('category-filter-select');
+    if (cf) cf.value = 'all';
+}
+function onCategoryFilterChange() {
+    currentCategoryFilter = document.getElementById('category-filter-select').value;
+    renderTasks();
+}
+function populateCategoryFilter() {
+    const el = document.getElementById('category-filter-select');
+    if (!el) return;
+    const cats = activeMode === 'personal' ? PERSONAL_CATEGORIES : WORK_CATEGORIES;
+    el.innerHTML = '<option value="all">' + t('catAll') + '</option>' +
+        cats.map(c => `<option value="${c.value}">${c.emoji} ${catLabel(c.value)}</option>`).join('');
+    el.value = currentCategoryFilter !== 'all' && cats.some(c => c.value === currentCategoryFilter)
+        ? currentCategoryFilter : 'all';
+    currentCategoryFilter = el.value;
 }
 function updateModeUI() {
     document.getElementById('mode-work-btn')?.classList.toggle('active', activeMode === 'work');
@@ -2424,6 +2949,11 @@ function updateModeUI() {
     }
 }
 
+// ── Sidebar toggle ────────────────────────────────────────────────────────────
+function toggleSidebar() {
+    document.getElementById('tab-tasks').classList.toggle('sidebar-hidden');
+}
+
 // ── Export CSV ────────────────────────────────────────────────────────────────
 function exportTasks() {
     const rows=['Task,Priority,Category,Due Date,Notes,Status,Added'];
@@ -2431,7 +2961,7 @@ function exportTasks() {
     const blob=new Blob([rows.join('\n')],{type:'text/csv'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a'); a.href=url; a.download='tasks-'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
-    URL.revokeObjectURL(url); toast('Tasks exported to CSV!');
+    URL.revokeObjectURL(url); toast(t('toastCsvExported'));
 }
 
 
@@ -2490,6 +3020,15 @@ const JQL_PRIORITIES = ['Highest','High','Medium','Low'];
 function jbSid(s) { return 'jb-s-' + s.replace(/\s+/g,'').toLowerCase(); }
 function jbPid(p) { return 'jb-p-' + p.toLowerCase(); }
 
+function switchSettingsTab(tab) {
+    ['general', 'jira', 'personal'].forEach(t => {
+        const btn   = document.getElementById('stab-' + t);
+        const panel = document.getElementById('settings-panel-' + t);
+        if (btn)   btn.classList.toggle('active', t === tab);
+        if (panel) panel.style.display = t === tab ? '' : 'none';
+    });
+}
+
 function openSettings() {
     document.getElementById('s-jira-url').value  = settings.jiraUrl || '';
     document.getElementById('s-jira-jql').value  = settings.jiraJql || '';
@@ -2506,7 +3045,10 @@ function openSettings() {
     renderThemePresets();
     syncThemeStudio();
     _syncDarkToggle((typeof settings !== 'undefined' && settings.themePreset) || 'default');
-    const cr = document.getElementById('conn-result'); cr.className = 'conn-result'; cr.textContent = '';
+    const cr = document.getElementById('conn-result'); if (cr) { cr.className = 'conn-result'; cr.textContent = ''; }
+    const preferredTab = activeMode === 'personal' ? 'personal' : 'jira';
+    const available = document.getElementById('stab-' + preferredTab) ? preferredTab : (document.getElementById('stab-jira') ? 'jira' : 'general');
+    switchSettingsTab(available);
     document.getElementById('settings-modal').style.display = 'block';
 }
 function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
@@ -2520,7 +3062,7 @@ function saveSettings() {
     settings.jiraPriorities = JQL_PRIORITIES.filter(p => { const el = document.getElementById(jbPid(p));   return el && el.checked; }).join(',');
     settings.jiraUpdatedDays = document.getElementById('jb-updated').value;
     settings.jiraProjects    = document.getElementById('jb-projects').value.trim();
-    closeSettings(); debouncedSave(); toast('Settings saved!');
+    closeSettings(); debouncedSave(); toast(t('toastSettingsSaved'));
 }
 
 // ── JQL build helpers ─────────────────────────────────────────────────────────
@@ -2712,12 +3254,21 @@ function promoteIssue(id) {
     tasks.unshift({ id:Date.now(), text:'['+key+'] '+(f.summary||''), notes:settings.jiraUrl+'/browse/'+key, priority:mapPrio(f.priority?.name), category:'JIRA', dueDate:f.duedate||'', done:false, createdAt:new Date().toLocaleDateString('en-CA') });
     promotedJiraIds.push(id);
     debouncedSave(); renderTasks(); updateStats(); renderJiraIssues();
-    toast('['+key+'] added to My Tasks!');
+    toast(tFmt('toastJiraAdded', '['+key+']'));
 }
 
 
 /* ── js/inbox.js ── */
 // inbox.js — Brain Dump capture modal, inbox panel rendering, promote/delete inbox items.
+
+function formatCapturedAt(val) {
+    if (!val) return '';
+    if (val.includes('T')) {
+        const d = new Date(val);
+        return d.toLocaleDateString('en-CA') + ' ' + d.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
+    }
+    return val; // legacy date-only string
+}
 
 // ── Brain Dump Inbox ──────────────────────────────────────────────────────────
 let inboxPanelOpen = true;
@@ -2732,7 +3283,7 @@ function closeCapture() {
 function saveCapture() {
     const text = document.getElementById('capture-textarea').value.trim();
     if (!text) return;
-    inboxItems.push({ id: Date.now(), text, capturedAt: todayStr() });
+    inboxItems.push({ id: Date.now(), text, capturedAt: new Date().toISOString() });
     debouncedSave(); closeCapture(); renderInbox();
 }
 function renderInbox() {
@@ -2742,15 +3293,15 @@ function renderInbox() {
     if (!panel || !list) return;
     if (!inboxItems.length) { panel.style.display = 'none'; return; }
     panel.style.display = 'block';
-    label.textContent = '📥 Inbox (' + inboxItems.length + ')';
+    label.innerHTML = '&#128450; ' + t('inboxLabel') + ' (' + inboxItems.length + ')';
     if (!inboxPanelOpen) { list.style.display = 'none'; return; }
     list.style.display = 'block';
     list.innerHTML = inboxItems.map(item => `
         <div class="inbox-card">
             <div class="inbox-text">${escHtml(item.text)}</div>
-            <div class="inbox-meta">${item.capturedAt}</div>
+            <div class="inbox-meta">${formatCapturedAt(item.capturedAt)}</div>
             <div class="inbox-actions">
-                <button class="btn btn-small" onclick="promoteInboxItem(${item.id})" aria-label="Add to tasks: ${escHtml(item.text)}">&#8594; Add to Tasks</button>
+                <button class="btn btn-small" style="flex:1" onclick="promoteInboxItem(${item.id})" aria-label="Add to tasks: ${escHtml(item.text)}">${t('inboxAddBtn')}</button>
                 <button class="btn btn-small btn-danger" onclick="deleteInboxItem(${item.id})" aria-label="Delete inbox item: ${escHtml(item.text)}">&#128465;</button>
             </div>
         </div>
@@ -2768,11 +3319,286 @@ function promoteInboxItem(id) {
     document.getElementById('task-input').focus();
     deleteInboxItem(id);
     document.getElementById('tab-tasks').scrollIntoView({ behavior: 'smooth' });
-    toast('Inbox item ready to add — fill in the details above 📝');
+    toast(t('inboxPromoted'));
 }
 function deleteInboxItem(id) {
     inboxItems = inboxItems.filter(i => i.id !== id);
     debouncedSave(); renderInbox();
+}
+
+
+/* ── js/drive.js ── */
+// drive.js — Google Drive family sync: OAuth, read/write, merge, assignment filter.
+
+// ── Drive state ───────────────────────────────────────────────────────────────
+let driveUser             = null;   // { name, email }
+let driveToken            = null;   // current access token string
+let driveTokenExpiry      = 0;      // Unix ms
+let lastKnownModifiedTime = null;   // ISO string from last Drive read/write
+let currentAssignFilter   = 'all';  // 'all' | '' (unassigned) | '<name>'
+let _driveSyncing         = false;
+
+// ── Token persistence ─────────────────────────────────────────────────────────
+function loadStoredToken() {
+    const stored = window.db.get(DRIVE_TOKEN_LS_KEY);
+    if (!stored) return;
+    if (Date.now() < stored.expiresAt - 60000) {
+        driveToken       = stored.token;
+        driveTokenExpiry = stored.expiresAt;
+    }
+}
+function persistToken(token, expiresIn) {
+    driveTokenExpiry = Date.now() + expiresIn * 1000;
+    driveToken       = token;
+    window.db.set(DRIVE_TOKEN_LS_KEY, { token, expiresAt: driveTokenExpiry });
+}
+function clearToken() {
+    driveToken = null; driveTokenExpiry = 0;
+    localStorage.removeItem(DRIVE_TOKEN_LS_KEY);
+}
+function hasValidToken() {
+    return !!driveToken && Date.now() < driveTokenExpiry - 60000;
+}
+
+// ── GIS loading ───────────────────────────────────────────────────────────────
+let _gisLoaded = false;
+function loadGIS() {
+    return new Promise((resolve, reject) => {
+        if (_gisLoaded) { resolve(); return; }
+        if (document.getElementById('gis-script')) {
+            // Script tag exists but load hasn't fired yet — wait for it
+            document.getElementById('gis-script').addEventListener('load', () => { _gisLoaded = true; resolve(); });
+            return;
+        }
+        const s = document.createElement('script');
+        s.id  = 'gis-script';
+        s.src = 'https://accounts.google.com/gsi/client';
+        s.onload  = () => { _gisLoaded = true; resolve(); };
+        s.onerror = () => reject(new Error('Failed to load Google Identity Services'));
+        document.head.appendChild(s);
+    });
+}
+
+// ── OAuth token request ───────────────────────────────────────────────────────
+function requestToken() {
+    return new Promise(async (resolve, reject) => {
+        if (!settings.driveClientId) { reject(new Error('No Client ID configured')); return; }
+        try { await loadGIS(); } catch(e) { reject(e); return; }
+        const client = google.accounts.oauth2.initTokenClient({
+            client_id: settings.driveClientId,
+            scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile',
+            callback: (resp) => {
+                if (resp.error) { reject(new Error(resp.error)); return; }
+                persistToken(resp.access_token, resp.expires_in);
+                resolve(resp.access_token);
+            },
+        });
+        client.requestAccessToken({ prompt: '' });
+    });
+}
+
+// ── Ensure token (use cached or prompt) ──────────────────────────────────────
+async function ensureToken() {
+    if (hasValidToken()) return driveToken;
+    return requestToken();
+}
+
+// ── Drive API helpers ─────────────────────────────────────────────────────────
+async function driveGet(url, params) {
+    const token = await ensureToken();
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    const r  = await fetch(url + qs, { headers: { Authorization: 'Bearer ' + token } });
+    if (!r.ok) throw new Error('Drive GET failed: ' + r.status);
+    return r.json();
+}
+async function driveGetMedia(fileId) {
+    const token = await ensureToken();
+    const r = await fetch(DRIVE_API_BASE + '/files/' + fileId + '?alt=media', {
+        headers: { Authorization: 'Bearer ' + token }
+    });
+    if (!r.ok) throw new Error('Drive read failed: ' + r.status);
+    return r.json();
+}
+async function drivePatch(fileId, body) {
+    const token = await ensureToken();
+    const r = await fetch(DRIVE_UPLOAD_BASE + '/files/' + fileId + '?uploadType=media', {
+        method: 'PATCH',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error('Drive write failed: ' + r.status);
+    return r.json();
+}
+async function driveGetMeta(fileId) {
+    return driveGet(DRIVE_API_BASE + '/files/' + fileId, { fields: 'modifiedTime' });
+}
+
+// ── Merge ─────────────────────────────────────────────────────────────────────
+function mergeTasks(local, remote) {
+    const map = new Map();
+    for (const t of remote) map.set(t.id, t);
+    for (const t of local) {
+        const r = map.get(t.id);
+        if (!r || (t.updatedAt || '') >= (r.updatedAt || '')) map.set(t.id, t);
+    }
+    // Preserve local ordering; append remote-only tasks at end
+    const localIds = new Set(local.map(t => t.id));
+    const result   = local.map(t => map.get(t.id));
+    for (const [id, t] of map) {
+        if (!localIds.has(id)) result.push(t);
+    }
+    return result;
+}
+
+// ── Drive read ────────────────────────────────────────────────────────────────
+async function driveLoad() {
+    if (!settings.driveFileId || !settings.driveClientId) return false;
+    try {
+        const [data, meta] = await Promise.all([
+            driveGetMedia(settings.driveFileId),
+            driveGetMeta(settings.driveFileId)
+        ]);
+        lastKnownModifiedTime = meta.modifiedTime;
+        if (data.tasks) {
+            tasks = mergeTasks(tasks, data.tasks);
+            renderTasks(); updateStats();
+        }
+        setDriveSyncIndicator('synced');
+        return true;
+    } catch(e) {
+        console.warn('Drive load failed:', e.message);
+        setDriveSyncIndicator('error');
+        return false;
+    }
+}
+
+// ── Drive write (fetch-before-write) ─────────────────────────────────────────
+async function driveSave() {
+    if (!settings.driveFileId || !settings.driveClientId) return;
+    if (_driveSyncing) return;
+    if (!hasValidToken()) return;
+    _driveSyncing = true;
+    setDriveSyncIndicator('syncing');
+    try {
+        const meta = await driveGetMeta(settings.driveFileId);
+        if (lastKnownModifiedTime !== null && meta.modifiedTime !== lastKnownModifiedTime) {
+            // Remote changed since last sync — fetch and merge before writing
+            const remote = await driveGetMedia(settings.driveFileId);
+            if (remote.tasks) tasks = mergeTasks(tasks, remote.tasks);
+        }
+        const body   = { version: APP_VERSION, tasks, modifiedAt: new Date().toISOString() };
+        const result = await drivePatch(settings.driveFileId, body);
+        lastKnownModifiedTime = result.modifiedTime;
+        renderTasks(); updateStats();
+        setDriveSyncIndicator('synced');
+    } catch(e) {
+        console.warn('Drive save failed:', e.message);
+        setDriveSyncIndicator('error');
+    } finally {
+        _driveSyncing = false;
+    }
+}
+
+// ── Google profile ────────────────────────────────────────────────────────────
+async function fetchDriveUser() {
+    if (!hasValidToken()) return;
+    try {
+        const r = await driveGet('https://www.googleapis.com/oauth2/v2/userinfo');
+        driveUser = { name: r.name || r.email, email: r.email };
+        updateDriveUserChip();
+    } catch(e) { /* non-fatal — profile is cosmetic */ }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function initDrive() {
+    if (!settings.driveClientId || !settings.driveFileId) {
+        setDriveSyncIndicator('off');
+        renderAssignFilterPills();
+        return;
+    }
+    loadStoredToken();
+    if (hasValidToken()) {
+        await fetchDriveUser();
+        await driveLoad();
+    } else {
+        setDriveSyncIndicator('off');
+    }
+    renderAssignFilterPills();
+}
+
+// ── Sign in / out ─────────────────────────────────────────────────────────────
+async function driveSignIn() {
+    try {
+        await requestToken();
+        await fetchDriveUser();
+        await driveLoad();
+        renderAssignFilterPills();
+        toast(t('toastDriveSignedIn'));
+    } catch(e) {
+        toast(tFmt('toastDriveSignInFail', e.message), 3000, 'var(--red)');
+    }
+}
+function driveSignOut() {
+    clearToken();
+    driveUser = null;
+    updateDriveUserChip();
+    setDriveSyncIndicator('off');
+    toast(t('toastDriveSignedOut'));
+}
+
+// ── Assignment filter ─────────────────────────────────────────────────────────
+function passesAssignFilter(task) {
+    if (currentAssignFilter === 'all') return true;
+    if (currentAssignFilter === '') return !task.assignedTo;
+    return task.assignedTo === currentAssignFilter;
+}
+function setAssignFilter(val) {
+    currentAssignFilter = val;
+    document.querySelectorAll('.assign-pill').forEach(b => {
+        b.classList.toggle('active', b.dataset.assign === val);
+    });
+    renderTasks();
+}
+function renderAssignFilterPills() {
+    const wrap = document.getElementById('assign-filter-wrap');
+    if (!wrap) return;
+    const members = (settings.familyMembers || '').split('\n').map(s => s.trim()).filter(Boolean);
+    if (!members.length || !settings.driveClientId) {
+        wrap.innerHTML = '';
+        return;
+    }
+    const pills = [
+        { label: 'All',        val: 'all' },
+        { label: 'Unassigned', val: ''    },
+        ...members.map(m => ({ label: m, val: m }))
+    ].map(p =>
+        `<button class="filter-btn filter-pill assign-pill${currentAssignFilter === p.val ? ' active' : ''}" data-assign="${escAttr(p.val)}" onclick="setAssignFilter(${JSON.stringify(p.val)})">${escHtml(p.label)}</button>`
+    ).join('');
+    wrap.innerHTML = '<span class="filter-divider">|</span>' + pills;
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+function setDriveSyncIndicator(state) {
+    const wrap  = document.getElementById('drive-sync-indicator');
+    const dot   = document.getElementById('drive-sync-dot');
+    const label = document.getElementById('drive-sync-label');
+    if (!dot) return;
+    const map = {
+        off:     ['',        ''],
+        syncing: ['syncing', 'Syncing…'],
+        synced:  ['synced',  'Synced'],
+        error:   ['error',   'Sync error'],
+    };
+    const [cls, text] = map[state] || map.off;
+    dot.className     = 'drive-sync-dot' + (cls ? ' ' + cls : '');
+    if (label) label.textContent = text;
+    if (wrap)  wrap.style.display = state === 'off' ? 'none' : '';
+}
+function updateDriveUserChip() {
+    const chip = document.getElementById('drive-user-chip');
+    if (!chip) return;
+    chip.textContent  = driveUser ? driveUser.name : '';
+    chip.style.display = driveUser ? '' : 'none';
 }
 
 
@@ -2795,27 +3621,23 @@ const STATIC_TAGLINES = [
 ];
 let _taglineStaticIdx = Math.floor(Math.random() * STATIC_TAGLINES.length);
 function getMotivationalTagline() {
-    const today = todayStr();
-    const yest  = yesterdayStr();
+    // Streak milestones are event-driven — always show them when applicable
     if (streak.current > 0 && [3,7,14,30].includes(streak.current)) {
         return '🔥 ' + streak.current + '-day streak — you\'re on fire!';
     }
     if (streak.current >= 2) {
         return '🔥 ' + streak.current + ' days in a row — keep it going!';
     }
+    // Build a rotation pool so context messages don't block static ones
+    const today = todayStr(), yest = yesterdayStr();
+    const pool = [...STATIC_TAGLINES];
     const yestCount = completionLog[yest] || 0;
-    if (yestCount >= 5) {
-        return 'You crushed ' + yestCount + ' tasks yesterday 💪';
-    }
+    if (yestCount >= 5) pool.push('You crushed ' + yestCount + ' tasks yesterday 💪');
     const todayCount = completionLog[today] || 0;
-    if (todayCount >= 2) {
-        return todayCount + ' done today already — nice pace! 🎯';
-    }
-    if (inboxItems.length > 0) {
-        return inboxItems.length + ' idea' + (inboxItems.length > 1 ? 's' : '') + ' waiting in your inbox 💡';
-    }
-    const line = STATIC_TAGLINES[_taglineStaticIdx];
-    _taglineStaticIdx = (_taglineStaticIdx + 1) % STATIC_TAGLINES.length;
+    if (todayCount >= 2) pool.push(todayCount + ' done today already — nice pace! 🎯');
+    if (inboxItems.length > 0) pool.push(inboxItems.length + ' idea' + (inboxItems.length > 1 ? 's' : '') + ' waiting in your inbox 💡');
+    const line = pool[_taglineStaticIdx % pool.length];
+    _taglineStaticIdx = (_taglineStaticIdx + 1) % pool.length;
     return line;
 }
 (function() {
@@ -2842,7 +3664,6 @@ function renderHeatmap() {
     const CELL_PX    = 10;   // cell width/height in px (compact sidebar size)
     const CELL_GAP   = 2;    // gap between cells
     const LABEL_PX   = 18;   // day-label column width
-    const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
     const today = new Date();
     today.setHours(0,0,0,0);
@@ -2865,10 +3686,14 @@ function renderHeatmap() {
         weeks.push(week);
     }
 
+    const locale      = uiLang === 'fr' ? 'fr-CA' : 'en-CA';
+    const DAY_LABELS  = Array.from({length: 7}, (_, i) =>
+        new Date(2024, 0, 1 + i).toLocaleDateString(locale, { weekday: 'short' })
+    );
     const monthLabels = weeks.map((week, wi) => {
         const firstDay = week[0];
         if (wi === 0 || firstDay.getMonth() !== weeks[wi-1][0].getMonth()) {
-            return firstDay.toLocaleDateString('en-CA', { month: 'short' });
+            return firstDay.toLocaleDateString(locale, { month: 'short' });
         }
         return '';
     });
@@ -2910,7 +3735,7 @@ function renderHeatmap() {
             if (isFuture) {
                 html += '<div class="heatmap-cell heatmap-cell-future"></div>';
             } else {
-                const tip = ds + (cnt ? ' — ' + cnt + ' task' + (cnt > 1 ? 's' : '') + ' done' : ' — no completions');
+                const tip = ds + (cnt ? ' — ' + cnt + ' ' + (cnt > 1 ? t('hmTasksDone') : t('hmTaskDone')) : ' — ' + t('hmNoComp'));
                 html += '<div class="heatmap-cell" style="background:' + cellColor(cnt) + ';" title="' + tip + '"></div>';
             }
         }
@@ -2941,8 +3766,9 @@ function _computeStatsData() {
     });
 
     const dowTotals = [0,0,0,0,0,0,0];
-    const DOW_LONG  = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-    const DOW_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const locale    = uiLang === 'fr' ? 'fr-CA' : 'en-CA';
+    const DOW_LONG  = Array.from({length: 7}, (_, i) => new Date(2024, 0, 1 + i).toLocaleDateString(locale, { weekday: 'long' }));
+    const DOW_SHORT = Array.from({length: 7}, (_, i) => new Date(2024, 0, 1 + i).toLocaleDateString(locale, { weekday: 'short' }));
     Object.entries(completionLog).forEach(([ds, cnt]) => {
         dowTotals[(new Date(ds + 'T00:00:00').getDay() + 6) % 7] += cnt;
     });
@@ -2969,28 +3795,28 @@ function renderStatsCards() {
     el.innerHTML = `
         <div class="stats-card-big">
             <div class="scb-value">🔥 ${streak.current}</div>
-            <div class="scb-label">Current Streak</div>
-            <div class="scb-sub">Longest: ${streak.longest} days</div>
+            <div class="scb-label">${t('scbCurrStreak')}</div>
+            <div class="scb-sub">${tFmt('scbLongest', streak.longest)}</div>
         </div>
         <div class="stats-card-big">
             <div class="scb-value">${d.weekCount}</div>
-            <div class="scb-label">Completed This Week</div>
-            <div class="scb-sub">${d.todayCount} today · ${d.yesterdayCount} yesterday</div>
+            <div class="scb-label">${t('scbCompWeek')}</div>
+            <div class="scb-sub">${tFmt('ssbTodayYest', d.todayCount, d.yesterdayCount)}</div>
         </div>
         <div class="stats-card-big">
             <div class="scb-value">${d.monthCount}</div>
-            <div class="scb-label">Completed This Month</div>
-            <div class="scb-sub">${d.allTimeDone} all time</div>
+            <div class="scb-label">${t('scbCompMonth')}</div>
+            <div class="scb-sub">${tFmt('ssbAllTime', d.allTimeDone)}</div>
         </div>
         <div class="stats-card-big">
             <div class="scb-value">${d.compRate}%</div>
-            <div class="scb-label">Completion Rate</div>
-            <div class="scb-sub">${d.allTimeDone} done of ${d.totalTasks} created</div>
+            <div class="scb-label">${t('ssbCompRate')}</div>
+            <div class="scb-sub">${tFmt('scbDoneOf', d.allTimeDone, d.totalTasks)}</div>
         </div>
         ${d.bestDowLong ? `<div class="stats-card-big">
             <div class="scb-value" style="font-size:1.1rem">💪 ${d.bestDowLong}</div>
-            <div class="scb-label">Most Productive Day</div>
-            <div class="scb-sub">${d.bestDowCount} tasks on ${d.bestDowLong}s total</div>
+            <div class="scb-label">${t('scbMostProd')}</div>
+            <div class="scb-sub">${tFmt('scbTasksOnDay', d.bestDowCount, d.bestDowLong)}</div>
         </div>` : ''}
     `;
 }
@@ -3002,27 +3828,27 @@ function renderSidebarStats() {
     el.innerHTML = `
         <div class="ssc-card">
             <div class="ssc-value">🔥 ${streak.current}</div>
-            <div class="ssc-label">Day Streak</div>
-            <div class="ssc-sub">Longest: ${streak.longest}d</div>
+            <div class="ssc-label">${t('ssbDayStreak')}</div>
+            <div class="ssc-sub">${tFmt('ssbLongest', streak.longest)}</div>
         </div>
         <div class="ssc-card">
             <div class="ssc-value">${d.weekCount}</div>
-            <div class="ssc-label">This Week</div>
-            <div class="ssc-sub">${d.todayCount} today · ${d.yesterdayCount} yesterday</div>
+            <div class="ssc-label">${t('ssbThisWeek')}</div>
+            <div class="ssc-sub">${tFmt('ssbTodayYest', d.todayCount, d.yesterdayCount)}</div>
         </div>
         <div class="ssc-card">
             <div class="ssc-value">${d.monthCount}</div>
-            <div class="ssc-label">This Month</div>
-            <div class="ssc-sub">${d.allTimeDone} all time</div>
+            <div class="ssc-label">${t('ssbThisMonth')}</div>
+            <div class="ssc-sub">${tFmt('ssbAllTime', d.allTimeDone)}</div>
         </div>
         <div class="ssc-card">
             <div class="ssc-value">${d.compRate}%</div>
-            <div class="ssc-label">Completion Rate</div>
+            <div class="ssc-label">${t('ssbCompRate')}</div>
         </div>
         ${d.bestDowShort ? `<div class="ssc-card">
             <div class="ssc-value">💪 ${d.bestDowShort}</div>
-            <div class="ssc-label">Best Day</div>
-            <div class="ssc-sub">${d.bestDowCount} tasks total</div>
+            <div class="ssc-label">${t('ssbBestDay')}</div>
+            <div class="ssc-sub">${tFmt('ssbTasksTotal', d.bestDowCount)}</div>
         </div>` : ''}
     `;
 }
@@ -3097,6 +3923,7 @@ function closeGhostTask() {
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
+if (window.innerWidth < 700) document.getElementById('tab-tasks').classList.add('sidebar-hidden');
 renderColorSwatches('add-color-swatches', '');
 initStorage();
 

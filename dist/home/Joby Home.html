@@ -3563,27 +3563,23 @@ const STATIC_TAGLINES = [
 ];
 let _taglineStaticIdx = Math.floor(Math.random() * STATIC_TAGLINES.length);
 function getMotivationalTagline() {
-    const today = todayStr();
-    const yest  = yesterdayStr();
+    // Streak milestones are event-driven — always show them when applicable
     if (streak.current > 0 && [3,7,14,30].includes(streak.current)) {
         return '🔥 ' + streak.current + '-day streak — you\'re on fire!';
     }
     if (streak.current >= 2) {
         return '🔥 ' + streak.current + ' days in a row — keep it going!';
     }
+    // Build a rotation pool so context messages don't block static ones
+    const today = todayStr(), yest = yesterdayStr();
+    const pool = [...STATIC_TAGLINES];
     const yestCount = completionLog[yest] || 0;
-    if (yestCount >= 5) {
-        return 'You crushed ' + yestCount + ' tasks yesterday 💪';
-    }
+    if (yestCount >= 5) pool.push('You crushed ' + yestCount + ' tasks yesterday 💪');
     const todayCount = completionLog[today] || 0;
-    if (todayCount >= 2) {
-        return todayCount + ' done today already — nice pace! 🎯';
-    }
-    if (inboxItems.length > 0) {
-        return inboxItems.length + ' idea' + (inboxItems.length > 1 ? 's' : '') + ' waiting in your inbox 💡';
-    }
-    const line = STATIC_TAGLINES[_taglineStaticIdx];
-    _taglineStaticIdx = (_taglineStaticIdx + 1) % STATIC_TAGLINES.length;
+    if (todayCount >= 2) pool.push(todayCount + ' done today already — nice pace! 🎯');
+    if (inboxItems.length > 0) pool.push(inboxItems.length + ' idea' + (inboxItems.length > 1 ? 's' : '') + ' waiting in your inbox 💡');
+    const line = pool[_taglineStaticIdx % pool.length];
+    _taglineStaticIdx = (_taglineStaticIdx + 1) % pool.length;
     return line;
 }
 (function() {
