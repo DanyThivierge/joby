@@ -710,10 +710,10 @@ select option { background: var(--card); color: var(--text); }
 .task-item.selected { background: var(--purple-light) !important; border-left: 3px solid var(--purple); }
 .sel-indicator {
     display: none;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     border: 2px solid var(--border);
-    border-radius: 50%;
+    border-radius: 4px;
     flex-shrink: 0;
     margin-right: 6px;
     transition: all 0.15s;
