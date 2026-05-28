@@ -1255,7 +1255,7 @@ const GAS_MODE = true;
 /* ── js/constants.js ── */
 // constants.js — App-wide configuration values and magic strings/numbers.
 
-const APP_VERSION         = '1.8';
+const APP_VERSION         = '2.1';
 const OPFS_FILENAME       = 'work-tasks.json';
 const LS_KEY              = 'work_tasks';
 const LS_THEME_KEY        = 'wtt-theme';
@@ -1774,7 +1774,9 @@ function applyLang(lang) {
     if (lang) uiLang = lang;
     const s = STRINGS[uiLang];
     if (!s) return;
-    document.documentElement.lang = uiLang;
+    const localeLang = uiLang === 'fr' ? 'fr-CA' : 'en-CA';
+    document.documentElement.lang = localeLang;
+    document.querySelectorAll('input[type="date"]').forEach(el => { el.lang = localeLang; });
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const val = s[el.dataset.i18n];
         if (val !== undefined) el.innerHTML = val;
@@ -2550,6 +2552,7 @@ async function initStorage() {
     populateCategorySelects();
     restoreSortSelect();
     updateModeUI();
+    if (typeof resetDueRecurringTasks === 'function' && resetDueRecurringTasks()) debouncedSave();
     renderTasks(); updateStats(); renderStreakBadge(); renderInbox();
     setSaveIndicator('saved');
     loadDriveSettingsUI();
@@ -2576,6 +2579,7 @@ async function switchMode(newMode) {
     populateCategorySelects();
     restoreSortSelect();
     updateModeUI();
+    if (typeof resetDueRecurringTasks === 'function' && resetDueRecurringTasks()) debouncedSave();
     renderTasks(); updateStats(); renderStreakBadge(); renderInbox();
     setSaveIndicator('saved');
 }
@@ -2808,21 +2812,14 @@ function toggleTask(id, evt) {
         t.doneAt = todayStr();
         logCompletion(); updateStreak();
         if (evt) fireConfetti(evt.clientX, evt.clientY);
-        // Schedule recurring reset — advance both dates by the frequency period
+        // Recurring tasks stay done until next page load — inform the user when it will reset
         if (t.recurFreq) {
-            const label      = freqLabel(t.recurFreq);
-            const oldCreated = t.createdAt;
-            const oldDue     = t.dueDate;
-            const freq       = t.recurFreq;
+            const nextDue = t.dueDate ? nextRecurDate(t.recurFreq, t.dueDate) : null;
+            const label   = freqLabel(t.recurFreq);
             setTimeout(() => {
-                const task = tasks.find(x => x.id === id);
-                if (!task || !task.done) return; // user may have un-done it
-                task.done      = false;
-                task.doneAt    = null;
-                task.createdAt = nextRecurDate(freq, oldCreated);
-                task.dueDate   = oldDue ? nextRecurDate(freq, oldDue) : null;
-                debouncedSave(); renderTasks(); updateStats();
-                const msg = task.dueDate ? tFmt('toastTaskResetDue', formatDue(task.dueDate)) : tFmt('toastTaskReset', label);
+                const msg = nextDue
+                    ? tFmt('toastTaskResetDue', formatDue(nextDue))
+                    : tFmt('toastTaskReset', label);
                 toast('↻ ' + msg, 3500, 'var(--purple)');
             }, 1600);
         }
@@ -2873,6 +2870,26 @@ function clearDone() {
     if(!n){toast(t('toastNoCleared'));return;}
     if(!confirm(tFmt('confirmClearDone', n)))return;
     tasks=tasks.filter(t=>!t.done); debouncedSave();renderTasks();updateStats();toast(tFmt('toastTasksCleared', n));
+}
+
+// ── Recurring reset on load ───────────────────────────────────────────────────
+// Recurring tasks stay done until the next app load on a new day, then advance
+// their dates and flip back to pending so they appear in Done for the rest of the
+// completion day.
+function resetDueRecurringTasks() {
+    const today = todayStr();
+    let changed = false;
+    tasks.forEach(t => {
+        if (!t.done || !t.recurFreq) return;
+        if (t.doneAt && t.doneAt < today) {
+            t.done      = false;
+            t.doneAt    = null;
+            t.createdAt = nextRecurDate(t.recurFreq, t.createdAt);
+            if (t.dueDate) t.dueDate = nextRecurDate(t.recurFreq, t.dueDate);
+            changed = true;
+        }
+    });
+    return changed;
 }
 
 // ── Edit modal ────────────────────────────────────────────────────────────────
@@ -3020,6 +3037,26 @@ function getFiltered() {
     return list;
 }
 
+// Returns the visual indent for each task in the filtered list.
+// A task's stored indent is only shown if its logical parent (from the master tasks array)
+// is present in the filtered list AND appears before it — prevents orphaned subtasks from
+// visually attaching to unrelated tasks when the parent is filtered out or reordered.
+function computeDisplayIndents(filtered) {
+    const filteredPos = new Map(filtered.map((t, i) => [t.id, i]));
+    return filtered.map((task, fi) => {
+        const indent = task.indent || 0;
+        if (indent === 0) return 0;
+        const masterIdx = tasks.findIndex(t => t.id === task.id);
+        for (let i = masterIdx - 1; i >= 0; i--) {
+            if ((tasks[i].indent || 0) < indent) {
+                const parentPos = filteredPos.get(tasks[i].id);
+                return (parentPos !== undefined && parentPos < fi) ? indent : 0;
+            }
+        }
+        return 0;
+    });
+}
+
 // ── Render tasks ──────────────────────────────────────────────────────────────
 function renderTasks() {
     const list = document.getElementById('task-list');
@@ -3031,9 +3068,10 @@ function renderTasks() {
         list.innerHTML = '<div class="empty-state"><div class="icon">&#128203;</div><p>' + (currentFilter==='all'&&!document.getElementById('search-input').value ? t('emptyNoTasks') : t('emptyNoMatch')) + '</p></div>';
         return;
     }
-    function taskCard(task, vi) {
+    const displayIndents = computeDisplayIndents(filtered);
+    function taskCard(task, vi, dIndent) {
         const ov     = isOverdue(task);
-        const indent = task.indent || 0;
+        const indent = dIndent;
         const due    = task.dueDate ? (ov&&!task.done ? '<span class="badge over-badge">&#9888; '+t('badgeOverdue')+' '+formatDue(task.dueDate)+'</span>' : '<span class="badge due-badge" title="'+formatDue(task.dueDate)+'">&#128197; '+t('badgeDue')+' '+relativeDue(task.dueDate)+'</span>') : '';
         const notes  = task.notes ? '<div class="task-notes">'+linkify(task.notes)+'</div>' : '';
         const recur  = task.recurFreq ? '<span class="badge recur-badge">&#8635; '+freqLabel(task.recurFreq)+'</span>' : '';
@@ -3049,7 +3087,7 @@ function renderTasks() {
         const isExpanded = expandedCompactIds.has(task.id);
         const isSelected = selectedIds.has(task.id);
         return '<div class="task-item'+(task.done?' done':'')+(ov&&!task.done?' overdue':'')+(task.color?' tc-'+task.color:'')+(isExpanded?' compact-expanded':'')+(selectionMode?' selectable':'')+(isSelected?' selected':'')+'"'
-            +' draggable="true" data-id="'+task.id+'" data-vis="'+vi+'" data-indent="'+indent+'"'
+            +' draggable="true" data-id="'+task.id+'" data-vis="'+vi+'" data-indent="'+(task.indent||0)+'"'
             +' style="margin-left:'+mleft+'px">'
             +'<div class="sel-indicator" onclick="toggleSelection('+task.id+',event)" aria-hidden="true"></div>'
             +'<div class="task-check'+(task.done?' checked':'')+'"'
@@ -3064,7 +3102,7 @@ function renderTasks() {
             +'</div>'
             +'</div>';
     }
-    list.innerHTML = filtered.map((t,i)=>taskCard(t,i)).join('');
+    list.innerHTML = filtered.map((t,i)=>taskCard(t,i,displayIndents[i])).join('');
     attachDrag();
     if (typeof updateBulkBar === 'function') updateBulkBar();
 }
@@ -3860,12 +3898,10 @@ function getMotivationalTagline() {
     if (streak.current > 0 && [3,7,14,30].includes(streak.current)) {
         return '🔥 ' + streak.current + '-day streak — you\'re on fire!';
     }
-    if (streak.current >= 2) {
-        return '🔥 ' + streak.current + ' days in a row — keep it going!';
-    }
     // Build a rotation pool so context messages don't block static ones
     const today = todayStr(), yest = yesterdayStr();
     const pool = [...STATIC_TAGLINES];
+    if (streak.current >= 2) pool.push('🔥 ' + streak.current + ' days in a row — keep it going!');
     const yestCount = completionLog[yest] || 0;
     if (yestCount >= 5) pool.push('You crushed ' + yestCount + ' tasks yesterday 💪');
     const todayCount = completionLog[today] || 0;

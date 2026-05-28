@@ -323,6 +323,14 @@ Tasks and settings are stored in OPFS — `work-tasks.json` for Work mode and `p
 
 ## Changelog
 
+### v2.1 (2026-05-28)
+
+- **Tagline rotation fix** — streak ≥ 2 message now rotates through the full pool instead of permanently replacing all other taglines
+- **Recurring tasks in Done filter** — completed recurring tasks stay `done` for the rest of the day and reset to pending on next page load (previously they reset after 1.6 s, making them invisible in the Done filter)
+- **Orphaned subtask indentation** — subtasks whose parent is filtered out (e.g. parent is done, viewing Pending filter) or reordered now display at indent 0 instead of visually attaching to an unrelated task
+- **Date picker locale** — `input[type="date"]` elements now get their `lang` attribute set explicitly on language switch so Chrome uses the correct regional date format (`dd/mm/yyyy` in French)
+- **WISHLIST.md** — new file for tracking low-priority ideas and nice-to-haves
+
 ### v2.0 (2026-05-27)
 
 - **Relative dates** — due dates display as "Due today / Due tomorrow / Due in N days" (≤ 6 days; falls back to formatted date); added dates show "Today / Yesterday / N days ago"; exact date visible on hover via `title` tooltip
