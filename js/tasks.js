@@ -134,21 +134,14 @@ function toggleTask(id, evt) {
         t.doneAt = todayStr();
         logCompletion(); updateStreak();
         if (evt) fireConfetti(evt.clientX, evt.clientY);
-        // Schedule recurring reset — advance both dates by the frequency period
+        // Recurring tasks stay done until next page load — inform the user when it will reset
         if (t.recurFreq) {
-            const label      = freqLabel(t.recurFreq);
-            const oldCreated = t.createdAt;
-            const oldDue     = t.dueDate;
-            const freq       = t.recurFreq;
+            const nextDue = t.dueDate ? nextRecurDate(t.recurFreq, t.dueDate) : null;
+            const label   = freqLabel(t.recurFreq);
             setTimeout(() => {
-                const task = tasks.find(x => x.id === id);
-                if (!task || !task.done) return; // user may have un-done it
-                task.done      = false;
-                task.doneAt    = null;
-                task.createdAt = nextRecurDate(freq, oldCreated);
-                task.dueDate   = oldDue ? nextRecurDate(freq, oldDue) : null;
-                debouncedSave(); renderTasks(); updateStats();
-                const msg = task.dueDate ? tFmt('toastTaskResetDue', formatDue(task.dueDate)) : tFmt('toastTaskReset', label);
+                const msg = nextDue
+                    ? tFmt('toastTaskResetDue', formatDue(nextDue))
+                    : tFmt('toastTaskReset', label);
                 toast('↻ ' + msg, 3500, 'var(--purple)');
             }, 1600);
         }
@@ -199,6 +192,26 @@ function clearDone() {
     if(!n){toast(t('toastNoCleared'));return;}
     if(!confirm(tFmt('confirmClearDone', n)))return;
     tasks=tasks.filter(t=>!t.done); debouncedSave();renderTasks();updateStats();toast(tFmt('toastTasksCleared', n));
+}
+
+// ── Recurring reset on load ───────────────────────────────────────────────────
+// Recurring tasks stay done until the next app load on a new day, then advance
+// their dates and flip back to pending so they appear in Done for the rest of the
+// completion day.
+function resetDueRecurringTasks() {
+    const today = todayStr();
+    let changed = false;
+    tasks.forEach(t => {
+        if (!t.done || !t.recurFreq) return;
+        if (t.doneAt && t.doneAt < today) {
+            t.done      = false;
+            t.doneAt    = null;
+            t.createdAt = nextRecurDate(t.recurFreq, t.createdAt);
+            if (t.dueDate) t.dueDate = nextRecurDate(t.recurFreq, t.dueDate);
+            changed = true;
+        }
+    });
+    return changed;
 }
 
 // ── Edit modal ────────────────────────────────────────────────────────────────

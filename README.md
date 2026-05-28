@@ -23,6 +23,8 @@ A self-contained task tracker for work and personal use. Runs entirely in the br
 - Filter by All / Pending / Done / High Priority / Overdue
 - **Category filter** — "Category: All" dropdown beside Sort narrows tasks by type (Dev, Meeting, etc.); repopulates automatically when switching Work ↔ Personal mode
 - Search and sort (by date added, priority, due date, or A–Z)
+- **Relative dates** — due dates show "Due today / Due tomorrow / Due in N days"; added dates show "Today / Yesterday / N days ago"; hover for the exact date
+- **Bulk selection** — ☑ Select button enters selection mode; checkbox indicators appear on all cards; floating action bar lets you Complete or Delete all selected tasks at once; Escape or Cancel to exit
 - Drag and drop to reorder tasks
 - **Drag right to indent** — create visual subtasks up to 3 levels deep; sort keeps subtasks with their parent; L-shaped dot connectors show the parent→child relationship
 - **Parent completion guard** — cannot mark a parent done while children are still open
@@ -48,6 +50,14 @@ A self-contained task tracker for work and personal use. Runs entirely in the br
 - **≡ Compact** toggle in the filter bar collapses all tasks to single-line rows — priority dot, category, due date, and 📎/↻ indicators remain visible
 - Click any compacted task row to expand it inline and see notes, badges, and the added date; click again to collapse
 - Preference is saved and restored between sessions
+
+### Mobile
+
+- Fully responsive at ≤ 640 px — no separate app or build needed
+- Sidebar slides in as a fixed overlay drawer; backdrop tap to close; toggle button in the header
+- Filter pills scroll horizontally so all filters remain accessible on small screens
+- Add-task inputs stack vertically; text field takes full width
+- Touch targets enlarged (task checkbox min 24 px, action buttons min 34 px)
 
 ### Themes & Customisation
 
@@ -118,6 +128,14 @@ The left sidebar shows everything at a glance without switching tabs:
 - Falls back to `localStorage` automatically (works when opening the file directly without a server)
 - Auto-saves on every change (800ms debounce)
 - Save indicator in the header (green = saved, amber = saving, red = failed)
+
+### Google Drive Family Sync *(home build only)*
+
+- Share a single Google Drive JSON file across family devices — no server required
+- OAuth via Google Identity Services (GIS); no bundled credentials — bring your own Google Cloud Client ID
+- Per-task `updatedAt` timestamp: on any save, the app fetches the remote file first and merges task-by-task (newer `updatedAt` wins), preventing overwrites
+- Assignment filter pills in the controls row when family members are configured
+- Settings: OAuth Client ID, Drive File ID, family members list (newline-separated)
 
 ---
 
@@ -240,7 +258,7 @@ Tasks and settings are stored in OPFS — `work-tasks.json` for Work mode and `p
 
 ```json
 {
-  "version": "1.8",
+  "version": "2.0",
   "tasks": [
     {
       "id": 1234567890,
@@ -254,7 +272,10 @@ Tasks and settings are stored in OPFS — `work-tasks.json` for Work mode and `p
       "createdAt": "2026-05-07",
       "indent": 0,
       "color": "",
-      "recurFreq": null
+      "recurFreq": null,
+      "createdBy": "Alice",
+      "assignedTo": "Bob",
+      "updatedAt": "2026-05-27T12:00:00.000Z"
     }
   ],
   "inboxItems": [
@@ -275,7 +296,10 @@ Tasks and settings are stored in OPFS — `work-tasks.json` for Work mode and `p
     "themePreset": "default",
     "themeCustom": {},
     "compactView": false,
-    "sortPreference": "added"
+    "sortPreference": "added",
+    "driveClientId": "",
+    "driveFileId": "",
+    "familyMembers": ""
   },
   "promotedJiraIds": ["1366029", "1362011"]
 }
@@ -289,7 +313,7 @@ Tasks and settings are stored in OPFS — `work-tasks.json` for Work mode and `p
 | --- | --- |
 | `n` | Open the inline add-task form |
 | `Space` | Open the Brain Dump capture modal |
-| `Escape` | Close any open modal or form |
+| `Escape` | Close any open modal or form; exit bulk selection mode |
 | `Tab` (on task checkbox) | Indent the task one level |
 | `Shift+Tab` (on task checkbox) | Dedent the task one level |
 | `Alt+↑ / Alt+↓` | Move the focused task up or down |
@@ -298,6 +322,14 @@ Tasks and settings are stored in OPFS — `work-tasks.json` for Work mode and `p
 ---
 
 ## Changelog
+
+### v2.0 (2026-05-27)
+
+- **Relative dates** — due dates display as "Due today / Due tomorrow / Due in N days" (≤ 6 days; falls back to formatted date); added dates show "Today / Yesterday / N days ago"; exact date visible on hover via `title` tooltip
+- **Bulk selection** — ☑ Select button in the controls bar enters selection mode; 18×18 px checkbox indicators appear on every task card; a floating bulk-action-bar shows the count and Complete / Delete / Cancel buttons; bulkComplete updates the streak; Escape exits selection mode; task actions are hidden and the completion dot dimmed while in selection mode
+- **Mobile responsive** — `@media (max-width: 640px)` overlay: sidebar becomes a fixed-position drawer that slides in from the left; backdrop tap to close; filter pills scroll horizontally; add-task inputs stack; touch targets enlarged; dark-mode button hidden at ≤ 480 px (accessible via Settings); CSS transition gated behind `.sidebar-ready` class added after first paint to prevent load animation; `window.matchMedia` used in JS to stay in sync with CSS breakpoints
+- **Google Drive family sync** *(home build only)* — OAuth via Google Identity Services; per-task `updatedAt` merge arbitration (newer wins); fetch-before-write concurrency; assignment dropdowns in add/edit forms; filter pills in controls row; signed-in user chip in header; `createdBy` / `assignedTo` / `updatedAt` fields added to task schema
+- **Tagline rotation fix** — `getMotivationalTagline()` now uses a pool pattern (shuffled full list) so inbox and streak messages no longer cause a permanently stuck tagline
 
 ### v1.8 (2026-05-26)
 

@@ -77,6 +77,7 @@ async function initStorage() {
     populateCategorySelects();
     restoreSortSelect();
     updateModeUI();
+    if (typeof resetDueRecurringTasks === 'function' && resetDueRecurringTasks()) debouncedSave();
     renderTasks(); updateStats(); renderStreakBadge(); renderInbox();
     setSaveIndicator('saved');
     loadDriveSettingsUI();
@@ -103,6 +104,7 @@ async function switchMode(newMode) {
     populateCategorySelects();
     restoreSortSelect();
     updateModeUI();
+    if (typeof resetDueRecurringTasks === 'function' && resetDueRecurringTasks()) debouncedSave();
     renderTasks(); updateStats(); renderStreakBadge(); renderInbox();
     setSaveIndicator('saved');
 }

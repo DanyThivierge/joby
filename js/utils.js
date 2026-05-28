@@ -128,7 +128,9 @@ function applyLang(lang) {
     if (lang) uiLang = lang;
     const s = STRINGS[uiLang];
     if (!s) return;
-    document.documentElement.lang = uiLang;
+    const localeLang = uiLang === 'fr' ? 'fr-CA' : 'en-CA';
+    document.documentElement.lang = localeLang;
+    document.querySelectorAll('input[type="date"]').forEach(el => { el.lang = localeLang; });
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const val = s[el.dataset.i18n];
         if (val !== undefined) el.innerHTML = val;

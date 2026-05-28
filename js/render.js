@@ -42,6 +42,26 @@ function getFiltered() {
     return list;
 }
 
+// Returns the visual indent for each task in the filtered list.
+// A task's stored indent is only shown if its logical parent (from the master tasks array)
+// is present in the filtered list AND appears before it — prevents orphaned subtasks from
+// visually attaching to unrelated tasks when the parent is filtered out or reordered.
+function computeDisplayIndents(filtered) {
+    const filteredPos = new Map(filtered.map((t, i) => [t.id, i]));
+    return filtered.map((task, fi) => {
+        const indent = task.indent || 0;
+        if (indent === 0) return 0;
+        const masterIdx = tasks.findIndex(t => t.id === task.id);
+        for (let i = masterIdx - 1; i >= 0; i--) {
+            if ((tasks[i].indent || 0) < indent) {
+                const parentPos = filteredPos.get(tasks[i].id);
+                return (parentPos !== undefined && parentPos < fi) ? indent : 0;
+            }
+        }
+        return 0;
+    });
+}
+
 // ── Render tasks ──────────────────────────────────────────────────────────────
 function renderTasks() {
     const list = document.getElementById('task-list');
@@ -53,9 +73,10 @@ function renderTasks() {
         list.innerHTML = '<div class="empty-state"><div class="icon">&#128203;</div><p>' + (currentFilter==='all'&&!document.getElementById('search-input').value ? t('emptyNoTasks') : t('emptyNoMatch')) + '</p></div>';
         return;
     }
-    function taskCard(task, vi) {
+    const displayIndents = computeDisplayIndents(filtered);
+    function taskCard(task, vi, dIndent) {
         const ov     = isOverdue(task);
-        const indent = task.indent || 0;
+        const indent = dIndent;
         const due    = task.dueDate ? (ov&&!task.done ? '<span class="badge over-badge">&#9888; '+t('badgeOverdue')+' '+formatDue(task.dueDate)+'</span>' : '<span class="badge due-badge" title="'+formatDue(task.dueDate)+'">&#128197; '+t('badgeDue')+' '+relativeDue(task.dueDate)+'</span>') : '';
         const notes  = task.notes ? '<div class="task-notes">'+linkify(task.notes)+'</div>' : '';
         const recur  = task.recurFreq ? '<span class="badge recur-badge">&#8635; '+freqLabel(task.recurFreq)+'</span>' : '';
@@ -71,7 +92,7 @@ function renderTasks() {
         const isExpanded = expandedCompactIds.has(task.id);
         const isSelected = selectedIds.has(task.id);
         return '<div class="task-item'+(task.done?' done':'')+(ov&&!task.done?' overdue':'')+(task.color?' tc-'+task.color:'')+(isExpanded?' compact-expanded':'')+(selectionMode?' selectable':'')+(isSelected?' selected':'')+'"'
-            +' draggable="true" data-id="'+task.id+'" data-vis="'+vi+'" data-indent="'+indent+'"'
+            +' draggable="true" data-id="'+task.id+'" data-vis="'+vi+'" data-indent="'+(task.indent||0)+'"'
             +' style="margin-left:'+mleft+'px">'
             +'<div class="sel-indicator" onclick="toggleSelection('+task.id+',event)" aria-hidden="true"></div>'
             +'<div class="task-check'+(task.done?' checked':'')+'"'
@@ -86,7 +107,7 @@ function renderTasks() {
             +'</div>'
             +'</div>';
     }
-    list.innerHTML = filtered.map((t,i)=>taskCard(t,i)).join('');
+    list.innerHTML = filtered.map((t,i)=>taskCard(t,i,displayIndents[i])).join('');
     attachDrag();
     if (typeof updateBulkBar === 'function') updateBulkBar();
 }

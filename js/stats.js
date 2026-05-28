@@ -33,12 +33,10 @@ function getMotivationalTagline() {
     if (streak.current > 0 && [3,7,14,30].includes(streak.current)) {
         return '🔥 ' + streak.current + '-day streak — you\'re on fire!';
     }
-    if (streak.current >= 2) {
-        return '🔥 ' + streak.current + ' days in a row — keep it going!';
-    }
     // Build a rotation pool so context messages don't block static ones
     const today = todayStr(), yest = yesterdayStr();
     const pool = [...STATIC_TAGLINES];
+    if (streak.current >= 2) pool.push('🔥 ' + streak.current + ' days in a row — keep it going!');
     const yestCount = completionLog[yest] || 0;
     if (yestCount >= 5) pool.push('You crushed ' + yestCount + ' tasks yesterday 💪');
     const todayCount = completionLog[today] || 0;
