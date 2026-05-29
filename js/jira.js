@@ -35,6 +35,8 @@ function openSettings() {
     const preferredTab = activeMode === 'personal' ? 'personal' : 'jira';
     const available = document.getElementById('stab-' + preferredTab) ? preferredTab : (document.getElementById('stab-jira') ? 'jira' : 'general');
     switchSettingsTab(available);
+    const tamaChk = document.getElementById('s-tamagoshi-enabled');
+    if (tamaChk) tamaChk.checked = settings.tamagoshiEnabled === true;
     document.getElementById('settings-modal').style.display = 'block';
 }
 function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }

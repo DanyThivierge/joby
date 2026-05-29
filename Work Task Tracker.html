@@ -14,7 +14,7 @@
         <img src="th_logo_en.png" alt="TELUS Health" class="logo-img" id="logo-img">
         <div class="logo-divider"></div>
         <span class="app-name">Joby</span>
-        <span class="app-version">v2.0</span>
+        <span class="app-version">v2.1</span>
         <span class="app-tagline" id="app-tagline"></span>
     </div>
     <div class="header-actions">
@@ -280,6 +280,14 @@
                             </div>
                         </div>
                     </div>
+                    <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);">
+                        <div style="font-weight:700;font-size:0.85rem;color:var(--text-1);margin-bottom:12px;letter-spacing:.5px">&#128025; Joby the Octopus</div>
+                        <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:12px">
+                            <span style="font-size:0.88rem;color:var(--text-2)">Show Joby in the header bar</span>
+                            <input type="checkbox" id="s-tamagoshi-enabled" onchange="toggleTamagoshi(this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:var(--purple)">
+                        </label>
+                        <p style="font-size:0.75rem;color:var(--text-3);margin-top:6px">An animated octopus that walks, hangs, and reacts to your tasks. Off by default.</p>
+                    </div>
                 </div>
 
                 <!-- ── Jira panel ── -->
@@ -483,6 +491,11 @@
 <script src="js/inbox.js"></script>
 <script src="js/drive.js"></script>
 <script src="js/stats.js"></script>
+<!-- ASCII version -->
+<!--<script src="js/tamagoshi.js"></script> -->
+
+<!-- SVG version (swap to compare) -->
+<script src="js/tamagoshi_svg.js"></script>
 <script src="js/main.js"></script>
 
 <!-- ⚡ Brain Dump FAB -->
@@ -501,5 +514,15 @@
     </div>
 </div>
 
+<!-- Tamagoshi: fixed overlay across header + tabs bar -->
+<div id="tama-strip" style="display:none">
+    <div id="tama-body">
+        <div id="tama-bubble"></div>
+        <div id="tama-line0" class="tama-line"></div>
+        <div id="tama-line1" class="tama-line"></div>
+        <div id="tama-line2" class="tama-line"></div>
+    </div>
+    <div id="tama-treats"></div>
+</div>
 </body>
 </html>

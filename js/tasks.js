@@ -134,6 +134,10 @@ function toggleTask(id, evt) {
         t.doneAt = todayStr();
         logCompletion(); updateStreak();
         if (evt) fireConfetti(evt.clientX, evt.clientY);
+        if (typeof tamaTaskDone === 'function') {
+            tamaTaskDone(evt ? evt.clientX : null);
+            if (tasks.filter(t => !t.done).length === 0 && typeof tamaAllDone === 'function') tamaAllDone();
+        }
         // Recurring tasks stay done until next page load — inform the user when it will reset
         if (t.recurFreq) {
             const nextDue = t.dueDate ? nextRecurDate(t.recurFreq, t.dueDate) : null;

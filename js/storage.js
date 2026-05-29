@@ -8,7 +8,7 @@ function currentLsKey() {
 }
 
 function payload() {
-    return { version: APP_VERSION, tasks, settings: { jiraUrl: settings.jiraUrl, jiraJql: settings.jiraJql, jiraAssigneeMe: settings.jiraAssigneeMe, jiraUnresolved: settings.jiraUnresolved, jiraStatuses: settings.jiraStatuses, jiraStatusNot: settings.jiraStatusNot, jiraPriorities: settings.jiraPriorities, jiraUpdatedDays: settings.jiraUpdatedDays, jiraProjects: settings.jiraProjects, themePreset: settings.themePreset, themeCustom: settings.themeCustom, compactView: settings.compactView, sortPreference: settings.sortPreference, driveClientId: settings.driveClientId, driveFileId: settings.driveFileId, familyMembers: settings.familyMembers }, promotedJiraIds, inboxItems, completionLog, streak };
+    return { version: APP_VERSION, tasks, settings: { jiraUrl: settings.jiraUrl, jiraJql: settings.jiraJql, jiraAssigneeMe: settings.jiraAssigneeMe, jiraUnresolved: settings.jiraUnresolved, jiraStatuses: settings.jiraStatuses, jiraStatusNot: settings.jiraStatusNot, jiraPriorities: settings.jiraPriorities, jiraUpdatedDays: settings.jiraUpdatedDays, jiraProjects: settings.jiraProjects, themePreset: settings.themePreset, themeCustom: settings.themeCustom, compactView: settings.compactView, tamagoshiEnabled: settings.tamagoshiEnabled, sortPreference: settings.sortPreference, driveClientId: settings.driveClientId, driveFileId: settings.driveFileId, familyMembers: settings.familyMembers }, promotedJiraIds, inboxItems, completionLog, streak };
 }
 async function opfsHandle() {
     const root = await navigator.storage.getDirectory();
@@ -47,7 +47,8 @@ function normalizeSettings(s) {
         jiraProjects:   (s && s.jiraProjects)   || '',
         themePreset:    (s && s.themePreset)    || 'default',
         themeCustom:    (s && s.themeCustom)    || {},
-        compactView:    (s && s.compactView)    || false,
+        compactView:       (s && s.compactView)       || false,
+        tamagoshiEnabled:  s && s.tamagoshiEnabled  !== undefined ? s.tamagoshiEnabled  : false,
         sortPreference: (s && s.sortPreference) || 'added',
         driveClientId:  (s && s.driveClientId)  || '',
         driveFileId:    (s && s.driveFileId)    || '',
@@ -82,6 +83,7 @@ async function initStorage() {
     setSaveIndicator('saved');
     loadDriveSettingsUI();
     if (typeof initDrive === 'function') initDrive();
+    if (typeof applyTamagoshiSetting === 'function') applyTamagoshiSetting();
     try { uiLang = localStorage.getItem(LANG_LS_KEY) || 'en'; } catch {}
     if (typeof applyLang === 'function') applyLang();
 }

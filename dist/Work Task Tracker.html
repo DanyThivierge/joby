@@ -811,6 +811,184 @@ select option { background: var(--card); color: var(--text); }
     #dark-toggle-btn { display: none; }
 }
 
+/* ==========================================================================
+   ── Tamagoshi Creature Core System Layout ──
+   ========================================================================== */
+
+#tama-strip {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 160px;
+    pointer-events: none;
+    overflow: visible;
+    user-select: none;
+    z-index: 50;
+}
+
+#tama-body {
+    position: absolute;
+    top: 4px;
+    left: 0;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 900;                 
+    font-size: 14px;                  
+    line-height: 1.25;                 
+    letter-spacing: normal;           /* FIXED: Reverted to normal to prevent micro-rounding tracking errors */
+    white-space: nowrap;
+    pointer-events: none;
+    transition: color 0.4s ease, opacity 0.6s ease, filter 0.3s ease;
+
+    /* ── CHUNKY RETRO STROKE ── */
+    -webkit-text-stroke: 0.5px currentcolor; 
+    text-rendering: optimizeLegibility;       
+}
+
+/* Hat line: keep bold weight but use minimal stroke — box-drawing chars bloat at 0.5px */
+#tama-line0 {
+    -webkit-text-stroke: 0.15px currentcolor;
+}
+
+.tama-line { display: block; }
+
+/* ── Reactive Palette & High Priority ID Overrides ── */
+
+#tama-body.joby-happy { 
+    color: #FF69B4; 
+    animation: jobyGlow 3s infinite alternate ease-in-out;
+}
+
+#tama-body.joby-worried { 
+    color: #DC143C; 
+    animation: jobyHeartbeat 0.8s infinite alternate ease-in-out;
+    text-shadow: 0 0 8px rgba(220,20,60,0.6); 
+}
+
+#tama-body.joby-sleeping { 
+    color: #D8BFD8; 
+    animation: jobySleepGlow 4s infinite ease-in-out;
+}
+
+#tama-body.joby-focused {
+    color: #00ffcc;
+    filter: drop-shadow(0 0 5px rgba(0,255,204,0.6));
+    animation: jobyGlow 1.5s infinite alternate ease-in-out;
+}
+
+#tama-body.joby-excited, 
+#tama-body.joby-eating { 
+    color: #FFD700; 
+}
+
+#tama-body.joby-hanging { 
+    color: #87CEEB; 
+}
+
+#tama-body.joby-boredom { 
+    color: #9333ea; 
+    filter: drop-shadow(0 2px 4px rgba(147,51,234,0.3));
+}
+
+#tama-body.joby-rainbow { 
+    color: #FF69B4; 
+    animation: jobyRainbow 3s linear infinite; 
+}
+
+/* ── Solid Black Eye Lock Layers ── */
+#tama-body .joby-eye {
+    color: #000000 !important;
+    -webkit-text-stroke: 0.4px #000000 !important;
+    text-shadow: none !important;                  
+    filter: none !important;                       
+}
+
+/* ── Animation Vectors ── */
+@keyframes jobyGlow {
+    0%   { filter: brightness(1); }
+    100% { filter: brightness(1.2) drop-shadow(0 0 4px rgba(255,105,180,0.4)); }
+}
+@keyframes jobyHeartbeat {
+    0%   { transform: scale(1); filter: saturate(1); }
+    100% { transform: scale(1.03); filter: saturate(1.4); }
+}
+@keyframes jobySleepGlow {
+    0%, 100% { opacity: 0.4; }
+    50%      { opacity: 0.7; }
+}
+@keyframes jobyRainbow {
+    0%   { color: #FF69B4; filter: hue-rotate(0deg); }
+    100% { color: #FF69B4; filter: hue-rotate(360deg); }
+}
+
+/* ── Speech system ── */
+#tama-bubble {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-family: var(--font-body, system-ui);
+    white-space: nowrap;
+    color: var(--text-1);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 60;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+#tama-bubble.visible { opacity: 1; }
+#tama-bubble::before { content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-bottom-color: var(--border); }
+
+/* ── Treats layer ── */
+#tama-treats { position: absolute; top: 18px; left: 0; right: 0; height: 40px; pointer-events: none; }
+.tama-treat { position: absolute; color: #f59e0b; font-size: 15px; animation: tama-drop 0.35s ease-out forwards; }
+@keyframes tama-drop { from { transform: translateY(-18px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ==========================================================================
+   ── Floating Emoji Overlay Layouts ──
+   ========================================================================== */
+
+.joby-floating-effect {
+    font-size: 26px;
+    display: inline-block;
+    line-height: 1;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.18));
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.joby-bounce { animation: jobyBounceEffect 0.5s infinite alternate ease-in-out; }
+.joby-pop    { animation: jobyPopEffect 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.35) forwards; }
+.joby-steam  { animation: jobySteamEffect 1.4s infinite ease-in-out; }
+.joby-pulse  { animation: jobyPulseEffect 0.7s infinite alternate ease-in-out; }
+.joby-sweat  { animation: jobySweatEffect 0.6s infinite linear; }
+
+@keyframes jobyBounceEffect {
+    from { transform: translateY(2px) scale(0.95); }
+    to   { transform: translateY(-8px) scale(1.05); }
+}
+@keyframes jobyPopEffect {
+    0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+    70%  { transform: scale(1.2) rotate(10deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes jobySteamEffect {
+    0%   { transform: translateY(4px) scale(0.8) rotate(-3deg); opacity: 0.3; }
+    50%  { transform: translateY(-3px) scale(1.05) rotate(5deg); opacity: 1; }
+    100% { transform: translateY(-8px) scale(0.9) rotate(-2deg); opacity: 0; }
+}
+@keyframes jobyPulseEffect {
+    from { transform: scale(0.88); filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1)); }
+    to   { transform: scale(1.1); filter: drop-shadow(0 3px 8px rgba(255,215,0,0.3)); }
+}
+@keyframes jobySweatEffect {
+    0%   { transform: translate(-2px, -4px); opacity: 0; }
+    30%  { opacity: 1; }
+    100% { transform: translate(2px, 6px); opacity: 0; }
+}
 </style>
 </head>
 <body>
@@ -820,7 +998,7 @@ select option { background: var(--card); color: var(--text); }
         <img src="th_logo_en.png" alt="TELUS Health" class="logo-img" id="logo-img">
         <div class="logo-divider"></div>
         <span class="app-name">Joby</span>
-        <span class="app-version">v2.0</span>
+        <span class="app-version">v2.1</span>
         <span class="app-tagline" id="app-tagline"></span>
     </div>
     <div class="header-actions">
@@ -1070,6 +1248,14 @@ select option { background: var(--card); color: var(--text); }
                             </div>
                         </div>
                     </div>
+                    <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);">
+                        <div style="font-weight:700;font-size:0.85rem;color:var(--text-1);margin-bottom:12px;letter-spacing:.5px">&#128025; Joby the Octopus</div>
+                        <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:12px">
+                            <span style="font-size:0.88rem;color:var(--text-2)">Show Joby in the header bar</span>
+                            <input type="checkbox" id="s-tamagoshi-enabled" onchange="toggleTamagoshi(this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:var(--purple)">
+                        </label>
+                        <p style="font-size:0.75rem;color:var(--text-3);margin-top:6px">An animated octopus that walks, hangs, and reacts to your tasks. Off by default.</p>
+                    </div>
                 </div>
 
                 <!-- ── Jira panel ── -->
@@ -1231,6 +1417,10 @@ select option { background: var(--card); color: var(--text); }
     </div>
 </div>
 
+<!-- ASCII version -->
+<!-- -->
+
+<!-- SVG version (swap to compare) -->
 
 <!-- ⚡ Brain Dump FAB -->
 <button class="fab-capture" onclick="openCapture()" title="Brain dump (Space)" aria-label="Open Brain Dump capture (Space)">&#9889;</button>
@@ -1248,6 +1438,16 @@ select option { background: var(--card); color: var(--text); }
     </div>
 </div>
 
+<!-- Tamagoshi: fixed overlay across header + tabs bar -->
+<div id="tama-strip" style="display:none">
+    <div id="tama-body">
+        <div id="tama-bubble"></div>
+        <div id="tama-line0" class="tama-line"></div>
+        <div id="tama-line1" class="tama-line"></div>
+        <div id="tama-line2" class="tama-line"></div>
+    </div>
+    <div id="tama-treats"></div>
+</div>
 <script>
 /* ── js/constants.js ── */
 // constants.js — App-wide configuration values and magic strings/numbers.
@@ -2480,7 +2680,7 @@ function currentLsKey() {
 }
 
 function payload() {
-    return { version: APP_VERSION, tasks, settings: { jiraUrl: settings.jiraUrl, jiraJql: settings.jiraJql, jiraAssigneeMe: settings.jiraAssigneeMe, jiraUnresolved: settings.jiraUnresolved, jiraStatuses: settings.jiraStatuses, jiraStatusNot: settings.jiraStatusNot, jiraPriorities: settings.jiraPriorities, jiraUpdatedDays: settings.jiraUpdatedDays, jiraProjects: settings.jiraProjects, themePreset: settings.themePreset, themeCustom: settings.themeCustom, compactView: settings.compactView, sortPreference: settings.sortPreference, driveClientId: settings.driveClientId, driveFileId: settings.driveFileId, familyMembers: settings.familyMembers }, promotedJiraIds, inboxItems, completionLog, streak };
+    return { version: APP_VERSION, tasks, settings: { jiraUrl: settings.jiraUrl, jiraJql: settings.jiraJql, jiraAssigneeMe: settings.jiraAssigneeMe, jiraUnresolved: settings.jiraUnresolved, jiraStatuses: settings.jiraStatuses, jiraStatusNot: settings.jiraStatusNot, jiraPriorities: settings.jiraPriorities, jiraUpdatedDays: settings.jiraUpdatedDays, jiraProjects: settings.jiraProjects, themePreset: settings.themePreset, themeCustom: settings.themeCustom, compactView: settings.compactView, tamagoshiEnabled: settings.tamagoshiEnabled, sortPreference: settings.sortPreference, driveClientId: settings.driveClientId, driveFileId: settings.driveFileId, familyMembers: settings.familyMembers }, promotedJiraIds, inboxItems, completionLog, streak };
 }
 async function opfsHandle() {
     const root = await navigator.storage.getDirectory();
@@ -2519,7 +2719,8 @@ function normalizeSettings(s) {
         jiraProjects:   (s && s.jiraProjects)   || '',
         themePreset:    (s && s.themePreset)    || 'default',
         themeCustom:    (s && s.themeCustom)    || {},
-        compactView:    (s && s.compactView)    || false,
+        compactView:       (s && s.compactView)       || false,
+        tamagoshiEnabled:  s && s.tamagoshiEnabled  !== undefined ? s.tamagoshiEnabled  : false,
         sortPreference: (s && s.sortPreference) || 'added',
         driveClientId:  (s && s.driveClientId)  || '',
         driveFileId:    (s && s.driveFileId)    || '',
@@ -2554,6 +2755,7 @@ async function initStorage() {
     setSaveIndicator('saved');
     loadDriveSettingsUI();
     if (typeof initDrive === 'function') initDrive();
+    if (typeof applyTamagoshiSetting === 'function') applyTamagoshiSetting();
     try { uiLang = localStorage.getItem(LANG_LS_KEY) || 'en'; } catch {}
     if (typeof applyLang === 'function') applyLang();
 }
@@ -2809,6 +3011,10 @@ function toggleTask(id, evt) {
         t.doneAt = todayStr();
         logCompletion(); updateStreak();
         if (evt) fireConfetti(evt.clientX, evt.clientY);
+        if (typeof tamaTaskDone === 'function') {
+            tamaTaskDone(evt ? evt.clientX : null);
+            if (tasks.filter(t => !t.done).length === 0 && typeof tamaAllDone === 'function') tamaAllDone();
+        }
         // Recurring tasks stay done until next page load — inform the user when it will reset
         if (t.recurFreq) {
             const nextDue = t.dueDate ? nextRecurDate(t.recurFreq, t.dueDate) : null;
@@ -3306,6 +3512,8 @@ function openSettings() {
     const preferredTab = activeMode === 'personal' ? 'personal' : 'jira';
     const available = document.getElementById('stab-' + preferredTab) ? preferredTab : (document.getElementById('stab-jira') ? 'jira' : 'general');
     switchSettingsTab(available);
+    const tamaChk = document.getElementById('s-tamagoshi-enabled');
+    if (tamaChk) tamaChk.checked = settings.tamagoshiEnabled === true;
     document.getElementById('settings-modal').style.display = 'block';
 }
 function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; }
