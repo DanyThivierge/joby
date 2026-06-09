@@ -532,6 +532,7 @@ function init() {
   lastActivityTime = Date.now();
   window.addEventListener('resize', updateBounds);
   setInterval(maybeSpeak, 9000);
+  applyTamagoshiSetting();
   requestAnimationFrame(rafLoop);
 }
 
