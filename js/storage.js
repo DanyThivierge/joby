@@ -144,24 +144,33 @@ function setSaveIndicator(state) {
 
 // ── Export / Import JSON ──────────────────────────────────────────────────────
 async function exportJSON() {
+    const filename = 'work-tasks-backup-' + new Date().toISOString().slice(0,10) + '.json';
+    const json = JSON.stringify(payload(), null, 2);
+    function blobDownload() {
+        const blob = new Blob([json], { type: 'application/json' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url; a.download = filename;
+        a.click(); URL.revokeObjectURL(url);
+        toast(t('toastBackupDownloaded'));
+    }
     if ('showSaveFilePicker' in window) {
         try {
             const fh = await window.showSaveFilePicker({
-                suggestedName: 'work-tasks-backup-' + new Date().toISOString().slice(0,10) + '.json',
+                suggestedName: filename,
                 types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
             });
             const w = await fh.createWritable();
-            await w.write(JSON.stringify(payload(), null, 2));
+            await w.write(json);
             await w.close();
             toast(t('toastBackupExported'));
-        } catch(e) { if (e.name !== 'AbortError') toast(tFmt('toastExportFailed', e.message)); }
+        } catch(e) {
+            if (e.name === 'AbortError') return;
+            if (e.name === 'SecurityError') { blobDownload(); return; }
+            toast(tFmt('toastExportFailed', e.message));
+        }
     } else {
-        const blob = new Blob([JSON.stringify(payload(), null, 2)], { type: 'application/json' });
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        a.href = url; a.download = 'work-tasks-backup-' + new Date().toISOString().slice(0,10) + '.json';
-        a.click(); URL.revokeObjectURL(url);
-        toast(t('toastBackupDownloaded'));
+        blobDownload();
     }
 }
 async function importJSON(event) {
