@@ -32,6 +32,7 @@ const JS_ORDER = [
     'js/inbox.js',
     'js/drive.js',
     'js/stats.js',
+    'js/tamagoshi_svg.js',
     'js/main.js',
 ];
 
