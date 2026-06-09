@@ -60,6 +60,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
     padding: 0 24px; display: flex; align-items: center;
     justify-content: space-between; height: 56px;
     box-shadow: var(--shadow-sm);
+    position: sticky; top: 0; z-index: 45;
 }
 .header-left { display: flex; align-items: center; gap: 0; }
 .logo-img    { height: 32px; display: block; filter: var(--logo-filter); }
@@ -100,7 +101,7 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 [data-theme="dark"] .status-bar.info    { background: var(--green-light); border-color: var(--green); color: var(--green); }
 
 /* ── Tabs ───────────────────────────────────────────────────────────────── */
-.tabs-bar { background: var(--tab-bar-bg); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; gap: 0; }
+.tabs-bar { background: var(--tab-bar-bg); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; gap: 0; position: sticky; top: 56px; z-index: 44; }
 .tab-btn {
     padding: 14px 22px; border: none; background: transparent; cursor: pointer;
     font-size: 0.88rem; font-weight: 600; color: var(--text-3);
