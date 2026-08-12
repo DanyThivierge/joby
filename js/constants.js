@@ -17,6 +17,7 @@ const JIRA_DEFAULT_URL    = 'https://telushealth.atlassian.net';
 const SAVE_DEBOUNCE_MS    = 800;
 const DELETE_UNDO_MS      = 5000;
 const TAGLINE_INTERVAL_MS = 5 * 60 * 1000;
+const DIGEST_POLL_MS      = 20 * 60 * 1000;
 
 const MAX_INDENT          = 3;
 const CONFETTI_COUNT      = 28;

@@ -44,3 +44,9 @@ const TASK_COLORS = [
     { key: 'blue',   label: 'Blue',   hex: '#3b82f6' },
     { key: 'pink',   label: 'Pink',   hex: '#ec4899' },
 ];
+
+// ── Jira Digest tab ───────────────────────────────────────────────────────────
+let digestItems       = {};   // commentId -> digest item (see docs/superpowers/specs/2026-08-12-jira-digest-tab-design.md)
+let digestLastPolled  = null; // ISO timestamp of the last successful poll
+let digestIsLoading   = false;
+let digestMyAccountId = null; // cached Jira accountId of the current user
