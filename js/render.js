@@ -7,7 +7,10 @@ function switchTab(tab, btn) {
     btn.classList.add('active');
     document.getElementById('tab-tasks').style.display  = tab === 'tasks'  ? '' : 'none';
     document.getElementById('tab-jira').style.display   = tab === 'jira'   ? '' : 'none';
-    if (tab === 'jira')  initJiraTab();
+    const digestTab = document.getElementById('tab-digest');
+    if (digestTab) digestTab.style.display = tab === 'digest' ? '' : 'none';
+    if (tab === 'jira')   initJiraTab();
+    if (tab === 'digest') initDigestTab();
 }
 
 // Groups tasks into [parent, ...children] blocks so sort keeps subtasks with their parent.
