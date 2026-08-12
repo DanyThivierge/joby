@@ -20,6 +20,8 @@ import os
 PORT        = 3333
 JIRA_HOST   = 'https://telushealth.atlassian.net'
 COOKIE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jira-cookie.txt')
+DIGEST_DIR  = os.environ.get('JOBY_DIGEST_DIR', r'G:\My Drive\Joby\jira-digest')
+DIGEST_FILE = os.path.join(DIGEST_DIR, 'jira-digest.json')
 
 
 def get_cookie():
@@ -45,12 +47,16 @@ class JiraProxy(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/_status':
             self._status()
+        elif self.path == '/digest/data':
+            self._digest_get()
         else:
             self._proxy()
 
     def do_POST(self):
         if self.path == '/_set-cookie':
             self._handle_set_cookie()
+        elif self.path == '/digest/data':
+            self._digest_post()
         else:
             self._proxy()
 
@@ -87,6 +93,38 @@ class JiraProxy(BaseHTTPRequestHandler):
             save_cookie(cookie)
             print(f'  Cookie updated ({len(cookie)} chars) → {COOKIE_FILE}')
             self._json(200, {'ok': True})
+        except Exception as e:
+            self._json(500, {'error': str(e)})
+
+    def _digest_get(self):
+        try:
+            os.makedirs(DIGEST_DIR, exist_ok=True)
+            if not os.path.exists(DIGEST_FILE):
+                self._json(200, {})
+                return
+            with open(DIGEST_FILE, 'r', encoding='utf-8') as f:
+                data = f.read()
+            body = data.encode('utf-8')
+            self.send_response(200)
+            self._cors()
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        except Exception as e:
+            self._json(500, {'error': str(e)})
+
+    def _digest_post(self):
+        length = int(self.headers.get('Content-Length', 0))
+        raw = self.rfile.read(length) if length else b'{}'
+        try:
+            json.loads(raw)  # validate before writing to disk
+            os.makedirs(DIGEST_DIR, exist_ok=True)
+            with open(DIGEST_FILE, 'w', encoding='utf-8') as f:
+                f.write(raw.decode('utf-8'))
+            self._json(200, {'ok': True})
+        except json.JSONDecodeError as e:
+            self._json(400, {'error': 'Invalid JSON: %s' % e})
         except Exception as e:
             self._json(500, {'error': str(e)})
 
