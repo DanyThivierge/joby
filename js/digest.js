@@ -16,8 +16,8 @@ function initDigestTab() {
     document.getElementById('digest-no-config').style.display = ok ? 'none' : 'block';
     document.getElementById('digest-content').style.display   = ok ? 'block' : 'none';
     if (!ok) return;
-    if (Object.keys(digestItems).length === 0) {
-        loadDigestFromProxy().then(fetchDigest);
+    if (!digestHydrated) {
+        fetchDigest();
     } else {
         renderDigest();
     }
@@ -26,11 +26,17 @@ function initDigestTab() {
 async function loadDigestFromProxy() {
     try {
         const r = await fetch(PROXY_ORIGIN + '/digest/data');
-        if (!r.ok) return;
+        if (!r.ok) {
+            console.warn('Failed to load digest state from proxy: HTTP ' + r.status);
+            return;
+        }
         const data = await r.json();
         digestItems      = data.items      || {};
         digestLastPolled = data.lastPolled || null;
-    } catch { /* proxy not reachable yet — fetchDigest's own error path will surface this */ }
+        digestHydrated   = true;
+    } catch (e) {
+        console.warn('Failed to load digest state from proxy:', e);
+    }
 }
 
 async function saveDigestToProxy() {
@@ -93,6 +99,7 @@ async function fetchDigest() {
     const btn = document.getElementById('digest-refresh-btn');
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Loading...'; }
     try {
+        if (!digestHydrated) await loadDigestFromProxy();
         const accountId = await fetchMyAccountId();
         const since = digestLastPolled ? new Date(digestLastPolled) : null;
         const jql = '(assignee = currentUser() OR watcher = currentUser())'

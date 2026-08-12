@@ -51,3 +51,4 @@ let digestItems       = {};   // commentId -> digest item (see docs/superpowers/
 let digestLastPolled  = null; // ISO timestamp of the last successful poll
 let digestIsLoading   = false;
 let digestMyAccountId = null; // cached Jira accountId of the current user
+let digestHydrated    = false; // true once digestItems has been loaded from the proxy at least once this session
