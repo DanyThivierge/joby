@@ -240,10 +240,44 @@ function renderDigest() {
 }
 
 function renderDigestGroup(group) {
-    const items = group.items.slice().sort((a, b) => new Date(b.created) - new Date(a.created));
+    const clusters = clusterItemsByIssue(group.items);
     return '<div class="digest-group">'
         + '<div class="digest-group-header">' + escHtml(group.epicName) + '</div>'
-        + items.map(renderDigestItem).join('')
+        + clusters.map(renderDigestIssueCluster).join('')
+        + '</div>';
+}
+
+// Multiple new comments on the same issue used to render as separate cards with the
+// same issue header repeated. Cluster them under one shared header instead — each
+// comment keeps its own bucket/status/waitingOn controls (still keyed by commentId).
+function clusterItemsByIssue(items) {
+    const byIssue = {};
+    for (const item of items) {
+        if (!byIssue[item.issueKey]) byIssue[item.issueKey] = { issueKey: item.issueKey, comments: [], latest: 0 };
+        const cluster = byIssue[item.issueKey];
+        cluster.comments.push(item);
+        const t = new Date(item.created).getTime();
+        if (t > cluster.latest) cluster.latest = t;
+    }
+    return Object.values(byIssue).sort((a, b) => b.latest - a.latest);
+}
+
+function renderDigestIssueCluster(cluster) {
+    const comments = cluster.comments.slice().sort((a, b) => new Date(a.created) - new Date(b.created));
+    const head = comments[comments.length - 1]; // most recently merged comment has the freshest summary/epic
+    const reasons = {
+        mentionsMe: comments.some(c => c.mentionsMe),
+        isAssignee: comments.some(c => c.isAssignee),
+        isWatching: comments.some(c => c.isWatching),
+    };
+    return '<div class="digest-issue-cluster">'
+        + '<div class="digest-item-head" onclick="toggleDigestThread(\'' + head.commentId + '\')">'
+        + '<span class="jira-key">' + escHtml(cluster.issueKey) + '</span>'
+        + '<span class="digest-summary">' + escHtml(head.issueSummary) + '</span>'
+        + renderDigestReasonTags(reasons)
+        + '</div>'
+        + comments.map(renderDigestComment).join('')
+        + '<div class="digest-thread" id="digest-thread-' + head.commentId + '" style="display:none"></div>'
         + '</div>';
 }
 
@@ -261,7 +295,7 @@ function renderDigestAttachments(attachments) {
 // items didn't have yet). Patch just the comment-preview text in place rather than a
 // full renderDigest() — that would also collapse/re-fetch any other open thread panels.
 function refreshDigestCommentPreviews() {
-    document.querySelectorAll('.digest-item').forEach(el => {
+    document.querySelectorAll('.digest-comment-row').forEach(el => {
         const item = digestItems[el.dataset.commentId];
         const commentEl = el.querySelector('.digest-comment');
         if (item && commentEl) {
@@ -278,7 +312,7 @@ function renderDigestReasonTags(item) {
     return tags.length ? '<div class="digest-reasons">' + tags.join('') + '</div>' : '';
 }
 
-function renderDigestItem(item) {
+function renderDigestComment(item) {
     const bucketPills = Object.keys(DIGEST_BUCKET_LABELS).map(b =>
         '<button class="digest-bucket-pill' + (item.bucket === b ? ' active' : '') + '" onclick="setDigestBucket(\'' + item.commentId + '\',\'' + b + '\')">' + DIGEST_BUCKET_LABELS[b] + '</button>'
     ).join('');
@@ -288,12 +322,7 @@ function renderDigestItem(item) {
     const waitingInput = item.status === 'waiting'
         ? '<input type="text" class="digest-waiting-input" placeholder="Waiting on..." value="' + escAttr(item.waitingOn || '') + '" onchange="setDigestWaitingOn(\'' + item.commentId + '\', this.value)">'
         : '';
-    return '<div class="digest-item" data-comment-id="' + item.commentId + '">'
-        + '<div class="digest-item-head" onclick="toggleDigestThread(\'' + item.commentId + '\')">'
-        + '<span class="jira-key">' + escHtml(item.issueKey) + '</span>'
-        + '<span class="digest-summary">' + escHtml(item.issueSummary) + '</span>'
-        + renderDigestReasonTags(item)
-        + '</div>'
+    return '<div class="digest-comment-row" data-comment-id="' + item.commentId + '">'
         + '<div class="digest-comment"><strong>' + escHtml(item.author) + ':</strong> ' + linkify(resolveMentionsForDisplay(item.body)) + '</div>'
         + renderDigestAttachments(item.attachments)
         + '<div class="digest-controls">'
@@ -301,7 +330,6 @@ function renderDigestItem(item) {
         + '<select class="digest-status-select" onchange="setDigestStatus(\'' + item.commentId + '\', this.value)">' + statusOptions + '</select>'
         + waitingInput
         + '</div>'
-        + '<div class="digest-thread" id="digest-thread-' + item.commentId + '" style="display:none"></div>'
         + '</div>';
 }
 

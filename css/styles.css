@@ -989,7 +989,7 @@ select option { background: var(--card); color: var(--text); }
     font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
     color: var(--text-3); padding: 6px 2px; border-bottom: 1px solid var(--border); margin-bottom: 10px;
 }
-.digest-item {
+.digest-issue-cluster {
     background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card);
     padding: 12px 14px; margin-bottom: 10px;
 }
@@ -1000,7 +1000,9 @@ select option { background: var(--card); color: var(--text); }
     font-size: 0.65rem; padding: 2px 7px; border-radius: 3px; font-weight: 600;
     background: var(--purple-light); color: var(--purple); white-space: nowrap;
 }
-.digest-comment { font-size: 0.85rem; color: var(--text); margin-top: 6px; line-height: 1.5; }
+.digest-comment-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.digest-comment-row:first-of-type { margin-top: 8px; padding-top: 0; border-top: none; }
+.digest-comment { font-size: 0.85rem; color: var(--text); line-height: 1.5; }
 .digest-attachments { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 .digest-attachment-thumb {
     width: 96px; height: 72px; object-fit: cover; border-radius: var(--radius-btn);
