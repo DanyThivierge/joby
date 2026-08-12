@@ -29,6 +29,7 @@ const JS_ORDER = [
     'js/render.js',
     'js/drag.js',
     'js/jira.js',
+    'js/digest.js',
     'js/inbox.js',
     'js/drive.js',
     'js/stats.js',
@@ -56,6 +57,7 @@ function buildHtml(gasMode, homeMode) {
     if (homeMode) {
         html = html.replace(/\s*<div class="mode-toggle">[\s\S]*?<\/div>/m, '');
         html = html.replace(/\s*<button id="jira-tab-btn"[^>]*>.*?<\/button>/g, '');
+        html = html.replace(/\s*<button id="digest-tab-btn"[^>]*>.*?<\/button>/g, '');
         // Strip Jira config fields from settings modal
         html = html.replace(/\s*<!-- jira-settings-start -->[\s\S]*?<!-- jira-settings-end -->/gm, '');
         // Strip Update Cookie / Test Proxy buttons from modal actions (now inside work panel, stripped with jira-settings above)

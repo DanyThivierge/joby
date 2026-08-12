@@ -990,6 +990,46 @@ select option { background: var(--card); color: var(--text); }
     30%  { opacity: 1; }
     100% { transform: translate(2px, 6px); opacity: 0; }
 }
+
+/* ── Jira Digest tab ────────────────────────────────────────────────────────── */
+.digest-group { margin-bottom: 20px; }
+.digest-group-header {
+    font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--text-3); padding: 6px 2px; border-bottom: 1px solid var(--border); margin-bottom: 10px;
+}
+.digest-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card);
+    padding: 12px 14px; margin-bottom: 10px;
+}
+.digest-item-head { display: flex; gap: 8px; align-items: baseline; cursor: pointer; }
+.digest-summary { font-size: 0.85rem; color: var(--text-2); }
+.digest-comment { font-size: 0.85rem; color: var(--text); margin-top: 6px; line-height: 1.5; }
+.digest-attachments { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.digest-attachment-thumb {
+    width: 96px; height: 72px; object-fit: cover; border-radius: var(--radius-btn);
+    border: 1px solid var(--border); cursor: pointer;
+}
+.digest-attachment-link {
+    font-size: 0.78rem; color: var(--purple); text-decoration: none; align-self: center;
+}
+.digest-attachment-link:hover { text-decoration: underline; }
+.digest-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+.digest-buckets { display: flex; gap: 6px; }
+.digest-bucket-pill {
+    padding: 4px 10px; border: 1px solid var(--border); border-radius: var(--radius-pill);
+    background: var(--card); color: var(--text-3); cursor: pointer; font-size: 0.76rem; font-weight: 500;
+}
+.digest-bucket-pill:hover { border-color: var(--purple); color: var(--purple); }
+.digest-bucket-pill.active { background: var(--purple); border-color: var(--purple); color: #fff; }
+.digest-status-select { font-size: 0.8rem; padding: 4px 8px; border-radius: var(--radius-btn); }
+.digest-waiting-input { font-size: 0.8rem; padding: 4px 8px; border-radius: var(--radius-btn); flex: 1; min-width: 120px; }
+.digest-thread {
+    margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 8px;
+}
+.digest-thread-comment { font-size: 0.8rem; color: var(--text-2); }
+.digest-thread-date { color: var(--text-3); }
+.digest-thread-loading { font-size: 0.8rem; color: var(--text-3); font-style: italic; }
 </style>
 </head>
 <body>
@@ -1021,6 +1061,7 @@ select option { background: var(--card); color: var(--text); }
 <div class="tabs-bar">
     <button class="tab-btn active" onclick="switchTab('tasks',this)" data-i18n="tabTasks">&#128203; My Tasks</button>
     <button id="jira-tab-btn" class="tab-btn" onclick="switchTab('jira',this)">&#127919; Jira</button>
+    <button id="digest-tab-btn" class="tab-btn" onclick="switchTab('digest',this)">&#128276; Digest</button>
 </div>
 
 <!-- ─── MY TASKS ─────────────────────────────────────────────────────────────── -->
@@ -1191,6 +1232,28 @@ select option { background: var(--card); color: var(--text); }
         <div class="jira-load-more" id="jira-load-more" style="display:none">
             <button class="btn btn-outline" onclick="fetchJiraIssues(true)">Load more issues...</button>
         </div>
+    </div>
+</div>
+
+<!-- ─── DIGEST TAB ────────────────────────────────────────────────────────────── -->
+<div class="main" id="tab-digest" style="display:none">
+    <div id="digest-gas-mode" class="jira-no-config" style="display:none">
+        <div class="icon">&#128276;</div>
+        <p><strong>Jira Digest is only available in local mode.</strong></p>
+        <p style="margin-top:8px;font-size:0.88rem;color:var(--text-2)">This hosted version can't reach your Jira proxy. Download the source and run it locally with the proxy for this tab to work.</p>
+    </div>
+    <div id="digest-no-config" class="jira-no-config" style="display:none">
+        <div class="icon">&#9881;&#65039;</div>
+        <p>Configure your Jira connection in Settings (Jira tab) first, then come back here.</p>
+        <button class="btn btn-purple" onclick="openSettings()">Open Settings</button>
+    </div>
+    <div id="digest-content" style="display:none">
+        <div class="jira-toolbar">
+            <button class="jira-refresh-btn" id="digest-refresh-btn" onclick="fetchDigest()">&#128260; Refresh</button>
+            <label class="jql-check" style="margin-left:8px"><input type="checkbox" id="digest-show-done" onchange="renderDigest()"> Show done</label>
+            <span class="jira-count" id="digest-last-polled"></span>
+        </div>
+        <div class="task-list" id="digest-list"></div>
     </div>
 </div>
 
@@ -1418,10 +1481,26 @@ select option { background: var(--card); color: var(--text); }
     </div>
 </div>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <!-- ASCII version -->
 <!-- -->
 
 <!-- SVG version (swap to compare) -->
+
+
 
 <!-- ⚡ Brain Dump FAB -->
 <button class="fab-capture" onclick="openCapture()" title="Brain dump (Space)" aria-label="Open Brain Dump capture (Space)">&#9889;</button>
@@ -1470,6 +1549,7 @@ const JIRA_DEFAULT_URL    = 'https://telushealth.atlassian.net';
 const SAVE_DEBOUNCE_MS    = 800;
 const DELETE_UNDO_MS      = 5000;
 const TAGLINE_INTERVAL_MS = 5 * 60 * 1000;
+const DIGEST_POLL_MS      = 20 * 60 * 1000;
 
 const MAX_INDENT          = 3;
 const CONFETTI_COUNT      = 28;
@@ -1818,6 +1898,7 @@ let recognition       = null;
 let isListening       = false;
 let compactView          = false;
 const expandedCompactIds = new Set();
+const digestOpenThreadIds = new Set();
 let activeMode           = 'work'; // 'work' | 'personal'
 let uiLang               = 'en';   // 'en' | 'fr'
 let selectionMode        = false;
@@ -1839,6 +1920,12 @@ const TASK_COLORS = [
     { key: 'blue',   label: 'Blue',   hex: '#3b82f6' },
     { key: 'pink',   label: 'Pink',   hex: '#ec4899' },
 ];
+
+// ── Jira Digest tab ───────────────────────────────────────────────────────────
+let digestItems       = {};   // commentId -> digest item (see docs/superpowers/specs/2026-08-12-jira-digest-tab-design.md)
+let digestLastPolled  = null; // ISO timestamp of the last successful poll
+let digestIsLoading   = false;
+let digestMyAccountId = null; // cached Jira accountId of the current user
 
 
 /* ── js/utils.js ── */
@@ -3215,7 +3302,10 @@ function switchTab(tab, btn) {
     btn.classList.add('active');
     document.getElementById('tab-tasks').style.display  = tab === 'tasks'  ? '' : 'none';
     document.getElementById('tab-jira').style.display   = tab === 'jira'   ? '' : 'none';
-    if (tab === 'jira')  initJiraTab();
+    const digestTab = document.getElementById('tab-digest');
+    if (digestTab) digestTab.style.display = tab === 'digest' ? '' : 'none';
+    if (tab === 'jira')   initJiraTab();
+    if (tab === 'digest') initDigestTab();
 }
 
 // Groups tasks into [parent, ...children] blocks so sort keeps subtasks with their parent.
@@ -3730,6 +3820,297 @@ function promoteIssue(id) {
     promotedJiraIds.push(id);
     debouncedSave(); renderTasks(); updateStats(); renderJiraIssues();
     toast(tFmt('toastJiraAdded', '['+key+']'));
+}
+
+
+/* ── js/digest.js ── */
+// digest.js — Jira Digest tab: comment/mention triage grouped by epic, with status tracking.
+// State persists via jira-proxy.py's /digest/data endpoints (a Drive-synced JSON file on
+// disk), not OPFS — see docs/superpowers/specs/2026-08-12-jira-digest-tab-design.md.
+
+const DIGEST_BUCKET_LABELS = { review: '&#128064; Review', fix_help: '&#128295; Fix/Help', fyi: '&#128172; FYI' };
+const DIGEST_STATUS_LABELS = { todo: 'To Do', in_progress: 'In Progress', waiting: 'Waiting', done: 'Done' };
+
+function initDigestTab() {
+    if (typeof GAS_MODE !== 'undefined' && GAS_MODE) {
+        document.getElementById('digest-gas-mode').style.display  = 'block';
+        document.getElementById('digest-no-config').style.display = 'none';
+        document.getElementById('digest-content').style.display   = 'none';
+        return;
+    }
+    const ok = !!settings.jiraUrl;
+    document.getElementById('digest-no-config').style.display = ok ? 'none' : 'block';
+    document.getElementById('digest-content').style.display   = ok ? 'block' : 'none';
+    if (!ok) return;
+    if (Object.keys(digestItems).length === 0) {
+        loadDigestFromProxy().then(fetchDigest);
+    } else {
+        renderDigest();
+    }
+}
+
+async function loadDigestFromProxy() {
+    try {
+        const r = await fetch(PROXY_ORIGIN + '/digest/data');
+        if (!r.ok) return;
+        const data = await r.json();
+        digestItems      = data.items      || {};
+        digestLastPolled = data.lastPolled || null;
+    } catch { /* proxy not reachable yet — fetchDigest's own error path will surface this */ }
+}
+
+async function saveDigestToProxy() {
+    try {
+        await fetch(PROXY_ORIGIN + '/digest/data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lastPolled: digestLastPolled, items: digestItems })
+        });
+    } catch (e) {
+        // Best effort: a failed write here means this poll's changes (including any
+        // manual bucket/status overrides) aren't on disk yet. This does NOT get retried
+        // with the same time window — digestLastPolled has already advanced by the time
+        // this runs — so log it as the one place a user's triage state could silently
+        // go missing if the proxy write keeps failing.
+        console.warn('Failed to save digest state to proxy:', e);
+    }
+}
+
+function digestProxyUrl(jiraAbsoluteUrl) {
+    try {
+        const u = new URL(jiraAbsoluteUrl);
+        return PROXY_ORIGIN + u.pathname + u.search;
+    } catch { return jiraAbsoluteUrl; }
+}
+
+function classifyBucket(bodyText, mentionsMe) {
+    const lower = (bodyText || '').toLowerCase();
+    const reviewRx = /\b(review|thoughts?|take a look|what do you think|please check)\b/;
+    const fixRx    = /\b(can you fix|please fix|can you help|need help|look into|can you look)\b/;
+    if (mentionsMe && reviewRx.test(lower)) return 'review';
+    if (mentionsMe && fixRx.test(lower))    return 'fix_help';
+    return 'fyi';
+}
+
+function commentMentionsMe(bodyText, accountId) {
+    if (!accountId) return false;
+    const escaped = accountId.replace(/[.*+?^${}()|[\]\\]/g, '\\</body>');
+    const rx = new RegExp('\\[~accountid:' + escaped + '\\]', 'i');
+    return rx.test(bodyText || '');
+}
+
+function formatJqlDateTime(d) {
+    const pad = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+async function fetchMyAccountId() {
+    if (digestMyAccountId) return digestMyAccountId;
+    const r = await fetch(PROXY_ORIGIN + '/rest/api/3/myself', { headers: { Accept: 'application/json' } });
+    if (!r.ok) throw new Error('Could not identify current Jira user (HTTP ' + r.status + ')');
+    const me = await r.json();
+    digestMyAccountId = me.accountId;
+    return digestMyAccountId;
+}
+
+async function fetchDigest() {
+    if (digestIsLoading) return;
+    digestIsLoading = true;
+    const btn = document.getElementById('digest-refresh-btn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Loading...'; }
+    try {
+        const accountId = await fetchMyAccountId();
+        const since = digestLastPolled ? new Date(digestLastPolled) : null;
+        const jql = '(assignee = currentUser() OR watcher = currentUser())'
+            + (since ? ' AND updated >= "' + formatJqlDateTime(since) + '"' : '')
+            + ' ORDER BY updated DESC';
+        const searchResp = await fetch(PROXY_ORIGIN + '/rest/api/3/search/jql', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({ jql, fields: ['summary'], maxResults: 100 })
+        });
+        if (!searchResp.ok) {
+            const e = await searchResp.json().catch(() => ({}));
+            throw new Error((e.errorMessages || []).join(', ') || 'HTTP ' + searchResp.status);
+        }
+        const searchData = await searchResp.json();
+        for (const issue of (searchData.issues || [])) {
+            await mergeIssueComments(issue.key, accountId, since);
+        }
+        digestLastPolled = new Date().toISOString();
+        await saveDigestToProxy();
+        renderDigest();
+    } catch (e) {
+        const list = document.getElementById('digest-list');
+        if (list) list.innerHTML = '<div class="empty-state"><div class="icon">&#10060;</div><p>Failed to load: ' + escHtml(e.message) + '</p></div>';
+    } finally {
+        digestIsLoading = false;
+        if (btn) { btn.disabled = false; btn.innerHTML = '&#128260; Refresh'; }
+    }
+}
+
+async function mergeIssueComments(issueKey, accountId, since) {
+    const r = await fetch(PROXY_ORIGIN + '/rest/api/2/issue/' + issueKey + '?fields=attachment,comment,summary,project,parent');
+    if (!r.ok) return;
+    const issue = await r.json();
+    const f = issue.fields || {};
+    const epicName = (f.parent && f.parent.fields && f.parent.fields.summary) || (f.project && f.project.name) || 'Other';
+    const epicKey  = (f.parent && f.parent.key) || (f.project && f.project.key) || '';
+    const attachments = f.attachment || [];
+    const comments = (f.comment && f.comment.comments) || [];
+    for (const c of comments) {
+        const updated = new Date(c.updated || c.created);
+        if (since && updated <= since) continue;
+        const mentionsMe = commentMentionsMe(c.body, accountId);
+        const existing = digestItems[c.id];
+        const commentTime = new Date(c.created).getTime();
+        // Jira has no direct comment<->attachment link; approximate by upload-time proximity.
+        const relatedAttachments = attachments
+            .filter(a => Math.abs(new Date(a.created).getTime() - commentTime) <= 120000)
+            .map(a => ({ filename: a.filename, isImage: (a.mimeType || '').startsWith('image/'), url: digestProxyUrl(a.content) }));
+        digestItems[c.id] = {
+            commentId: c.id,
+            issueKey: issueKey,
+            issueSummary: f.summary || '',
+            epicKey: epicKey,
+            epicName: epicName,
+            author: (c.author && c.author.displayName) || 'Unknown',
+            body: c.body || '',
+            created: c.created,
+            bucket: existing ? existing.bucket : classifyBucket(c.body, mentionsMe),
+            bucketAuto: existing ? existing.bucketAuto : true,
+            status: existing ? existing.status : 'todo',
+            waitingOn: existing ? existing.waitingOn : null,
+            attachments: relatedAttachments,
+            mentionsMe: mentionsMe,
+        };
+    }
+}
+
+function groupDigestItems() {
+    const showDone = document.getElementById('digest-show-done')?.checked;
+    const items = Object.values(digestItems).filter(i => showDone || i.status !== 'done');
+    const groups = {};
+    for (const item of items) {
+        const key = item.epicName || 'Other';
+        if (!groups[key]) groups[key] = { epicName: key, items: [], latest: 0 };
+        groups[key].items.push(item);
+        const t = new Date(item.created).getTime();
+        if (t > groups[key].latest) groups[key].latest = t;
+    }
+    return Object.values(groups).sort((a, b) => b.latest - a.latest);
+}
+
+function renderDigest() {
+    const cont = document.getElementById('digest-list');
+    if (!cont) return;
+    const lastEl = document.getElementById('digest-last-polled');
+    if (lastEl) lastEl.textContent = digestLastPolled ? 'Last checked: ' + new Date(digestLastPolled).toLocaleString() : '';
+    const groups = groupDigestItems();
+    if (!groups.length) {
+        cont.innerHTML = '<div class="empty-state"><div class="icon">&#128276;</div><p>Nothing to triage — you\'re caught up.</p></div>';
+        digestOpenThreadIds.clear();
+        return;
+    }
+    cont.innerHTML = groups.map(renderDigestGroup).join('');
+    // A full rebuild collapses every thread <div> back to closed; re-open ones the
+    // user had expanded (e.g. across an auto-poll or after triaging another item).
+    for (const commentId of [...digestOpenThreadIds]) {
+        digestOpenThreadIds.delete(commentId); // toggleDigestThread re-adds it on open
+        if (digestItems[commentId]) toggleDigestThread(commentId);
+    }
+}
+
+function renderDigestGroup(group) {
+    const items = group.items.slice().sort((a, b) => new Date(b.created) - new Date(a.created));
+    return '<div class="digest-group">'
+        + '<div class="digest-group-header">' + escHtml(group.epicName) + '</div>'
+        + items.map(renderDigestItem).join('')
+        + '</div>';
+}
+
+function renderDigestAttachments(attachments) {
+    if (!attachments || !attachments.length) return '';
+    return '<div class="digest-attachments">' + attachments.map(a =>
+        a.isImage
+            ? '<img class="digest-attachment-thumb" src="' + escAttr(a.url) + '" alt="' + escAttr(a.filename) + '" onclick="window.open(this.src,\'_blank\')">'
+            : '<a class="digest-attachment-link" href="' + escAttr(a.url) + '" target="_blank" rel="noopener noreferrer">&#128206; ' + escHtml(a.filename) + '</a>'
+    ).join('') + '</div>';
+}
+
+function renderDigestItem(item) {
+    const bucketPills = Object.keys(DIGEST_BUCKET_LABELS).map(b =>
+        '<button class="digest-bucket-pill' + (item.bucket === b ? ' active' : '') + '" onclick="setDigestBucket(\'' + item.commentId + '\',\'' + b + '\')">' + DIGEST_BUCKET_LABELS[b] + '</button>'
+    ).join('');
+    const statusOptions = Object.keys(DIGEST_STATUS_LABELS).map(s =>
+        '<option value="' + s + '"' + (item.status === s ? ' selected' : '') + '>' + DIGEST_STATUS_LABELS[s] + '</option>'
+    ).join('');
+    const waitingInput = item.status === 'waiting'
+        ? '<input type="text" class="digest-waiting-input" placeholder="Waiting on..." value="' + escAttr(item.waitingOn || '') + '" onchange="setDigestWaitingOn(\'' + item.commentId + '\', this.value)">'
+        : '';
+    return '<div class="digest-item" data-comment-id="' + item.commentId + '">'
+        + '<div class="digest-item-head" onclick="toggleDigestThread(\'' + item.commentId + '\')">'
+        + '<span class="jira-key">' + escHtml(item.issueKey) + '</span>'
+        + '<span class="digest-summary">' + escHtml(item.issueSummary) + '</span>'
+        + '</div>'
+        + '<div class="digest-comment"><strong>' + escHtml(item.author) + ':</strong> ' + linkify(item.body) + '</div>'
+        + renderDigestAttachments(item.attachments)
+        + '<div class="digest-controls">'
+        + '<div class="digest-buckets">' + bucketPills + '</div>'
+        + '<select class="digest-status-select" onchange="setDigestStatus(\'' + item.commentId + '\', this.value)">' + statusOptions + '</select>'
+        + waitingInput
+        + '</div>'
+        + '<div class="digest-thread" id="digest-thread-' + item.commentId + '" style="display:none"></div>'
+        + '</div>';
+}
+
+function setDigestBucket(commentId, bucket) {
+    const item = digestItems[commentId]; if (!item) return;
+    item.bucket = bucket; item.bucketAuto = false;
+    saveDigestToProxy(); renderDigest();
+}
+function setDigestStatus(commentId, status) {
+    const item = digestItems[commentId]; if (!item) return;
+    item.status = status;
+    if (status !== 'waiting') item.waitingOn = null;
+    saveDigestToProxy(); renderDigest();
+}
+function setDigestWaitingOn(commentId, name) {
+    const item = digestItems[commentId]; if (!item) return;
+    item.waitingOn = name;
+    saveDigestToProxy();
+}
+
+async function toggleDigestThread(commentId) {
+    const el = document.getElementById('digest-thread-' + commentId);
+    if (!el) return;
+    if (el.style.display !== 'none') {
+        el.style.display = 'none';
+        digestOpenThreadIds.delete(commentId);
+        return;
+    }
+    const item = digestItems[commentId];
+    if (!item) return;
+    el.style.display = 'block';
+    digestOpenThreadIds.add(commentId);
+    el.innerHTML = '<div class="digest-thread-loading">Loading thread...</div>';
+    try {
+        const r = await fetch(PROXY_ORIGIN + '/rest/api/2/issue/' + item.issueKey + '?fields=comment');
+        if (!r.ok) {
+            const e = await r.json().catch(() => ({}));
+            throw new Error((e.errorMessages || []).join(', ') || 'HTTP ' + r.status);
+        }
+        const issue = await r.json();
+        const comments = ((issue.fields && issue.fields.comment && issue.fields.comment.comments) || [])
+            .slice().sort((a, b) => new Date(a.created) - new Date(b.created));
+        el.innerHTML = comments.map(c =>
+            '<div class="digest-thread-comment"><strong>' + escHtml((c.author && c.author.displayName) || 'Unknown') + '</strong>'
+            + ' &middot; <span class="digest-thread-date">' + formatDue((c.created || '').slice(0, 10)) + '</span>'
+            + '<div>' + linkify(c.body || '') + '</div></div>'
+        ).join('');
+    } catch (e) {
+        el.innerHTML = '<div class="digest-thread-loading">Failed to load thread: ' + escHtml(e.message) + '</div>';
+    }
 }
 
 
@@ -5432,6 +5813,13 @@ function closeGhostTask() {
 // ── Boot ──────────────────────────────────────────────────────────────────────
 renderColorSwatches('add-color-swatches', '');
 initStorage();
+// Digest auto-poll: re-check Jira every 20 minutes while the app is open.
+// Skipped in the GAS build (no proxy access) and the Home build (no Jira integration at all).
+setInterval(() => {
+    const gasMode  = typeof GAS_MODE   !== 'undefined' && GAS_MODE;
+    const homeMode = typeof HOME_BUILD !== 'undefined' && HOME_BUILD;
+    if (settings.jiraUrl && !gasMode && !homeMode) fetchDigest();
+}, DIGEST_POLL_MS);
 // Enable mobile sidebar transition only after first paint to prevent slide-in on load
 requestAnimationFrame(() => requestAnimationFrame(() => {
     document.getElementById('tab-tasks')?.classList.add('sidebar-ready');
