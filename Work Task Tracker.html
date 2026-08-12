@@ -43,6 +43,7 @@
 <div class="tabs-bar">
     <button class="tab-btn active" onclick="switchTab('tasks',this)" data-i18n="tabTasks">&#128203; My Tasks</button>
     <button id="jira-tab-btn" class="tab-btn" onclick="switchTab('jira',this)">&#127919; Jira</button>
+    <button id="digest-tab-btn" class="tab-btn" onclick="switchTab('digest',this)">&#128276; Digest</button>
 </div>
 
 <!-- ─── MY TASKS ─────────────────────────────────────────────────────────────── -->
@@ -219,6 +220,28 @@
         <div class="jira-load-more" id="jira-load-more" style="display:none">
             <button class="btn btn-outline" onclick="fetchJiraIssues(true)">Load more issues...</button>
         </div>
+    </div>
+</div>
+
+<!-- ─── DIGEST TAB ────────────────────────────────────────────────────────────── -->
+<div class="main" id="tab-digest" style="display:none">
+    <div id="digest-gas-mode" class="jira-no-config" style="display:none">
+        <div class="icon">&#128276;</div>
+        <p><strong>Jira Digest is only available in local mode.</strong></p>
+        <p style="margin-top:8px;font-size:0.88rem;color:var(--text-2)">This hosted version can't reach your Jira proxy. Download the source and run it locally with the proxy for this tab to work.</p>
+    </div>
+    <div id="digest-no-config" class="jira-no-config" style="display:none">
+        <div class="icon">&#9881;&#65039;</div>
+        <p>Configure your Jira connection in Settings (Jira tab) first, then come back here.</p>
+        <button class="btn btn-purple" onclick="openSettings()">Open Settings</button>
+    </div>
+    <div id="digest-content" style="display:none">
+        <div class="jira-toolbar">
+            <button class="jira-refresh-btn" id="digest-refresh-btn" onclick="fetchDigest()">&#128260; Refresh</button>
+            <label class="jql-check" style="margin-left:8px"><input type="checkbox" id="digest-show-done" onchange="renderDigest()"> Show done</label>
+            <span class="jira-count" id="digest-last-polled"></span>
+        </div>
+        <div class="task-list" id="digest-list"></div>
     </div>
 </div>
 
@@ -488,6 +511,7 @@
 <script src="js/render.js"></script>
 <script src="js/drag.js"></script>
 <script src="js/jira.js"></script>
+<script src="js/digest.js"></script>
 <script src="js/inbox.js"></script>
 <script src="js/drive.js"></script>
 <script src="js/stats.js"></script>
