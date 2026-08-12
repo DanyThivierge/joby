@@ -183,9 +183,16 @@ function renderDigest() {
     const groups = groupDigestItems();
     if (!groups.length) {
         cont.innerHTML = '<div class="empty-state"><div class="icon">&#128276;</div><p>Nothing to triage — you\'re caught up.</p></div>';
+        digestOpenThreadIds.clear();
         return;
     }
     cont.innerHTML = groups.map(renderDigestGroup).join('');
+    // A full rebuild collapses every thread <div> back to closed; re-open ones the
+    // user had expanded (e.g. across an auto-poll or after triaging another item).
+    for (const commentId of [...digestOpenThreadIds]) {
+        digestOpenThreadIds.delete(commentId); // toggleDigestThread re-adds it on open
+        if (digestItems[commentId]) toggleDigestThread(commentId);
+    }
 }
 
 function renderDigestGroup(group) {
@@ -251,13 +258,22 @@ function setDigestWaitingOn(commentId, name) {
 async function toggleDigestThread(commentId) {
     const el = document.getElementById('digest-thread-' + commentId);
     if (!el) return;
-    if (el.style.display !== 'none') { el.style.display = 'none'; return; }
+    if (el.style.display !== 'none') {
+        el.style.display = 'none';
+        digestOpenThreadIds.delete(commentId);
+        return;
+    }
     const item = digestItems[commentId];
     if (!item) return;
     el.style.display = 'block';
+    digestOpenThreadIds.add(commentId);
     el.innerHTML = '<div class="digest-thread-loading">Loading thread...</div>';
     try {
         const r = await fetch(PROXY_ORIGIN + '/rest/api/2/issue/' + item.issueKey + '?fields=comment');
+        if (!r.ok) {
+            const e = await r.json().catch(() => ({}));
+            throw new Error((e.errorMessages || []).join(', ') || 'HTTP ' + r.status);
+        }
         const issue = await r.json();
         const comments = ((issue.fields && issue.fields.comment && issue.fields.comment.comments) || [])
             .slice().sort((a, b) => new Date(a.created) - new Date(b.created));

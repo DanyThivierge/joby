@@ -23,6 +23,7 @@ let recognition       = null;
 let isListening       = false;
 let compactView          = false;
 const expandedCompactIds = new Set();
+const digestOpenThreadIds = new Set();
 let activeMode           = 'work'; // 'work' | 'personal'
 let uiLang               = 'en';   // 'en' | 'fr'
 let selectionMode        = false;
