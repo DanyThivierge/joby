@@ -11,7 +11,7 @@ STOP:
   Ctrl+C
 """
 
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 import json
@@ -149,7 +149,7 @@ class JiraProxy(BaseHTTPRequestHandler):
         req.add_header('User-Agent',   'Mozilla/5.0')
 
         try:
-            with urlopen(req) as resp:
+            with urlopen(req, timeout=15) as resp:
                 data = resp.read()
                 print(f'  {self.command} {self.path} → {resp.status}')
                 self.send_response(resp.status)
@@ -174,4 +174,4 @@ if __name__ == '__main__':
     else:
         print('  No cookie yet — open the tracker Settings to add yours')
     print('  Press Ctrl+C to stop.\n')
-    HTTPServer(('', PORT), JiraProxy).serve_forever()
+    ThreadingHTTPServer(('', PORT), JiraProxy).serve_forever()
