@@ -40,7 +40,14 @@ async function saveDigestToProxy() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ lastPolled: digestLastPolled, items: digestItems })
         });
-    } catch { /* best effort — next successful poll retries with the same lastPolled */ }
+    } catch (e) {
+        // Best effort: a failed write here means this poll's changes (including any
+        // manual bucket/status overrides) aren't on disk yet. This does NOT get retried
+        // with the same time window — digestLastPolled has already advanced by the time
+        // this runs — so log it as the one place a user's triage state could silently
+        // go missing if the proxy write keeps failing.
+        console.warn('Failed to save digest state to proxy:', e);
+    }
 }
 
 function digestProxyUrl(jiraAbsoluteUrl) {
