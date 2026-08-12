@@ -1333,9 +1333,9 @@ select option { background: var(--card); color: var(--text); }
                             <summary>&#9654; How to get your cookie (click to expand)</summary>
                             <ol class="cookie-steps">
                                 <li>Open <strong>telushealth.atlassian.net</strong> in your browser (log in if asked)</li>
-                                <li>Press <strong>F12</strong> to open DevTools &rarr; click the <strong>Network</strong> tab</li>
-                                <li>Click any request in the list (e.g. the first one)</li>
-                                <li>In the right panel scroll to <strong>Request Headers</strong></li>
+                                <li>Press <strong>F12</strong> to open DevTools &rarr; click the <strong>Network</strong> tab, then reload the page (<strong>Ctrl+Shift+R</strong>) so real requests show up</li>
+                                <li>Filter to <strong>Doc</strong> or <strong>Fetch/XHR</strong> &mdash; click a request whose Status is a plain number like <strong>200</strong> (not <em>"(from disk cache)"</em>) and whose URL is on <strong>telushealth.atlassian.net</strong> itself, not a CDN/asset subdomain (e.g. not <code>*.atl-paas.net</code>)</li>
+                                <li>In the right panel scroll to <strong>Request Headers</strong> (not Response Headers)</li>
                                 <li>Find the <strong>cookie:</strong> row &rarr; right-click it &rarr; <strong>Copy value</strong></li>
                                 <li>Paste below and click <strong>Update Cookie</strong></li>
                             </ol>
