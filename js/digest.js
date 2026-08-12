@@ -160,3 +160,113 @@ async function mergeIssueComments(issueKey, accountId, since) {
         };
     }
 }
+
+function groupDigestItems() {
+    const showDone = document.getElementById('digest-show-done')?.checked;
+    const items = Object.values(digestItems).filter(i => showDone || i.status !== 'done');
+    const groups = {};
+    for (const item of items) {
+        const key = item.epicName || 'Other';
+        if (!groups[key]) groups[key] = { epicName: key, items: [], latest: 0 };
+        groups[key].items.push(item);
+        const t = new Date(item.created).getTime();
+        if (t > groups[key].latest) groups[key].latest = t;
+    }
+    return Object.values(groups).sort((a, b) => b.latest - a.latest);
+}
+
+function renderDigest() {
+    const cont = document.getElementById('digest-list');
+    if (!cont) return;
+    const lastEl = document.getElementById('digest-last-polled');
+    if (lastEl) lastEl.textContent = digestLastPolled ? 'Last checked: ' + new Date(digestLastPolled).toLocaleString() : '';
+    const groups = groupDigestItems();
+    if (!groups.length) {
+        cont.innerHTML = '<div class="empty-state"><div class="icon">&#128276;</div><p>Nothing to triage — you\'re caught up.</p></div>';
+        return;
+    }
+    cont.innerHTML = groups.map(renderDigestGroup).join('');
+}
+
+function renderDigestGroup(group) {
+    const items = group.items.slice().sort((a, b) => new Date(b.created) - new Date(a.created));
+    return '<div class="digest-group">'
+        + '<div class="digest-group-header">' + escHtml(group.epicName) + '</div>'
+        + items.map(renderDigestItem).join('')
+        + '</div>';
+}
+
+function renderDigestAttachments(attachments) {
+    if (!attachments || !attachments.length) return '';
+    return '<div class="digest-attachments">' + attachments.map(a =>
+        a.isImage
+            ? '<img class="digest-attachment-thumb" src="' + escAttr(a.url) + '" alt="' + escAttr(a.filename) + '" onclick="window.open(this.src,\'_blank\')">'
+            : '<a class="digest-attachment-link" href="' + escAttr(a.url) + '" target="_blank" rel="noopener noreferrer">&#128206; ' + escHtml(a.filename) + '</a>'
+    ).join('') + '</div>';
+}
+
+function renderDigestItem(item) {
+    const bucketPills = Object.keys(DIGEST_BUCKET_LABELS).map(b =>
+        '<button class="digest-bucket-pill' + (item.bucket === b ? ' active' : '') + '" onclick="setDigestBucket(\'' + item.commentId + '\',\'' + b + '\')">' + DIGEST_BUCKET_LABELS[b] + '</button>'
+    ).join('');
+    const statusOptions = Object.keys(DIGEST_STATUS_LABELS).map(s =>
+        '<option value="' + s + '"' + (item.status === s ? ' selected' : '') + '>' + DIGEST_STATUS_LABELS[s] + '</option>'
+    ).join('');
+    const waitingInput = item.status === 'waiting'
+        ? '<input type="text" class="digest-waiting-input" placeholder="Waiting on..." value="' + escAttr(item.waitingOn || '') + '" onchange="setDigestWaitingOn(\'' + item.commentId + '\', this.value)">'
+        : '';
+    return '<div class="digest-item" data-comment-id="' + item.commentId + '">'
+        + '<div class="digest-item-head" onclick="toggleDigestThread(\'' + item.commentId + '\')">'
+        + '<span class="jira-key">' + escHtml(item.issueKey) + '</span>'
+        + '<span class="digest-summary">' + escHtml(item.issueSummary) + '</span>'
+        + '</div>'
+        + '<div class="digest-comment"><strong>' + escHtml(item.author) + ':</strong> ' + linkify(item.body) + '</div>'
+        + renderDigestAttachments(item.attachments)
+        + '<div class="digest-controls">'
+        + '<div class="digest-buckets">' + bucketPills + '</div>'
+        + '<select class="digest-status-select" onchange="setDigestStatus(\'' + item.commentId + '\', this.value)">' + statusOptions + '</select>'
+        + waitingInput
+        + '</div>'
+        + '<div class="digest-thread" id="digest-thread-' + item.commentId + '" style="display:none"></div>'
+        + '</div>';
+}
+
+function setDigestBucket(commentId, bucket) {
+    const item = digestItems[commentId]; if (!item) return;
+    item.bucket = bucket; item.bucketAuto = false;
+    saveDigestToProxy(); renderDigest();
+}
+function setDigestStatus(commentId, status) {
+    const item = digestItems[commentId]; if (!item) return;
+    item.status = status;
+    if (status !== 'waiting') item.waitingOn = null;
+    saveDigestToProxy(); renderDigest();
+}
+function setDigestWaitingOn(commentId, name) {
+    const item = digestItems[commentId]; if (!item) return;
+    item.waitingOn = name;
+    saveDigestToProxy();
+}
+
+async function toggleDigestThread(commentId) {
+    const el = document.getElementById('digest-thread-' + commentId);
+    if (!el) return;
+    if (el.style.display !== 'none') { el.style.display = 'none'; return; }
+    const item = digestItems[commentId];
+    if (!item) return;
+    el.style.display = 'block';
+    el.innerHTML = '<div class="digest-thread-loading">Loading thread...</div>';
+    try {
+        const r = await fetch(PROXY_ORIGIN + '/rest/api/2/issue/' + item.issueKey + '?fields=comment');
+        const issue = await r.json();
+        const comments = ((issue.fields && issue.fields.comment && issue.fields.comment.comments) || [])
+            .slice().sort((a, b) => new Date(a.created) - new Date(b.created));
+        el.innerHTML = comments.map(c =>
+            '<div class="digest-thread-comment"><strong>' + escHtml((c.author && c.author.displayName) || 'Unknown') + '</strong>'
+            + ' &middot; <span class="digest-thread-date">' + formatDue((c.created || '').slice(0, 10)) + '</span>'
+            + '<div>' + linkify(c.body || '') + '</div></div>'
+        ).join('');
+    } catch (e) {
+        el.innerHTML = '<div class="digest-thread-loading">Failed to load thread: ' + escHtml(e.message) + '</div>';
+    }
+}
