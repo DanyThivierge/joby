@@ -38,11 +38,44 @@ mentioned, filtered to `updated >= lastPolled`; then fetch each such issue's
 comments added/edited since `lastPolled`. A comment is flagged `mentionsMe`
 when the user's Jira mention markup appears in the body.
 
+## Storage: Drive-synced folder via the proxy (not OPFS)
+
+Modeled on how ARGUS works (`~/.claude/scripts/argus/argus.py`): that tool
+reads/writes files directly on the local filesystem path where Google Drive
+Desktop syncs a folder (e.g. `G:\My Drive\Project Hub`) — no OAuth, no Drive
+API, no cloud SDK. We're not touching ARGUS itself, just reusing the same
+"write to a Drive-synced local path" idea.
+
+Joby is a browser page, so it can't touch that filesystem directly. Instead,
+`jira-proxy.py` (already running locally for Jira access) gains two new
+endpoints:
+
+- `GET /digest/data` — reads and returns `jira-digest.json` from the digest
+  folder (returns `{}` if the file doesn't exist yet)
+- `POST /digest/data` — overwrites `jira-digest.json` with the given payload
+
+On first use, the proxy auto-creates a default folder (e.g. `<detected
+Google Drive root>\Joby\jira-digest\`) if it doesn't already exist — no
+setup step required. The path can be overridden later in Joby's Settings
+(same pattern as the existing Jira cookie field) if the default guess is
+wrong for someone's machine.
+
+This replaces OPFS for this tab specifically (work/personal task data is
+unaffected and stays in OPFS). Practical wins over OPFS: the digest survives
+a browser cache clear or a different machine entirely (anything with that
+Drive folder synced can read it), and — combined with the "never delete,
+only collapse" rule below — gives real history, which is the exact gap the
+old Google-Doc digest and Jira's own notification center both have.
+
+No merge/conflict logic (unlike Joby's OAuth-based family sync, which
+reconciles concurrent writers by `updatedAt`): this is single-user data with
+effectively one writer at a time, so a plain read-modify-write is
+sufficient for v1.
+
 ## Data model
 
-New OPFS file, separate from `work-tasks.json` / `personal-tasks.json`:
-`jira-digest.json`, holding a `lastPolled` timestamp and a keyed map of
-digest items:
+`jira-digest.json` (see storage section above) holds a `lastPolled`
+timestamp and a keyed map of digest items:
 
 ```json
 {
@@ -130,8 +163,10 @@ Joby has no existing automated test setup; this follows the same pattern.
 Verification is manual against real issues:
 - Classification buckets and epic grouping look right on real comment data.
 - Image thumbnails render; document links open in Jira.
-- Status and bucket-override persist across a page reload (OPFS
-  round-trip).
+- Status and bucket-override persist across a page reload (round-trips
+  through the proxy to the Drive-synced JSON file and back).
+- Digest folder auto-creates correctly on a machine where it doesn't exist
+  yet.
 - Poll correctly picks up only what changed since `lastPolled` (no
   duplicate items, no missed comments across a 20-minute gap).
 
