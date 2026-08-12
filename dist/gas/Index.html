@@ -1001,8 +1001,13 @@ select option { background: var(--card); color: var(--text); }
     background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card);
     padding: 12px 14px; margin-bottom: 10px;
 }
-.digest-item-head { display: flex; gap: 8px; align-items: baseline; cursor: pointer; }
+.digest-item-head { display: flex; gap: 8px; align-items: baseline; cursor: pointer; flex-wrap: wrap; }
 .digest-summary { font-size: 0.85rem; color: var(--text-2); }
+.digest-reasons { display: flex; gap: 4px; margin-left: auto; }
+.digest-reason-tag {
+    font-size: 0.65rem; padding: 2px 7px; border-radius: 3px; font-weight: 600;
+    background: var(--purple-light); color: var(--purple); white-space: nowrap;
+}
 .digest-comment { font-size: 0.85rem; color: var(--text); margin-top: 6px; line-height: 1.5; }
 .digest-attachments { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 .digest-attachment-thumb {
@@ -3994,12 +3999,14 @@ async function fetchDigest() {
 }
 
 async function mergeIssueComments(issueKey, accountId, since) {
-    const r = await fetch(PROXY_ORIGIN + '/rest/api/2/issue/' + issueKey + '?fields=attachment,comment,summary,project,parent');
+    const r = await fetch(PROXY_ORIGIN + '/rest/api/2/issue/' + issueKey + '?fields=attachment,comment,summary,project,parent,assignee,watches');
     if (!r.ok) return;
     const issue = await r.json();
     const f = issue.fields || {};
     const epicName = (f.parent && f.parent.fields && f.parent.fields.summary) || (f.project && f.project.name) || 'Other';
     const epicKey  = (f.parent && f.parent.key) || (f.project && f.project.key) || '';
+    const isAssignee = !!(f.assignee && f.assignee.accountId === accountId);
+    const isWatching = !!(f.watches && f.watches.isWatching);
     const attachments = f.attachment || [];
     const comments = (f.comment && f.comment.comments) || [];
     for (const c of comments) {
@@ -4028,6 +4035,8 @@ async function mergeIssueComments(issueKey, accountId, since) {
             waitingOn: existing ? existing.waitingOn : null,
             attachments: relatedAttachments,
             mentionsMe: mentionsMe,
+            isAssignee: isAssignee, // reflects current issue state, refreshed every poll (not a user override)
+            isWatching: isWatching,
         };
     }
 }
@@ -4083,6 +4092,28 @@ function renderDigestAttachments(attachments) {
     ).join('') + '</div>';
 }
 
+// Mention names resolve at render time from digestUserNames, but that cache can grow
+// after cards are already on screen (e.g. opening a thread learns a name the top-level
+// items didn't have yet). Patch just the comment-preview text in place rather than a
+// full renderDigest() — that would also collapse/re-fetch any other open thread panels.
+function refreshDigestCommentPreviews() {
+    document.querySelectorAll('.digest-item').forEach(el => {
+        const item = digestItems[el.dataset.commentId];
+        const commentEl = el.querySelector('.digest-comment');
+        if (item && commentEl) {
+            commentEl.innerHTML = '<strong>' + escHtml(item.author) + ':</strong> ' + linkify(resolveMentionsForDisplay(item.body));
+        }
+    });
+}
+
+function renderDigestReasonTags(item) {
+    const tags = [];
+    if (item.mentionsMe) tags.push('<span class="digest-reason-tag">&#64; Mentioned</span>');
+    if (item.isAssignee) tags.push('<span class="digest-reason-tag">&#128204; Assigned</span>');
+    if (item.isWatching) tags.push('<span class="digest-reason-tag">&#128064; Watching</span>');
+    return tags.length ? '<div class="digest-reasons">' + tags.join('') + '</div>' : '';
+}
+
 function renderDigestItem(item) {
     const bucketPills = Object.keys(DIGEST_BUCKET_LABELS).map(b =>
         '<button class="digest-bucket-pill' + (item.bucket === b ? ' active' : '') + '" onclick="setDigestBucket(\'' + item.commentId + '\',\'' + b + '\')">' + DIGEST_BUCKET_LABELS[b] + '</button>'
@@ -4097,6 +4128,7 @@ function renderDigestItem(item) {
         + '<div class="digest-item-head" onclick="toggleDigestThread(\'' + item.commentId + '\')">'
         + '<span class="jira-key">' + escHtml(item.issueKey) + '</span>'
         + '<span class="digest-summary">' + escHtml(item.issueSummary) + '</span>'
+        + renderDigestReasonTags(item)
         + '</div>'
         + '<div class="digest-comment"><strong>' + escHtml(item.author) + ':</strong> ' + linkify(resolveMentionsForDisplay(item.body)) + '</div>'
         + renderDigestAttachments(item.attachments)
@@ -4152,6 +4184,7 @@ async function toggleDigestThread(commentId) {
             if (c.author && c.author.accountId) digestUserNames[c.author.accountId] = c.author.displayName || digestUserNames[c.author.accountId];
         }
         await resolveUnknownMentions(comments.map(c => c.body || ''));
+        refreshDigestCommentPreviews();
         el.innerHTML = comments.map(c =>
             '<div class="digest-thread-comment"><strong>' + escHtml((c.author && c.author.displayName) || 'Unknown') + '</strong>'
             + ' &middot; <span class="digest-thread-date">' + formatDue((c.created || '').slice(0, 10)) + '</span>'
