@@ -1927,6 +1927,7 @@ let digestLastPolled  = null; // ISO timestamp of the last successful poll
 let digestIsLoading   = false;
 let digestMyAccountId = null; // cached Jira accountId of the current user
 let digestHydrated    = false; // true once digestItems has been loaded from the proxy at least once this session
+let digestUserNames   = {};   // accountId -> displayName, for resolving [~accountid:...] mentions in comment text
 
 
 /* ── js/utils.js ── */
@@ -3906,6 +3907,37 @@ function commentMentionsMe(bodyText, accountId) {
     return rx.test(bodyText || '');
 }
 
+// Classification (classifyBucket/commentMentionsMe) needs Jira's raw [~accountid:...]
+// markup, so item.body is stored unmodified. This resolves that markup to a display
+// name for rendering only — it never touches the stored body.
+const MENTION_RX = /\[~accountid:([a-zA-Z0-9:_-]+)\]/g;
+function extractMentionedAccountIds(bodyText) {
+    const ids = new Set();
+    let m;
+    MENTION_RX.lastIndex = 0;
+    while ((m = MENTION_RX.exec(bodyText || ''))) ids.add(m[1]);
+    return ids;
+}
+function resolveMentionsForDisplay(bodyText) {
+    return (bodyText || '').replace(MENTION_RX, (full, id) => '@' + (digestUserNames[id] || 'someone'));
+}
+async function resolveUnknownMentions(bodyTexts) {
+    const unknown = new Set();
+    for (const body of bodyTexts) {
+        for (const id of extractMentionedAccountIds(body)) {
+            if (!digestUserNames[id]) unknown.add(id);
+        }
+    }
+    if (!unknown.size) return;
+    const params = [...unknown].map(id => 'accountId=' + encodeURIComponent(id)).join('&');
+    try {
+        const r = await fetch(PROXY_ORIGIN + '/rest/api/3/user/bulk?' + params);
+        if (!r.ok) return;
+        const data = await r.json();
+        for (const u of (data.values || [])) digestUserNames[u.accountId] = u.displayName;
+    } catch { /* best effort — unresolved mentions fall back to "someone" */ }
+}
+
 function formatJqlDateTime(d) {
     const pad = n => String(n).padStart(2, '0');
     return d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
@@ -3945,6 +3977,7 @@ async function fetchDigest() {
         for (const issue of (searchData.issues || [])) {
             await mergeIssueComments(issue.key, accountId, since);
         }
+        await resolveUnknownMentions(Object.values(digestItems).map(i => i.body));
         digestLastPolled = new Date().toISOString();
         await saveDigestToProxy();
         renderDigest();
@@ -3967,6 +4000,7 @@ async function mergeIssueComments(issueKey, accountId, since) {
     const attachments = f.attachment || [];
     const comments = (f.comment && f.comment.comments) || [];
     for (const c of comments) {
+        if (c.author && c.author.accountId) digestUserNames[c.author.accountId] = c.author.displayName || digestUserNames[c.author.accountId];
         const updated = new Date(c.updated || c.created);
         if (since && updated <= since) continue;
         const mentionsMe = commentMentionsMe(c.body, accountId);
@@ -4061,7 +4095,7 @@ function renderDigestItem(item) {
         + '<span class="jira-key">' + escHtml(item.issueKey) + '</span>'
         + '<span class="digest-summary">' + escHtml(item.issueSummary) + '</span>'
         + '</div>'
-        + '<div class="digest-comment"><strong>' + escHtml(item.author) + ':</strong> ' + linkify(item.body) + '</div>'
+        + '<div class="digest-comment"><strong>' + escHtml(item.author) + ':</strong> ' + linkify(resolveMentionsForDisplay(item.body)) + '</div>'
         + renderDigestAttachments(item.attachments)
         + '<div class="digest-controls">'
         + '<div class="digest-buckets">' + bucketPills + '</div>'
@@ -4111,10 +4145,14 @@ async function toggleDigestThread(commentId) {
         const issue = await r.json();
         const comments = ((issue.fields && issue.fields.comment && issue.fields.comment.comments) || [])
             .slice().sort((a, b) => new Date(a.created) - new Date(b.created));
+        for (const c of comments) {
+            if (c.author && c.author.accountId) digestUserNames[c.author.accountId] = c.author.displayName || digestUserNames[c.author.accountId];
+        }
+        await resolveUnknownMentions(comments.map(c => c.body || ''));
         el.innerHTML = comments.map(c =>
             '<div class="digest-thread-comment"><strong>' + escHtml((c.author && c.author.displayName) || 'Unknown') + '</strong>'
             + ' &middot; <span class="digest-thread-date">' + formatDue((c.created || '').slice(0, 10)) + '</span>'
-            + '<div>' + linkify(c.body || '') + '</div></div>'
+            + '<div>' + linkify(resolveMentionsForDisplay(c.body || '')) + '</div></div>'
         ).join('');
     } catch (e) {
         el.innerHTML = '<div class="digest-thread-loading">Failed to load thread: ' + escHtml(e.message) + '</div>';
