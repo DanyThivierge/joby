@@ -122,6 +122,18 @@ The left sidebar shows everything at a glance without switching tabs:
 - Promoted issues are tracked so you don't double-add them
 - Pagination for large backlogs
 
+### Jira Digest
+
+- New **🔔 Digest** tab, next to the Jira tab — turns Jira comment/mention/watch activity into a triaged inbox instead of scattered notifications
+- Comments are grouped by Epic (falls back to Project when an issue has no epic), most recently active group first
+- Each comment auto-classifies into **Review**, **Fix/Help**, or **FYI** based on whether you're mentioned and the phrasing used — click a bucket pill to override
+- Per-item status: **To Do / In Progress / Waiting on \_\_\_ / Done** — Done items collapse out of view but are never deleted (check "Show done" to bring them back)
+- Click an item to expand the full comment thread for that issue
+- Image attachments render as inline thumbnails; other attachments show as a link that opens in Jira
+- Auto-refreshes every 20 minutes while the app is open, plus a manual Refresh button
+- Data is stored outside the browser: `jira-proxy.py` reads/writes `jira-digest.json` on disk inside a Google-Drive-synced folder (`G:\My Drive\Joby\jira-digest` by default, override with the `JOBY_DIGEST_DIR` environment variable) — same pattern as the ARGUS dashboard, no OAuth required. This means digest history survives a browser cache clear and is available from any machine with that Drive folder synced.
+- Not available in the GAS (hosted) build or the Home/Personal build — same restriction as the Jira tab, since both need the local proxy.
+
 ### Persistence & Saving
 
 - Uses the **Origin Private File System (OPFS)** to save tasks locally — survives browser cache clears, no permission prompts
@@ -216,6 +228,7 @@ Task Organizer/
 │   ├── render.js            # Task list rendering, tabs, stats bar, compact view, CSV export
 │   ├── drag.js              # Drag-and-drop reorder + indent detection
 │   ├── jira.js              # Jira integration, JQL builder, proxy calls
+│   ├── digest.js            # Jira Digest tab: comment/mention triage, grouping, status tracking
 │   ├── inbox.js             # Brain Dump capture modal and inbox panel
 │   ├── drive.js             # Google Drive family sync (home build only)
 │   ├── stats.js             # Heatmap, sidebar stats cards, motivational taglines
@@ -322,6 +335,10 @@ Tasks and settings are stored in OPFS — `work-tasks.json` for Work mode and `p
 ---
 
 ## Changelog
+
+### v2.2 (2026-08-12)
+
+- **Jira Digest tab** — comment/mention/watch activity from Jira, grouped by epic, bucketed into Review/Fix-Help/FYI (auto-classified, overridable), with To Do/In Progress/Waiting/Done status tracking and full thread view per issue; image attachments shown inline. Data persists to a Google-Drive-synced folder via `jira-proxy.py`, not OPFS, so history survives across machines and cache clears.
 
 ### v2.1 (2026-05-28)
 
