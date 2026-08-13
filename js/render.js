@@ -6,10 +6,8 @@ function switchTab(tab, btn) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-tasks').style.display  = tab === 'tasks'  ? '' : 'none';
-    document.getElementById('tab-jira').style.display   = tab === 'jira'   ? '' : 'none';
     const digestTab = document.getElementById('tab-digest');
     if (digestTab) digestTab.style.display = tab === 'digest' ? '' : 'none';
-    if (tab === 'jira')   initJiraTab();
     if (tab === 'digest') initDigestTab();
 }
 
@@ -203,9 +201,9 @@ function populateCategoryFilter() {
 function updateModeUI() {
     document.getElementById('mode-work-btn')?.classList.toggle('active', activeMode === 'work');
     document.getElementById('mode-personal-btn')?.classList.toggle('active', activeMode === 'personal');
-    const jiraBtn = document.getElementById('jira-tab-btn');
-    if (jiraBtn) jiraBtn.style.display = activeMode === 'personal' ? 'none' : '';
-    if (activeMode === 'personal' && activeTab === 'jira') {
+    const digestBtn = document.getElementById('digest-tab-btn');
+    if (digestBtn) digestBtn.style.display = activeMode === 'personal' ? 'none' : '';
+    if (activeMode === 'personal' && activeTab === 'digest') {
         const tasksBtn = document.querySelector('.tab-btn');
         if (tasksBtn) switchTab('tasks', tasksBtn);
     }

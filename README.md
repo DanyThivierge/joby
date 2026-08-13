@@ -111,28 +111,24 @@ The left sidebar shows everything at a glance without switching tabs:
 - **Confetti** — 28 coloured particles burst from the checkbox when you mark a task done
 - **Context-aware taglines** — the header tagline prioritises streak milestones, active streaks, strong performance, and inbox items before falling back to static lines
 
-### Jira Integration
-
-- Connects to your Atlassian instance via a local Python proxy (no API token required, bypasses corporate CORS/SSO restrictions)
-- Fetches issues assigned to you: unresolved, In Progress or To Do
-- **Visual JQL builder** — checkboxes for assignee, resolution, status (with NOT toggle), priority, updated timeframe, and project filter; live JQL preview
-- Custom JQL override field — disables the builder automatically when filled; ✕ button to clear
-- Filter Jira issues by status, priority, and project
-- Promote any Jira issue to My Tasks with one click — auto-fills title, priority, due date, and a link back to the issue
-- Promoted issues are tracked so you don't double-add them
-- Pagination for large backlogs
-
 ### Jira Digest
 
-- New **🔔 Digest** tab, next to the Jira tab — turns Jira comment/mention/watch activity into a triaged inbox instead of scattered notifications
-- Comments are grouped by Epic (falls back to Project when an issue has no epic), most recently active group first
+Connects to your Atlassian instance via a local Python proxy (no API token required, bypasses corporate CORS/SSO restrictions) and turns Jira comment/mention/watch activity into a triaged inbox instead of scattered notifications. This replaced an earlier Jira tab that just listed assigned issues — Digest is the one Jira surface in Joby now.
+
+- Comments are grouped by Epic (falls back to Project when an issue has no epic); within an epic, multiple new comments on the same issue collapse under one shared header, with only the most recent comment showing action controls — older ones are read-only context under a "+N earlier comments" toggle
 - Each comment auto-classifies into **Review**, **Fix/Help**, or **FYI** based on whether you're mentioned and the phrasing used — click a bucket pill to override
-- Per-item status: **To Do / In Progress / Waiting on \_\_\_ / Done** — Done items collapse out of view but are never deleted (check "Show done" to bring them back)
-- Click an item to expand the full comment thread for that issue
-- Image attachments render as inline thumbnails; other attachments show as a link that opens in Jira
-- Auto-refreshes every 20 minutes while the app is open, plus a manual Refresh button
-- Data is stored outside the browser: `jira-proxy.py` reads/writes `jira-digest.json` on disk inside a Google-Drive-synced folder (`G:\My Drive\Joby\jira-digest` by default, override with the `JOBY_DIGEST_DIR` environment variable) — same pattern as the ARGUS dashboard, no OAuth required. This means digest history survives a browser cache clear and is available from any machine with that Drive folder synced.
-- Not available in the GAS (hosted) build or the Home/Personal build — same restriction as the Jira tab, since both need the local proxy.
+- A reason tag (**Mentioned** / **Assigned** / **Watching**) on every card explains why it's in your digest at all
+- Per-item status: **To Do / In Progress / Waiting on \_\_\_ / Done**. Done items collapse out of view but are never deleted (check "Show done" to bring them back). Marking the visible comment Done closes the whole cluster together; reopening it reopens the whole cluster too
+- Comments you wrote yourself are skipped — nothing to triage in your own reply. Mentions you've already replied to auto-close, unless someone follows up afterward, which surfaces as a fresh item
+- Checkboxes on every card for bulk actions — "Select all shown" + "Mark Done" only touches what you actually pick, never everything at once
+- ⭐ Flag any item to mark it "come back to this later," independent of bucket/status
+- A stats bar at the top (To Do / Review / Fix-Help / FYI / Flagged counts) doubles as one-click filters; combine with the bucket filter and "Show done"
+- `[~accountid:...]` mention markup resolves to real names for display (classification still uses the raw Jira markup under the hood)
+- An "Open in Jira" link per issue, deep-linked to the specific comment, for replying
+- Auto-refreshes every 20 minutes while the app is open, plus a manual Refresh button. A "Look back" dropdown (day/week/month/3 months/year/forever) bounds the very first sync (default: last month) instead of pulling unlimited history; "Resync" re-checks further back on demand without waiting for a cold start
+- Data is stored outside the browser: `jira-proxy.py` reads/writes `jira-digest.json` on disk inside a Google-Drive-synced folder (`G:\My Drive\Joby\jira-digest` by default, override with the `JOBY_DIGEST_DIR` environment variable) — same pattern as the ARGUS dashboard, no OAuth required. This means digest history survives a browser cache clear and is available from any machine with that Drive folder synced
+- Stale items (no mention, and the issue no longer matches your current assignee/watcher list at all) are pruned automatically; mentions are kept regardless, since a mention is a standing fact independent of your current watch state
+- Not available in the GAS (hosted) build or the Home/Personal build, since both need the local proxy
 
 ### Persistence & Saving
 
@@ -183,7 +179,7 @@ python jira-proxy.py
 
 You should see: `Jira proxy running → http://localhost:3333`
 
-Keep this terminal open while using the Jira tab. Cookies expire after ~24 hours — the Settings UI lets you refresh without restarting the proxy.
+Keep this terminal open while using the Digest tab. Cookies expire after ~24 hours — the Settings UI lets you refresh without restarting the proxy.
 
 #### Step 2 — Add your Jira cookie
 
@@ -193,9 +189,9 @@ Keep this terminal open while using the Jira tab. Cookies expire after ~24 hours
 4. Click **Test Proxy** — you should see `✓ Connected as [Your Name]`
 5. Click **Save Settings**
 
-#### Step 3 — Load your issues
+#### Step 3 — Load your digest
 
-Switch to the **Jira** tab — your assigned issues load automatically.
+Switch to the **🔔 Jira Digest** tab — your comment/mention activity loads automatically.
 
 ### Sharing with Co-workers
 
@@ -227,7 +223,7 @@ Task Organizer/
 │   ├── tasks.js             # Task CRUD, streak, confetti, recurring reset, edit modal
 │   ├── render.js            # Task list rendering, tabs, stats bar, compact view, CSV export
 │   ├── drag.js              # Drag-and-drop reorder + indent detection
-│   ├── jira.js              # Jira integration, JQL builder, proxy calls
+│   ├── jira.js              # Settings modal + Jira proxy connection (cookie, Test Proxy)
 │   ├── digest.js            # Jira Digest tab: comment/mention triage, grouping, status tracking
 │   ├── inbox.js             # Brain Dump capture modal and inbox panel
 │   ├── drive.js             # Google Drive family sync (home build only)
@@ -335,6 +331,11 @@ Tasks and settings are stored in OPFS — `work-tasks.json` for Work mode and `p
 ---
 
 ## Changelog
+
+### v2.3 (2026-08-13)
+
+- **Removed the old Jira tab and its JQL Filter Builder** — Digest fully replaced it. Losing: promote-issue-to-My-Tasks (no Digest equivalent). The Settings → Jira panel now only holds the cookie/URL/Test Proxy fields Digest still needs; the visual JQL builder and custom JQL override are gone. Renamed the remaining tab and settings label to "Jira Digest" for clarity.
+- Digest refinements from real-world use: multi-comment clusters (only the most recent comment gets action controls, older ones collapse into a "+N earlier comments" toggle); a reason tag per card (Mentioned/Assigned/Watching); mention-name resolution fixed to page past Jira's 10-result default on the bulk lookup API; comments you wrote yourself are skipped; mentions you've already replied to auto-close (reversible); a stats bar with clickable bucket/flagged filters; a ⭐ flag for "later"; checkbox multi-select replacing a one-click "mark everything done" that turned out to be too easy to fire by accident; stale non-mention items whose issue no longer matches your assignee/watcher list are pruned automatically; a "Look back" window (bounding the previously-unlimited first sync) plus a manual "Resync" for checking further back on demand; the local proxy switched to a threaded server with a request timeout so one slow Jira call can't wedge every other request.
 
 ### v2.2 (2026-08-12)
 

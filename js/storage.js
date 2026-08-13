@@ -8,7 +8,7 @@ function currentLsKey() {
 }
 
 function payload() {
-    return { version: APP_VERSION, tasks, settings: { jiraUrl: settings.jiraUrl, jiraJql: settings.jiraJql, jiraAssigneeMe: settings.jiraAssigneeMe, jiraUnresolved: settings.jiraUnresolved, jiraStatuses: settings.jiraStatuses, jiraStatusNot: settings.jiraStatusNot, jiraPriorities: settings.jiraPriorities, jiraUpdatedDays: settings.jiraUpdatedDays, jiraProjects: settings.jiraProjects, themePreset: settings.themePreset, themeCustom: settings.themeCustom, compactView: settings.compactView, tamagoshiEnabled: settings.tamagoshiEnabled, sortPreference: settings.sortPreference, driveClientId: settings.driveClientId, driveFileId: settings.driveFileId, familyMembers: settings.familyMembers }, promotedJiraIds, inboxItems, completionLog, streak };
+    return { version: APP_VERSION, tasks, settings: { jiraUrl: settings.jiraUrl, themePreset: settings.themePreset, themeCustom: settings.themeCustom, compactView: settings.compactView, tamagoshiEnabled: settings.tamagoshiEnabled, sortPreference: settings.sortPreference, driveClientId: settings.driveClientId, driveFileId: settings.driveFileId, familyMembers: settings.familyMembers }, inboxItems, completionLog, streak };
 }
 async function opfsHandle() {
     const root = await navigator.storage.getDirectory();
@@ -37,14 +37,6 @@ async function loadFromOPFS() {
 function normalizeSettings(s) {
     return {
         jiraUrl:        (s && s.jiraUrl)        || JIRA_DEFAULT_URL,
-        jiraJql:        (s && s.jiraJql)        || '',
-        jiraAssigneeMe: s && s.jiraAssigneeMe  !== undefined ? s.jiraAssigneeMe  : true,
-        jiraUnresolved: s && s.jiraUnresolved  !== undefined ? s.jiraUnresolved  : true,
-        jiraStatuses:   s && s.jiraStatuses    !== undefined ? s.jiraStatuses    : 'In Progress,To Do',
-        jiraStatusNot:  s && s.jiraStatusNot   !== undefined ? s.jiraStatusNot   : false,
-        jiraPriorities: (s && s.jiraPriorities) || '',
-        jiraUpdatedDays:(s && s.jiraUpdatedDays)|| '',
-        jiraProjects:   (s && s.jiraProjects)   || '',
         themePreset:    (s && s.themePreset)    || 'default',
         themeCustom:    (s && s.themeCustom)    || {},
         compactView:       (s && s.compactView)       || false,
@@ -58,7 +50,6 @@ function normalizeSettings(s) {
 function applyData(data) {
     tasks           = data.tasks           || [];
     settings        = normalizeSettings(data.settings);
-    promotedJiraIds = data.promotedJiraIds || [];
     inboxItems      = data.inboxItems      || [];
     completionLog   = data.completionLog   || {};
     streak          = data.streak          || { current: 0, lastDate: '', longest: 0 };

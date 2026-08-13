@@ -42,8 +42,7 @@
 <!-- Tabs -->
 <div class="tabs-bar">
     <button class="tab-btn active" onclick="switchTab('tasks',this)" data-i18n="tabTasks">&#128203; My Tasks</button>
-    <button id="jira-tab-btn" class="tab-btn" onclick="switchTab('jira',this)">&#127919; Jira</button>
-    <button id="digest-tab-btn" class="tab-btn" onclick="switchTab('digest',this)">&#128276; Digest</button>
+    <button id="digest-tab-btn" class="tab-btn" onclick="switchTab('digest',this)">&#128276; Jira Digest</button>
 </div>
 
 <!-- ─── MY TASKS ─────────────────────────────────────────────────────────────── -->
@@ -184,45 +183,6 @@
     </div>
 </div>
 
-<!-- ─── JIRA TAB ──────────────────────────────────────────────────────────────── -->
-<div class="main" id="tab-jira" style="display:none">
-    <div id="jira-gas-mode" class="jira-no-config" style="display:none">
-        <div class="icon">&#127919;</div>
-        <p><strong>Jira integration is only available in local mode.</strong></p>
-        <p style="margin-top:8px;font-size:0.88rem;color:var(--text-2)">This hosted version can't reach your Jira proxy. Download the source, run it locally with VS Code Live Server, and Jira sync works out of the box.</p>
-        <a class="btn btn-purple" href="https://github.com/DanyThivierge/joby" target="_blank" rel="noopener noreferrer" style="margin-top:12px;text-decoration:none">&#128279; Get the code on GitHub</a>
-    </div>
-    <div id="jira-no-config" class="jira-no-config" style="display:none">
-        <div class="icon">&#9881;&#65039;</div>
-        <p>Start the proxy in a terminal (<code>node jira-proxy.js</code>), then open Settings to configure your Jira URL.</p>
-        <button class="btn btn-purple" onclick="openSettings()">Open Settings</button>
-    </div>
-    <div id="jira-content" style="display:none">
-        <div class="jira-toolbar">
-            <button class="jira-refresh-btn" id="jira-refresh-btn" onclick="fetchJiraIssues(false)">&#128260; Refresh</button>
-            <select id="jira-filter-status" onchange="renderJiraIssues()">
-                <option value="all">All Statuses</option>
-                <option value="inprogress">In Progress</option>
-                <option value="todo">To Do</option>
-            </select>
-            <select id="jira-filter-priority" onchange="renderJiraIssues()">
-                <option value="all">All Priorities</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-            </select>
-            <select id="jira-filter-project" onchange="renderJiraIssues()">
-                <option value="all">All Projects</option>
-            </select>
-            <span class="jira-count" id="jira-count"></span>
-        </div>
-        <div class="task-list" id="jira-list"></div>
-        <div class="jira-load-more" id="jira-load-more" style="display:none">
-            <button class="btn btn-outline" onclick="fetchJiraIssues(true)">Load more issues...</button>
-        </div>
-    </div>
-</div>
-
 <!-- ─── DIGEST TAB ────────────────────────────────────────────────────────────── -->
 <div class="main" id="tab-digest" style="display:none">
     <div id="digest-gas-mode" class="jira-no-config" style="display:none">
@@ -276,7 +236,7 @@
             <div class="settings-tabs-bar">
                 <button class="settings-tab active" id="stab-general" onclick="switchSettingsTab('general')" data-i18n="stTabGeneral">&#127775; General</button>
                 <!-- jira-settings-start -->
-                <button class="settings-tab" id="stab-jira" onclick="switchSettingsTab('jira')" data-i18n="stTabJira">&#127919; Jira</button>
+                <button class="settings-tab" id="stab-jira" onclick="switchSettingsTab('jira')" data-i18n="stTabJira">&#127919; Jira Digest</button>
                 <!-- jira-settings-end -->
                 <!-- home-only-start -->
                 <button class="settings-tab" id="stab-personal" onclick="switchSettingsTab('personal')" data-i18n="stTabPersonal">&#128100; Personal</button>
@@ -362,63 +322,6 @@
                         <label>Jira Base URL</label>
                         <input type="text" id="s-jira-url" placeholder="https://yourcompany.atlassian.net" />
                         <p class="field-note">Used for issue links — no trailing slash</p>
-                    </div>
-
-                    <div class="field">
-                        <label>JQL Filter Builder</label>
-                        <div class="jql-builder" id="jql-builder">
-                            <div class="jql-row" style="margin-bottom:10px;">
-                                <label class="jql-check"><input type="checkbox" id="jb-assignee" onchange="updateJqlPreview()"> Assigned to me</label>
-                                <label class="jql-check"><input type="checkbox" id="jb-unresolved" onchange="updateJqlPreview()"> Unresolved only</label>
-                            </div>
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 20px;">
-                                <div>
-                                    <div class="jql-group-label">Status <label class="jql-not-toggle"><input type="checkbox" id="jb-status-not" onchange="updateJqlPreview()"> NOT</label></div>
-                                    <div class="jql-row">
-                                        <label class="jql-check"><input type="checkbox" id="jb-s-inprogress" onchange="updateJqlPreview()"> In Progress</label>
-                                        <label class="jql-check"><input type="checkbox" id="jb-s-todo" onchange="updateJqlPreview()"> To Do</label>
-                                        <label class="jql-check"><input type="checkbox" id="jb-s-inreview" onchange="updateJqlPreview()"> In Review</label>
-                                        <label class="jql-check"><input type="checkbox" id="jb-s-blocked" onchange="updateJqlPreview()"> Blocked</label>
-                                        <label class="jql-check"><input type="checkbox" id="jb-s-closed" onchange="updateJqlPreview()"> Closed</label>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="jql-group-label">Priority <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem">(blank = any)</span></div>
-                                    <div class="jql-row">
-                                        <label class="jql-check"><input type="checkbox" id="jb-p-highest" onchange="updateJqlPreview()"> Highest</label>
-                                        <label class="jql-check"><input type="checkbox" id="jb-p-high" onchange="updateJqlPreview()"> High</label>
-                                        <label class="jql-check"><input type="checkbox" id="jb-p-medium" onchange="updateJqlPreview()"> Medium</label>
-                                        <label class="jql-check"><input type="checkbox" id="jb-p-low" onchange="updateJqlPreview()"> Low</label>
-                                    </div>
-                                    <div class="jql-group-label" style="margin-top:10px;">Updated</div>
-                                    <div class="jql-row">
-                                        <select id="jb-updated" onchange="updateJqlPreview()" style="font-size:0.82rem;padding:5px 8px;width:auto;">
-                                            <option value="">Any time</option>
-                                            <option value="7">Last 7 days</option>
-                                            <option value="30">Last 30 days</option>
-                                            <option value="90">Last 90 days</option>
-                                        </select>
-                                    </div>
-                                    <div class="jql-group-label" style="margin-top:10px;">Projects <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.7rem">(e.g. HBMADJ, CRM)</span></div>
-                                    <div class="jql-row">
-                                        <input type="text" id="jb-projects" placeholder="Blank = all" oninput="updateJqlPreview()" style="flex:1;min-width:0;font-size:0.82rem;padding:5px 8px;" />
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="jql-preview-wrap">
-                                <div class="jql-preview-label">Generated JQL</div>
-                                <div class="jql-preview" id="jql-preview"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label>Custom JQL Override <span style="font-weight:400;text-transform:none;font-size:0.72rem">(optional)</span></label>
-                        <div class="jql-input-row">
-                            <input type="text" id="s-jira-jql" placeholder="e.g. project = MYPROJ AND status != Closed ORDER BY updated DESC" oninput="updateJqlPreview()" style="flex:1;" />
-                            <button class="jql-clear-btn" onclick="clearCustomJql()" title="Clear custom JQL">&#10005; remove</button>
-                        </div>
-                        <p class="field-note">Overrides the builder above entirely when filled. Leave blank to use the builder.</p>
                     </div>
 
                     <div id="conn-result" class="conn-result"></div>

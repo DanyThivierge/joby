@@ -1,13 +1,9 @@
 // state.js — Global mutable state shared across all modules: tasks, settings, streaks, inbox.
 
 let tasks             = [];
-let settings          = { jiraUrl: JIRA_DEFAULT_URL, jiraJql: '', jiraAssigneeMe: true, jiraUnresolved: true, jiraStatuses: 'In Progress,To Do', jiraStatusNot: false, jiraPriorities: '', jiraUpdatedDays: '', jiraProjects: '' };
-let promotedJiraIds   = [];
+let settings          = { jiraUrl: JIRA_DEFAULT_URL };
 let saveDebTimer      = null;
 let isDirty           = false;
-let jiraIssues        = [];
-let jiraNextPageToken = null;
-let jiraIsLoading     = false;
 let activeTab         = 'tasks';
 let currentFilter         = 'all';
 let currentCategoryFilter = 'all';

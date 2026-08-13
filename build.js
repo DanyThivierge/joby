@@ -53,10 +53,9 @@ function buildHtml(gasMode, homeMode) {
         () => '<style>\n' + fs.readFileSync(path.join(ROOT, 'css/styles.css'), 'utf8') + '\n</style>'
     );
 
-    // Home build: strip mode toggle, Jira tab, and Jira settings sections from HTML
+    // Home build: strip mode toggle, Digest tab, and Jira settings sections from HTML
     if (homeMode) {
         html = html.replace(/\s*<div class="mode-toggle">[\s\S]*?<\/div>/m, '');
-        html = html.replace(/\s*<button id="jira-tab-btn"[^>]*>.*?<\/button>/g, '');
         html = html.replace(/\s*<button id="digest-tab-btn"[^>]*>.*?<\/button>/g, '');
         // Strip Jira config fields from settings modal
         html = html.replace(/\s*<!-- jira-settings-start -->[\s\S]*?<!-- jira-settings-end -->/gm, '');
