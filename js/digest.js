@@ -245,6 +245,7 @@ async function mergeIssueComments(issueKey, accountId, since) {
             mentionsMe: mentionsMe,
             isAssignee: isAssignee, // reflects current issue state, refreshed every poll (not a user override)
             isWatching: isWatching,
+            flagged: existing ? existing.flagged : false,
         };
     }
 }
@@ -253,7 +254,9 @@ function groupDigestItems() {
     const showDone = document.getElementById('digest-show-done')?.checked;
     const bucketFilter = document.getElementById('digest-filter-bucket')?.value || 'all';
     const items = Object.values(digestItems).filter(i =>
-        (showDone || i.status !== 'done') && (bucketFilter === 'all' || i.bucket === bucketFilter)
+        (showDone || i.status !== 'done') &&
+        (bucketFilter === 'all' || i.bucket === bucketFilter) &&
+        (!digestFlaggedOnly || i.flagged)
     );
     const groups = {};
     for (const item of items) {
@@ -266,9 +269,45 @@ function groupDigestItems() {
     return Object.values(groups).sort((a, b) => b.latest - a.latest);
 }
 
+function renderDigestStats() {
+    const el = document.getElementById('digest-stats');
+    if (!el) return;
+    const open = Object.values(digestItems).filter(i => i.status !== 'done');
+    const counts = { review: 0, fix_help: 0, fyi: 0 };
+    let flagged = 0;
+    for (const i of open) {
+        counts[i.bucket] = (counts[i.bucket] || 0) + 1;
+        if (i.flagged) flagged++;
+    }
+    el.innerHTML =
+        '<div class="digest-stat-pill" onclick="setDigestBucketFilter(\'all\')">' + open.length + ' To Do</div>'
+        + '<div class="digest-stat-pill" onclick="setDigestBucketFilter(\'review\')">' + (counts.review || 0) + ' &#128064; Review</div>'
+        + '<div class="digest-stat-pill" onclick="setDigestBucketFilter(\'fix_help\')">' + (counts.fix_help || 0) + ' &#128295; Fix/Help</div>'
+        + '<div class="digest-stat-pill" onclick="setDigestBucketFilter(\'fyi\')">' + (counts.fyi || 0) + ' &#128172; FYI</div>'
+        + '<div class="digest-stat-pill digest-stat-flag' + (digestFlaggedOnly ? ' active' : '') + '" onclick="toggleDigestFlaggedFilter()">' + flagged + ' &#11088; Flagged</div>';
+}
+
+function setDigestBucketFilter(bucket) {
+    const sel = document.getElementById('digest-filter-bucket');
+    if (sel) sel.value = bucket;
+    renderDigest();
+}
+
+function toggleDigestFlaggedFilter() {
+    digestFlaggedOnly = !digestFlaggedOnly;
+    renderDigest();
+}
+
+function toggleDigestFlag(commentId) {
+    const item = digestItems[commentId]; if (!item) return;
+    item.flagged = !item.flagged;
+    saveDigestToProxy(); renderDigest();
+}
+
 function renderDigest() {
     const cont = document.getElementById('digest-list');
     if (!cont) return;
+    renderDigestStats();
     const lastEl = document.getElementById('digest-last-polled');
     if (lastEl) lastEl.textContent = digestLastPolled ? 'Last checked: ' + new Date(digestLastPolled).toLocaleString() : '';
     const groups = groupDigestItems();
@@ -331,7 +370,7 @@ function renderDigestIssueCluster(cluster) {
           + context.map(renderDigestContextComment).join('')
           + '</div>'
         : '';
-    return '<div class="digest-issue-cluster">'
+    return '<div class="digest-issue-cluster' + (head.flagged ? ' digest-issue-cluster--flagged' : '') + '">'
         + '<div class="digest-item-head" onclick="toggleDigestThread(\'' + head.commentId + '\')">'
         + '<span class="jira-key">' + escHtml(cluster.issueKey) + '</span>'
         + '<span class="digest-summary">' + escHtml(head.issueSummary) + '</span>'
@@ -397,6 +436,8 @@ function renderDigestComment(item) {
     const waitingInput = item.status === 'waiting'
         ? '<input type="text" class="digest-waiting-input" placeholder="Waiting on..." value="' + escAttr(item.waitingOn || '') + '" onchange="setDigestWaitingOn(\'' + item.commentId + '\', this.value)">'
         : '';
+    const flagBtn = '<button class="digest-flag-btn' + (item.flagged ? ' active' : '') + '" onclick="toggleDigestFlag(\'' + item.commentId + '\')" title="Flag for later">'
+        + (item.flagged ? '&#11088;' : '&#9734;') + '</button>';
     return '<div class="digest-comment-row" data-comment-id="' + item.commentId + '">'
         + '<div class="digest-comment"><strong>' + escHtml(item.author) + ':</strong> ' + linkify(resolveMentionsForDisplay(item.body)) + '</div>'
         + renderDigestAttachments(item.attachments)
@@ -404,6 +445,7 @@ function renderDigestComment(item) {
         + '<div class="digest-buckets">' + bucketPills + '</div>'
         + '<select class="digest-status-select" onchange="setDigestStatus(\'' + item.commentId + '\', this.value)">' + statusOptions + '</select>'
         + waitingInput
+        + flagBtn
         + '</div>'
         + '</div>';
 }
