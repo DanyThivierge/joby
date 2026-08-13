@@ -101,13 +101,22 @@ async function resolveUnknownMentions(bodyTexts) {
         }
     }
     if (!unknown.size) return;
-    const params = [...unknown].map(id => 'accountId=' + encodeURIComponent(id)).join('&');
-    try {
-        const r = await fetch(PROXY_ORIGIN + '/rest/api/3/user/bulk?' + params);
-        if (!r.ok) return;
-        const data = await r.json();
-        for (const u of (data.values || [])) digestUserNames[u.accountId] = u.displayName;
-    } catch { /* best effort — unresolved mentions fall back to "someone" */ }
+    // /rest/api/3/user/bulk defaults to maxResults=10 per page regardless of how many
+    // accountId params are sent — without an explicit maxResults, anything past the
+    // first 10 unique unresolved people silently drops off (confirmed against the real
+    // API). Chunk requests and set maxResults to match each chunk so nothing is lost.
+    const ids = [...unknown];
+    const CHUNK_SIZE = 50;
+    for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+        const chunk = ids.slice(i, i + CHUNK_SIZE);
+        const params = chunk.map(id => 'accountId=' + encodeURIComponent(id)).join('&');
+        try {
+            const r = await fetch(PROXY_ORIGIN + '/rest/api/3/user/bulk?maxResults=' + chunk.length + '&' + params);
+            if (!r.ok) continue;
+            const data = await r.json();
+            for (const u of (data.values || [])) digestUserNames[u.accountId] = u.displayName;
+        } catch { /* best effort — this chunk's mentions fall back to "someone" */ }
+    }
 }
 
 function formatJqlDateTime(d) {
@@ -121,7 +130,19 @@ async function fetchMyAccountId() {
     if (!r.ok) throw new Error('Could not identify current Jira user (HTTP ' + r.status + ')');
     const me = await r.json();
     digestMyAccountId = me.accountId;
+    digestMyDisplayName = me.displayName || null;
     return digestMyAccountId;
+}
+
+// Comments you wrote yourself never need triage from you — you already know what you
+// said. Drops any item (new or already-persisted from before this existed) whose
+// author is you. authorAccountId covers items merged going forward; the displayName
+// fallback catches items persisted before that field existed.
+function purgeOwnDigestComments(accountId) {
+    for (const [id, item] of Object.entries(digestItems)) {
+        const isOwn = item.authorAccountId ? item.authorAccountId === accountId : item.author === digestMyDisplayName;
+        if (isOwn) delete digestItems[id];
+    }
 }
 
 async function fetchDigest() {
@@ -149,6 +170,7 @@ async function fetchDigest() {
         for (const issue of (searchData.issues || [])) {
             await mergeIssueComments(issue.key, accountId, since);
         }
+        purgeOwnDigestComments(accountId);
         await resolveUnknownMentions(Object.values(digestItems).map(i => i.body));
         digestLastPolled = new Date().toISOString();
         await saveDigestToProxy();
@@ -175,6 +197,7 @@ async function mergeIssueComments(issueKey, accountId, since) {
     const comments = (f.comment && f.comment.comments) || [];
     for (const c of comments) {
         if (c.author && c.author.accountId) digestUserNames[c.author.accountId] = c.author.displayName || digestUserNames[c.author.accountId];
+        if (c.author && c.author.accountId === accountId) continue; // your own comment — nothing for you to triage
         const updated = new Date(c.updated || c.created);
         if (since && updated <= since) continue;
         const mentionsMe = commentMentionsMe(c.body, accountId);
@@ -191,6 +214,7 @@ async function mergeIssueComments(issueKey, accountId, since) {
             epicKey: epicKey,
             epicName: epicName,
             author: (c.author && c.author.displayName) || 'Unknown',
+            authorAccountId: (c.author && c.author.accountId) || null,
             body: c.body || '',
             created: c.created,
             bucket: existing ? existing.bucket : classifyBucket(c.body, mentionsMe),
@@ -207,7 +231,10 @@ async function mergeIssueComments(issueKey, accountId, since) {
 
 function groupDigestItems() {
     const showDone = document.getElementById('digest-show-done')?.checked;
-    const items = Object.values(digestItems).filter(i => showDone || i.status !== 'done');
+    const bucketFilter = document.getElementById('digest-filter-bucket')?.value || 'all';
+    const items = Object.values(digestItems).filter(i =>
+        (showDone || i.status !== 'done') && (bucketFilter === 'all' || i.bucket === bucketFilter)
+    );
     const groups = {};
     for (const item of items) {
         const key = item.epicName || 'Other';
@@ -270,10 +297,12 @@ function renderDigestIssueCluster(cluster) {
         isAssignee: comments.some(c => c.isAssignee),
         isWatching: comments.some(c => c.isWatching),
     };
+    const jiraUrl = settings.jiraUrl + '/browse/' + encodeURIComponent(cluster.issueKey) + '?focusedCommentId=' + encodeURIComponent(head.commentId);
     return '<div class="digest-issue-cluster">'
         + '<div class="digest-item-head" onclick="toggleDigestThread(\'' + head.commentId + '\')">'
         + '<span class="jira-key">' + escHtml(cluster.issueKey) + '</span>'
         + '<span class="digest-summary">' + escHtml(head.issueSummary) + '</span>'
+        + '<a class="digest-open-jira" href="' + escAttr(jiraUrl) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="Open in Jira to reply">&#8599; Open in Jira</a>'
         + renderDigestReasonTags(reasons)
         + '</div>'
         + comments.map(renderDigestComment).join('')
@@ -348,6 +377,20 @@ function setDigestWaitingOn(commentId, name) {
     const item = digestItems[commentId]; if (!item) return;
     item.waitingOn = name;
     saveDigestToProxy();
+}
+
+// Marks Done everything currently visible under the active bucket filter / show-done
+// state — e.g. filter to FYI, then clear the whole bucket in one click, without
+// touching items hidden by the current filter.
+function markAllVisibleDigestDone() {
+    const ids = groupDigestItems().flatMap(g => g.items.map(i => i.commentId));
+    if (!ids.length) return;
+    for (const id of ids) {
+        const item = digestItems[id];
+        if (item) item.status = 'done';
+    }
+    saveDigestToProxy();
+    renderDigest();
 }
 
 async function toggleDigestThread(commentId) {

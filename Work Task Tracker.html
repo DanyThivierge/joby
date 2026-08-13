@@ -238,6 +238,13 @@
     <div id="digest-content" style="display:none">
         <div class="jira-toolbar">
             <button class="jira-refresh-btn" id="digest-refresh-btn" onclick="fetchDigest()">&#128260; Refresh</button>
+            <select id="digest-filter-bucket" onchange="renderDigest()">
+                <option value="all">All</option>
+                <option value="review">&#128064; Review</option>
+                <option value="fix_help">&#128295; Fix/Help</option>
+                <option value="fyi">&#128172; FYI</option>
+            </select>
+            <button class="btn btn-outline" onclick="markAllVisibleDigestDone()">&#10003; Mark shown as Done</button>
             <label class="jql-check" style="margin-left:8px"><input type="checkbox" id="digest-show-done" onchange="renderDigest()"> Show done</label>
             <span class="jira-count" id="digest-last-polled"></span>
         </div>
