@@ -245,9 +245,14 @@
                 <option value="fix_help">&#128295; Fix/Help</option>
                 <option value="fyi">&#128172; FYI</option>
             </select>
-            <button class="btn btn-outline" onclick="markAllVisibleDigestDone()">&#10003; Mark shown as Done</button>
+            <button class="btn btn-outline" onclick="selectAllVisibleDigest()">&#9745; Select all shown</button>
             <label class="jql-check" style="margin-left:8px"><input type="checkbox" id="digest-show-done" onchange="renderDigest()"> Show done</label>
             <span class="jira-count" id="digest-last-polled"></span>
+        </div>
+        <div id="digest-bulk-action-bar" class="bulk-action-bar" style="display:none">
+            <span class="bulk-count" id="digest-bulk-count"></span>
+            <button class="btn btn-outline" onclick="markSelectedDigestDone()">&#10003; Mark Done</button>
+            <button class="btn btn-outline" onclick="clearDigestSelection()">&#10005; Clear selection</button>
         </div>
         <div class="task-list" id="digest-list"></div>
     </div>

@@ -145,6 +145,30 @@ function purgeOwnDigestComments(accountId) {
     }
 }
 
+// The regular poll below is intentionally incremental (updated >= since), so an issue
+// you're still assignee/watcher on but that simply hasn't changed lately won't appear
+// in it — that's normal, not a sign you've lost the relationship. This separate,
+// non-incremental query is the only reliable way to know the *current* full set of
+// issues you're assignee/watcher on, so stale items (no mention, and the issue no
+// longer matches at all — e.g. you stopped watching it) can be cleaned up. Only prunes
+// non-mention items; a mention is a standing fact independent of your current watch
+// state.
+async function pruneStaleDigestItems() {
+    try {
+        const r = await fetch(PROXY_ORIGIN + '/rest/api/3/search/jql', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({ jql: '(assignee = currentUser() OR watcher = currentUser())', fields: ['summary'], maxResults: 100 })
+        });
+        if (!r.ok) return;
+        const data = await r.json();
+        const currentIssueKeys = new Set((data.issues || []).map(i => i.key));
+        for (const [id, item] of Object.entries(digestItems)) {
+            if (!item.mentionsMe && !currentIssueKeys.has(item.issueKey)) delete digestItems[id];
+        }
+    } catch { /* best effort — a failed validation query just means no cleanup this poll */ }
+}
+
 async function fetchDigest() {
     if (digestIsLoading) return;
     digestIsLoading = true;
@@ -171,6 +195,7 @@ async function fetchDigest() {
             await mergeIssueComments(issue.key, accountId, since);
         }
         purgeOwnDigestComments(accountId);
+        await pruneStaleDigestItems();
         await resolveUnknownMentions(Object.values(digestItems).map(i => i.body));
         digestLastPolled = new Date().toISOString();
         await saveDigestToProxy();
@@ -308,6 +333,7 @@ function renderDigest() {
     const cont = document.getElementById('digest-list');
     if (!cont) return;
     renderDigestStats();
+    updateDigestBulkBar();
     const lastEl = document.getElementById('digest-last-polled');
     if (lastEl) lastEl.textContent = digestLastPolled ? 'Last checked: ' + new Date(digestLastPolled).toLocaleString() : '';
     const groups = groupDigestItems();
@@ -438,7 +464,10 @@ function renderDigestComment(item) {
         : '';
     const flagBtn = '<button class="digest-flag-btn' + (item.flagged ? ' active' : '') + '" onclick="toggleDigestFlag(\'' + item.commentId + '\')" title="Flag for later">'
         + (item.flagged ? '&#11088;' : '&#9734;') + '</button>';
+    const selectCheckbox = '<input type="checkbox" class="digest-select-checkbox" onclick="event.stopPropagation();toggleDigestSelected(\'' + item.commentId + '\', this.checked)"'
+        + (digestSelectedIds.has(item.commentId) ? ' checked' : '') + '>';
     return '<div class="digest-comment-row" data-comment-id="' + item.commentId + '">'
+        + selectCheckbox
         + '<div class="digest-comment"><strong>' + escHtml(item.author) + ':</strong> ' + linkify(resolveMentionsForDisplay(item.body)) + '</div>'
         + renderDigestAttachments(item.attachments)
         + '<div class="digest-controls">'
@@ -457,6 +486,7 @@ function setDigestBucket(commentId, bucket) {
 }
 function setDigestStatus(commentId, status) {
     const item = digestItems[commentId]; if (!item) return;
+    const wasDone = item.status === 'done';
     item.status = status;
     if (status !== 'waiting') item.waitingOn = null;
     if (status === 'done') {
@@ -467,6 +497,13 @@ function setDigestStatus(commentId, status) {
         for (const other of Object.values(digestItems)) {
             if (other.issueKey === item.issueKey && other.commentId !== commentId) other.status = 'done';
         }
+    } else if (wasDone) {
+        // Symmetric to the above: reopening a cluster that was closed together should
+        // reopen the whole cluster, since the siblings have no controls of their own to
+        // reopen individually.
+        for (const other of Object.values(digestItems)) {
+            if (other.issueKey === item.issueKey && other.commentId !== commentId && other.status === 'done') other.status = 'todo';
+        }
     }
     saveDigestToProxy(); renderDigest();
 }
@@ -476,16 +513,39 @@ function setDigestWaitingOn(commentId, name) {
     saveDigestToProxy();
 }
 
-// Marks Done everything currently visible under the active bucket filter / show-done
-// state — e.g. filter to FYI, then clear the whole bucket in one click, without
-// touching items hidden by the current filter.
-function markAllVisibleDigestDone() {
-    const ids = groupDigestItems().flatMap(g => g.items.map(i => i.commentId));
-    if (!ids.length) return;
-    for (const id of ids) {
+// A single "mark everything shown as Done" button was too easy to fire by accident
+// with no way to undo — replaced with a checkbox on every card so only the items you
+// actually pick get closed. The bulk bar itself appears only once something's checked.
+function toggleDigestSelected(commentId, checked) {
+    if (checked) digestSelectedIds.add(commentId); else digestSelectedIds.delete(commentId);
+    updateDigestBulkBar();
+}
+function updateDigestBulkBar() {
+    const bar = document.getElementById('digest-bulk-action-bar');
+    if (!bar) return;
+    bar.style.display = digestSelectedIds.size > 0 ? 'flex' : 'none';
+    const countEl = document.getElementById('digest-bulk-count');
+    if (countEl) countEl.textContent = digestSelectedIds.size + ' selected';
+}
+function clearDigestSelection() {
+    digestSelectedIds.clear();
+    renderDigest();
+}
+// Selects every currently-visible primary comment (i.e. every checkbox actually on
+// screen right now, respecting the active bucket/show-done/flagged filters).
+function selectAllVisibleDigest() {
+    for (const el of document.querySelectorAll('.digest-select-checkbox')) {
+        digestSelectedIds.add(el.closest('.digest-comment-row').dataset.commentId);
+    }
+    renderDigest();
+}
+function markSelectedDigestDone() {
+    if (!digestSelectedIds.size) return;
+    for (const id of digestSelectedIds) {
         const item = digestItems[id];
         if (item) item.status = 'done';
     }
+    digestSelectedIds.clear();
     saveDigestToProxy();
     renderDigest();
 }
