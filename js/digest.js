@@ -558,11 +558,32 @@ function selectAllVisibleDigest() {
     }
     renderDigest();
 }
+// Checkboxes only exist on each cluster's primary (most recent) comment, so bulk actions
+// need the same cascade the single-item dropdown already does — otherwise a cluster's
+// earlier, checkbox-less context comments would be left with no way to close/reopen
+// them individually once their primary comment's status changes here.
 function markSelectedDigestDone() {
     if (!digestSelectedIds.size) return;
     for (const id of digestSelectedIds) {
-        const item = digestItems[id];
-        if (item) item.status = 'done';
+        const item = digestItems[id]; if (!item) continue;
+        item.status = 'done';
+        for (const other of Object.values(digestItems)) {
+            if (other.issueKey === item.issueKey && other.commentId !== id) other.status = 'done';
+        }
+    }
+    digestSelectedIds.clear();
+    saveDigestToProxy();
+    renderDigest();
+}
+function markSelectedDigestTodo() {
+    if (!digestSelectedIds.size) return;
+    for (const id of digestSelectedIds) {
+        const item = digestItems[id]; if (!item) continue;
+        item.status = 'todo';
+        item.waitingOn = null;
+        for (const other of Object.values(digestItems)) {
+            if (other.issueKey === item.issueKey && other.commentId !== id && other.status === 'done') other.status = 'todo';
+        }
     }
     digestSelectedIds.clear();
     saveDigestToProxy();
