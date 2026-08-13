@@ -169,7 +169,23 @@ async function pruneStaleDigestItems() {
     } catch { /* best effort — a failed validation query just means no cleanup this poll */ }
 }
 
-async function fetchDigest() {
+// Reads the lookback dropdown (defaults to 30 days if the element isn't there for
+// some reason). 'forever' means no lower bound at all.
+function digestLookbackSince() {
+    const v = document.getElementById('digest-lookback')?.value || '30';
+    if (v === 'forever') return null;
+    return new Date(Date.now() - Number(v) * 86400000);
+}
+
+// Resyncing intentionally does NOT permanently rewind digestLastPolled — it's a one-off
+// "also check further back" pass. After it completes, fetchDigest's own bookkeeping
+// advances digestLastPolled to now as usual, so the next normal Refresh stays a small
+// incremental catch-up rather than repeating this wider window every time.
+function resyncDigest() {
+    fetchDigest(digestLookbackSince());
+}
+
+async function fetchDigest(sinceOverride) {
     if (digestIsLoading) return;
     digestIsLoading = true;
     const btn = document.getElementById('digest-refresh-btn');
@@ -177,7 +193,10 @@ async function fetchDigest() {
     try {
         if (!digestHydrated) await loadDigestFromProxy();
         const accountId = await fetchMyAccountId();
-        const since = digestLastPolled ? new Date(digestLastPolled) : null;
+        // First-ever poll (no persisted lastPolled yet) also uses the lookback dropdown
+        // as its starting point, rather than pulling every comment ever regardless of
+        // age — that's what produced a 293-item, multi-year-old initial load.
+        const since = sinceOverride !== undefined ? sinceOverride : (digestLastPolled ? new Date(digestLastPolled) : digestLookbackSince());
         const jql = '(assignee = currentUser() OR watcher = currentUser())'
             + (since ? ' AND updated >= "' + formatJqlDateTime(since) + '"' : '')
             + ' ORDER BY updated DESC';

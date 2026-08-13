@@ -1281,6 +1281,15 @@ select option { background: var(--card); color: var(--text); }
         <div class="digest-stats" id="digest-stats"></div>
         <div class="jira-toolbar">
             <button class="jira-refresh-btn" id="digest-refresh-btn" onclick="fetchDigest()">&#128260; Refresh</button>
+            <select id="digest-lookback" title="How far back to look when resyncing">
+                <option value="1">Last day</option>
+                <option value="7">Last week</option>
+                <option value="30" selected>Last month</option>
+                <option value="90">Last 3 months</option>
+                <option value="365">Last year</option>
+                <option value="forever">Forever</option>
+            </select>
+            <button class="btn btn-outline" onclick="resyncDigest()" title="Re-check further back than the normal incremental refresh">&#128257; Resync</button>
             <select id="digest-filter-bucket" onchange="renderDigest()">
                 <option value="all">All</option>
                 <option value="review">&#128064; Review</option>
@@ -4043,7 +4052,23 @@ async function pruneStaleDigestItems() {
     } catch { /* best effort — a failed validation query just means no cleanup this poll */ }
 }
 
-async function fetchDigest() {
+// Reads the lookback dropdown (defaults to 30 days if the element isn't there for
+// some reason). 'forever' means no lower bound at all.
+function digestLookbackSince() {
+    const v = document.getElementById('digest-lookback')?.value || '30';
+    if (v === 'forever') return null;
+    return new Date(Date.now() - Number(v) * 86400000);
+}
+
+// Resyncing intentionally does NOT permanently rewind digestLastPolled — it's a one-off
+// "also check further back" pass. After it completes, fetchDigest's own bookkeeping
+// advances digestLastPolled to now as usual, so the next normal Refresh stays a small
+// incremental catch-up rather than repeating this wider window every time.
+function resyncDigest() {
+    fetchDigest(digestLookbackSince());
+}
+
+async function fetchDigest(sinceOverride) {
     if (digestIsLoading) return;
     digestIsLoading = true;
     const btn = document.getElementById('digest-refresh-btn');
@@ -4051,7 +4076,10 @@ async function fetchDigest() {
     try {
         if (!digestHydrated) await loadDigestFromProxy();
         const accountId = await fetchMyAccountId();
-        const since = digestLastPolled ? new Date(digestLastPolled) : null;
+        // First-ever poll (no persisted lastPolled yet) also uses the lookback dropdown
+        // as its starting point, rather than pulling every comment ever regardless of
+        // age — that's what produced a 293-item, multi-year-old initial load.
+        const since = sinceOverride !== undefined ? sinceOverride : (digestLastPolled ? new Date(digestLastPolled) : digestLookbackSince());
         const jql = '(assignee = currentUser() OR watcher = currentUser())'
             + (since ? ' AND updated >= "' + formatJqlDateTime(since) + '"' : '')
             + ' ORDER BY updated DESC';
