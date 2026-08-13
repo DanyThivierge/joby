@@ -3992,6 +3992,15 @@ async function mergeIssueComments(issueKey, accountId, since) {
         const mentionsMe = commentMentionsMe(c.body, accountId);
         const existing = digestItems[c.id];
         const commentTime = new Date(c.created).getTime();
+        // Jira has no reply-linking, so "did I comment on this issue after this mention"
+        // is the best available signal that you already addressed it. Only auto-closes
+        // an item still sitting untouched at 'todo' — never overrides a status you set
+        // yourself (e.g. "Waiting on Bob"). A later comment from someone else after your
+        // reply is itself a new item, which surfaces as a fresh follow-up on its own.
+        const answeredByMe = mentionsMe && comments.some(other =>
+            other.author && other.author.accountId === accountId && new Date(other.created).getTime() > commentTime
+        );
+        const status = answeredByMe && (!existing || existing.status === 'todo') ? 'done' : (existing ? existing.status : 'todo');
         // Jira has no direct comment<->attachment link; approximate by upload-time proximity.
         const relatedAttachments = attachments
             .filter(a => Math.abs(new Date(a.created).getTime() - commentTime) <= 120000)
@@ -4008,7 +4017,7 @@ async function mergeIssueComments(issueKey, accountId, since) {
             created: c.created,
             bucket: existing ? existing.bucket : classifyBucket(c.body, mentionsMe),
             bucketAuto: existing ? existing.bucketAuto : true,
-            status: existing ? existing.status : 'todo',
+            status: status,
             waitingOn: existing ? existing.waitingOn : null,
             attachments: relatedAttachments,
             mentionsMe: mentionsMe,
