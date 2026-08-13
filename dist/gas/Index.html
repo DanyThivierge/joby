@@ -4049,6 +4049,17 @@ async function mergeIssueComments(issueKey, accountId, since) {
     const isWatching = !!(f.watches && f.watches.isWatching);
     const attachments = f.attachment || [];
     const comments = (f.comment && f.comment.comments) || [];
+    // Backfill on every poll for every already-stored item on this issue, not just new
+    // comments below — otherwise an item persisted before isAssignee/isWatching existed
+    // (or one whose issue hasn't had a new comment since) never gets these set, and its
+    // reason tags stay blank even though the issue still matches the assignee/watcher
+    // search that surfaced it in the first place.
+    for (const item of Object.values(digestItems)) {
+        if (item.issueKey === issueKey) {
+            item.isAssignee = isAssignee;
+            item.isWatching = isWatching;
+        }
+    }
     for (const c of comments) {
         if (c.author && c.author.accountId) digestUserNames[c.author.accountId] = c.author.displayName || digestUserNames[c.author.accountId];
         if (c.author && c.author.accountId === accountId) continue; // your own comment — nothing for you to triage
