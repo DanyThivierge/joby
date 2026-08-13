@@ -1005,6 +1005,12 @@ select option { background: var(--card); color: var(--text); }
 .digest-comment-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
 .digest-comment-row:first-of-type { margin-top: 8px; padding-top: 0; border-top: none; }
 .digest-comment { font-size: 0.85rem; color: var(--text); line-height: 1.5; }
+.digest-context-toggle {
+    font-size: 0.72rem; color: var(--text-3); cursor: pointer; margin: 8px 0 0; user-select: none;
+}
+.digest-context-toggle:hover { color: var(--purple); }
+.digest-context-comments { opacity: 0.75; }
+.digest-context-comments .digest-comment { font-size: 0.8rem; }
 .digest-attachments { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 .digest-attachment-thumb {
     width: 96px; height: 72px; object-fit: cover; border-radius: var(--radius-btn);

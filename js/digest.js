@@ -307,6 +307,19 @@ function renderDigestIssueCluster(cluster) {
         isWatching: comments.some(c => c.isWatching),
     };
     const jiraUrl = settings.jiraUrl + '/browse/' + encodeURIComponent(cluster.issueKey) + '?focusedCommentId=' + encodeURIComponent(head.commentId);
+    // Only the most recent comment reflects where the conversation currently stands, so
+    // only it gets bucket/status controls. Earlier new-since-last-check comments in the
+    // same cluster are shown as plain, collapsed context — expand to read them, but
+    // there's nothing to individually triage there (closing the primary comment closes
+    // the whole cluster together, see setDigestStatus).
+    const context = comments.slice(0, -1);
+    const contextHtml = context.length
+        ? '<div class="digest-context-toggle" onclick="toggleDigestContext(\'' + head.commentId + '\')">'
+          + '&#9656; ' + context.length + ' earlier comment' + (context.length > 1 ? 's' : '') + '</div>'
+          + '<div class="digest-context-comments" id="digest-context-' + head.commentId + '" style="display:none">'
+          + context.map(renderDigestContextComment).join('')
+          + '</div>'
+        : '';
     return '<div class="digest-issue-cluster">'
         + '<div class="digest-item-head" onclick="toggleDigestThread(\'' + head.commentId + '\')">'
         + '<span class="jira-key">' + escHtml(cluster.issueKey) + '</span>'
@@ -314,9 +327,22 @@ function renderDigestIssueCluster(cluster) {
         + '<a class="digest-open-jira" href="' + escAttr(jiraUrl) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="Open in Jira to reply">&#8599; Open in Jira</a>'
         + renderDigestReasonTags(reasons)
         + '</div>'
-        + comments.map(renderDigestComment).join('')
+        + contextHtml
+        + renderDigestComment(head)
         + '<div class="digest-thread" id="digest-thread-' + head.commentId + '" style="display:none"></div>'
         + '</div>';
+}
+
+function renderDigestContextComment(item) {
+    return '<div class="digest-comment-row digest-context-comment" data-comment-id="' + item.commentId + '">'
+        + '<div class="digest-comment"><strong>' + escHtml(item.author) + ':</strong> ' + linkify(resolveMentionsForDisplay(item.body)) + '</div>'
+        + renderDigestAttachments(item.attachments)
+        + '</div>';
+}
+
+function toggleDigestContext(headCommentId) {
+    const el = document.getElementById('digest-context-' + headCommentId);
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
 function renderDigestAttachments(attachments) {
@@ -380,6 +406,15 @@ function setDigestStatus(commentId, status) {
     const item = digestItems[commentId]; if (!item) return;
     item.status = status;
     if (status !== 'waiting') item.waitingOn = null;
+    if (status === 'done') {
+        // Only the most recent comment in a cluster has visible controls (see
+        // renderDigestIssueCluster) — closing it needs to close the earlier, now-hidden
+        // context comments on the same issue too, or they'd be stuck with no way to
+        // dismiss them individually.
+        for (const other of Object.values(digestItems)) {
+            if (other.issueKey === item.issueKey && other.commentId !== commentId) other.status = 'done';
+        }
+    }
     saveDigestToProxy(); renderDigest();
 }
 function setDigestWaitingOn(commentId, name) {
