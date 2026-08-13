@@ -170,22 +170,17 @@ async function pruneStaleDigestItems() {
 }
 
 // Reads the lookback dropdown (defaults to 30 days if the element isn't there for
-// some reason). 'forever' means no lower bound at all.
+// some reason). 'forever' means no lower bound at all. Every fetchDigest() call uses
+// this directly, rather than the last-checked timestamp — a separate incremental
+// "since last poll" mode plus a manual "resync further back" button turned out to be a
+// distinction without a difference to explain, so there's just the one control now.
 function digestLookbackSince() {
     const v = document.getElementById('digest-lookback')?.value || '30';
     if (v === 'forever') return null;
     return new Date(Date.now() - Number(v) * 86400000);
 }
 
-// Resyncing intentionally does NOT permanently rewind digestLastPolled — it's a one-off
-// "also check further back" pass. After it completes, fetchDigest's own bookkeeping
-// advances digestLastPolled to now as usual, so the next normal Refresh stays a small
-// incremental catch-up rather than repeating this wider window every time.
-function resyncDigest() {
-    fetchDigest(digestLookbackSince());
-}
-
-async function fetchDigest(sinceOverride) {
+async function fetchDigest() {
     if (digestIsLoading) return;
     digestIsLoading = true;
     const btn = document.getElementById('digest-refresh-btn');
@@ -193,10 +188,7 @@ async function fetchDigest(sinceOverride) {
     try {
         if (!digestHydrated) await loadDigestFromProxy();
         const accountId = await fetchMyAccountId();
-        // First-ever poll (no persisted lastPolled yet) also uses the lookback dropdown
-        // as its starting point, rather than pulling every comment ever regardless of
-        // age — that's what produced a 293-item, multi-year-old initial load.
-        const since = sinceOverride !== undefined ? sinceOverride : (digestLastPolled ? new Date(digestLastPolled) : digestLookbackSince());
+        const since = digestLookbackSince();
         const jql = '(assignee = currentUser() OR watcher = currentUser())'
             + (since ? ' AND updated >= "' + formatJqlDateTime(since) + '"' : '')
             + ' ORDER BY updated DESC';
@@ -216,7 +208,7 @@ async function fetchDigest(sinceOverride) {
         purgeOwnDigestComments(accountId);
         await pruneStaleDigestItems();
         await resolveUnknownMentions(Object.values(digestItems).map(i => i.body));
-        digestLastPolled = new Date().toISOString();
+        digestLastPolled = new Date().toISOString(); // display only now ("Last checked: ...") — since's lookback comes from the dropdown, not this
         await saveDigestToProxy();
         renderDigest();
     } catch (e) {

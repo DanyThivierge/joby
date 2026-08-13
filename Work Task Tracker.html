@@ -199,7 +199,7 @@
         <div class="digest-stats" id="digest-stats"></div>
         <div class="jira-toolbar">
             <button class="jira-refresh-btn" id="digest-refresh-btn" onclick="fetchDigest()">&#128260; Refresh</button>
-            <select id="digest-lookback" title="How far back to look when resyncing">
+            <select id="digest-lookback" title="How far back Refresh checks">
                 <option value="1">Last day</option>
                 <option value="7">Last week</option>
                 <option value="30" selected>Last month</option>
@@ -207,7 +207,6 @@
                 <option value="365">Last year</option>
                 <option value="forever">Forever</option>
             </select>
-            <button class="btn btn-outline" onclick="resyncDigest()" title="Re-check further back than the normal incremental refresh">&#128257; Resync</button>
             <select id="digest-filter-bucket" onchange="renderDigest()">
                 <option value="all">All</option>
                 <option value="review">&#128064; Review</option>
