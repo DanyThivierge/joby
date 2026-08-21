@@ -863,13 +863,14 @@ function composeFrame(mood, hat, frame, walkPhase, isSprinting, dir) {
 }
 
 // ── DOM bootstrap ─────────────────────────────────────────────────────────────
-let strip, svgEl, bubbleEl, treatsEl;
+let strip, svgEl, bubbleEl, treatsEl, clickCatcherEl;
 
 // ── Walk zone ──────────────────────────────────────────────────────────────────
 let xOffset = 300, maxX = 300;
 
 // ── Core state ─────────────────────────────────────────────────────────────────
 let x = 0, dir = 1, frame = 0;
+let renderTick = 0; // increments once per render() call (~60/s) — for throttling reflow-forcing work independently of the 200ms logic-tick 'frame' counter above
 let mood = 'happy';
 let excitedFrames = 0, eatingFrames = 0, partyFrames = 0, idleFrames = 0;
 let hangPhase = 0, hangFrames = 0;
@@ -1028,24 +1029,6 @@ function render() {
   if (!jobyG) {
     jobyG = document.createElementNS(SVG_NS, 'g');
     jobyG.setAttribute('id', 'joby-g');
-    // svgEl itself is pointer-events:none (full-width overlay — header/tab clicks
-    // must pass through it everywhere else); Joby opts back in just for himself so
-    // clicking him doesn't also require poking a hole in the header's own click targets.
-    jobyG.style.pointerEvents = 'auto';
-    jobyG.style.cursor = 'pointer';
-    jobyG.addEventListener('click', petJoby);
-    // A real double-click fires click, click, dblclick in that order (DOM spec), so
-    // petJoby() will have already run once or twice by the time this handler does —
-    // harmless (a brief pink flash right before the spin), except for petFrames
-    // itself, which we clear here so the spin doesn't render pink-tinted the whole way.
-    jobyG.addEventListener('dblclick', e => {
-      e.stopPropagation();
-      petFrames = 0;
-      boredomMove = 'spinAround';
-      boredomFrames = 20;
-      boredomWalkFrame = 0;
-      showBubble('Wheeeee! 🌀', 1800);
-    });
     svgEl.appendChild(jobyG);
   }
 
@@ -1095,17 +1078,26 @@ function render() {
     `translate(${px},${ty + bounce}) scale(${scaleX},${scaleY}) translate(${-CX},0)`
   );
 
-  // Invisible click target, generously padded well past Joby's actual bounding box
-  // (hat to feet is only 0..36 x -6..36 locally). Needed in the first place because
-  // his visible shapes are thin strokes with fill:none, which only hit-test on the
-  // stroke line itself — but the real reason for the extra padding here is that
-  // he's a small, constantly-walking target; a forgiving hit area costs nothing
-  // since it's invisible either way. Recreated every frame along with everything
-  // else in jobyG; the one-time click listener above is on jobyG itself, so it
-  // doesn't need re-attaching to this.
-  const hitArea = el('rect', { x: -14, y: -20, width: 64, height: 76, fill: 'transparent' });
-  jobyG.appendChild(hitArea);
   jobyG.appendChild(frame_g);
+
+  // Reposition the HTML click-catcher to match Joby's actual on-screen box, read
+  // straight from the browser's own layout rather than re-derived from px/ty/scale —
+  // guarantees it can't drift out of sync with where he's actually drawn. Padded
+  // generously past his visible bounds since he's a small, constantly-walking target.
+  // getBoundingClientRect() forces a synchronous layout reflow, so this only runs
+  // every 3rd render() call (~20/s) rather than every rAF tick — imperceptible lag
+  // for something this size moving this slowly, and cuts the reflow cost by
+  // two-thirds. renderTick, not the 200ms-cadence 'frame' counter, so the throttle
+  // is actually spread evenly rather than bursting every 200ms then freezing.
+  renderTick++;
+  if (clickCatcherEl && renderTick % 3 === 0) {
+    const jr = jobyG.getBoundingClientRect();
+    const pad = 16;
+    clickCatcherEl.style.left   = (jr.left - pad) + 'px';
+    clickCatcherEl.style.top    = (jr.top - pad) + 'px';
+    clickCatcherEl.style.width  = (jr.width + pad * 2) + 'px';
+    clickCatcherEl.style.height = (jr.height + pad * 2) + 'px';
+  }
 }
 
 // ── rAF loop ───────────────────────────────────────────────────────────────────
@@ -1355,6 +1347,33 @@ function init() {
     treatsEl.id = 'tama-treats-svg';
     treatsEl.style.cssText = 'position:fixed;top:18px;left:0;right:0;height:40px;pointer-events:none;z-index:51;';
     document.body.appendChild(treatsEl);
+  }
+
+  // Click/tap target: a plain HTML div, not an SVG pointer-events region. Click
+  // detection on this moved off the SVG entirely after petting reactions were
+  // confirmed firing correctly under automated testing but not for a real user in
+  // either a regular or an Incognito window — regular HTML buttons elsewhere in the
+  // app worked fine for them the whole time, so this uses that same exact
+  // interaction primitive instead of continuing to trust SVG pointer-events in an
+  // environment where something about them evidently doesn't behave as expected.
+  // Repositioned every frame in render() via jobyG.getBoundingClientRect() rather
+  // than computed independently, so it can't drift out of sync with where Joby is
+  // actually drawn.
+  clickCatcherEl = document.getElementById('tama-clickcatcher');
+  if (!clickCatcherEl) {
+    clickCatcherEl = document.createElement('div');
+    clickCatcherEl.id = 'tama-clickcatcher';
+    clickCatcherEl.style.cssText = 'position:fixed;pointer-events:auto;cursor:pointer;z-index:55;background:transparent;';
+    clickCatcherEl.addEventListener('click', petJoby);
+    clickCatcherEl.addEventListener('dblclick', e => {
+      e.stopPropagation();
+      petFrames = 0;
+      boredomMove = 'spinAround';
+      boredomFrames = 20;
+      boredomWalkFrame = 0;
+      showBubble('Wheeeee! 🌀', 1800);
+    });
+    document.body.appendChild(clickCatcherEl);
   }
 
   updateBounds();
