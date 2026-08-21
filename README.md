@@ -195,14 +195,22 @@ Switch to the **🔔 Jira Digest** tab — your comment/mention activity loads a
 
 ### Sharing with Co-workers
 
-Each person needs their own copy of the cookie (cookies are personal session tokens). The workflow is the same for everyone:
+Each person needs their own copy of the cookie (cookies are personal session tokens) and their own running proxy — the proxy always talks to `http://localhost`, so it must run on each person's own machine no matter where the tracker itself is hosted.
+
+**If the tracker is hosted somewhere shared (e.g. a Gizmo deployment):** everyone just opens that URL. Each person only needs `jira-proxy.py` — send them that one file (it has no dependencies beyond a Python 3 install):
+
+1. Save `jira-proxy.py` (and, for convenience, `start-proxy.bat`) anywhere on their machine
+2. Double-click `start-proxy.bat` (or run `python jira-proxy.py` in a terminal) and leave the window open while using the app
+3. Open the hosted tracker URL → Settings → paste their own Jira cookie → **Update Cookie**
+
+**If running the tracker locally instead:**
 
 1. Copy the `Task Organizer` folder (or share the `dist/Work Task Tracker.html` build)
 2. Run `python jira-proxy.py` in a terminal
 3. Open the tracker
 4. Go to Settings → paste their own Jira cookie → **Update Cookie**
 
-The `jira-cookie.txt` file that gets created is personal — do not share it.
+The `jira-cookie.txt` file that gets created is personal — do not share it. Digest history saves to `G:\My Drive\Joby\jira-digest` on their own machine by default (override with the `JOBY_DIGEST_DIR` environment variable if that path doesn't exist for them) — it is not shared between users.
 
 ---
 
@@ -238,6 +246,7 @@ Task Organizer/
 │       └── Joby Home.html      # Personal-only build — no Work mode, no Jira
 ├── build.js                 # Bundle script — inlines CSS + JS, outputs to dist/
 ├── jira-proxy.py            # Local proxy for Jira API access
+├── start-proxy.bat          # Double-click launcher for jira-proxy.py (Windows)
 ├── jira-cookie.txt          # Your personal session cookie (auto-created, do not share)
 ├── th_logo_en.png           # TELUS Health logo (light mode — Work)
 ├── telus_logo_dark.png      # TELUS Health logo (dark mode — Work)

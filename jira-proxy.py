@@ -91,7 +91,7 @@ class JiraProxy(BaseHTTPRequestHandler):
             if not cookie:
                 self._json(400, {'error': 'Cookie value is empty'}); return
             save_cookie(cookie)
-            print(f'  Cookie updated ({len(cookie)} chars) → {COOKIE_FILE}')
+            print(f'  Cookie updated ({len(cookie)} chars) -> {COOKIE_FILE}')
             self._json(200, {'ok': True})
         except Exception as e:
             self._json(500, {'error': str(e)})
@@ -151,7 +151,7 @@ class JiraProxy(BaseHTTPRequestHandler):
         try:
             with urlopen(req, timeout=15) as resp:
                 data = resp.read()
-                print(f'  {self.command} {self.path} → {resp.status}')
+                print(f'  {self.command} {self.path} -> {resp.status}')
                 self.send_response(resp.status)
                 self._cors()
                 self.send_header('Content-Type', resp.headers.get('Content-Type', 'application/json'))
@@ -167,7 +167,7 @@ class JiraProxy(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     cookie = get_cookie()
-    print(f'\n  Jira proxy running → http://localhost:{PORT}')
+    print(f'\n  Jira proxy running -> http://localhost:{PORT}')
     print(f'  Forwarding to {JIRA_HOST}')
     if cookie:
         print(f'  Cookie loaded from file ({len(cookie)} chars)')
