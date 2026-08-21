@@ -54,7 +54,8 @@ function pickNewHat() {
 
 // ── Colour palettes (skins) per mood ───────────────────────────────────────────
 // 'classic' reproduces the original single MOOD_COLOR map exactly, plus a 'pet' hue
-// for the petting reaction below. window.setJobySkin() switches the active one.
+// for the petting reaction below. Skins auto-cycle over time (see scheduleNextSkin
+// below) — no settings UI for this. window.setJobySkin() can still force one manually.
 const PALETTES = {
   classic: { happy: '#F4A7C3', worried: '#DC143C', sleeping: '#D8BFD8', party: '#F4A7C3', excited: '#FFD700', eating: '#FFD700', focused: '#00ffcc', hanging: '#87CEEB', boredom: '#9333ea', pet: '#FF69B4' },
   neon:    { happy: '#00FF66', worried: '#FF0055', sleeping: '#7000FF', party: '#00E5FF', excited: '#FFE600', eating: '#FFE600', focused: '#00FF66', hanging: '#00E5FF', boredom: '#FF00AA', pet: '#FF00AA' },
@@ -66,6 +67,18 @@ const PALETTES = {
 };
 
 let currentSkin = 'classic';
+let skinTimer = 0; // ms until the next auto skin change — see the rAF loop below
+function scheduleNextSkin() {
+  skinTimer = 180000 + Math.random() * 240000; // 3-7 minutes
+}
+scheduleNextSkin();
+function pickNewSkin() {
+  const others = Object.keys(PALETTES).filter(k => k !== currentSkin);
+  return others[Math.floor(Math.random() * others.length)];
+}
+// No settings UI for this — skins cycle on their own over time. setJobySkin() still
+// works for manually forcing one (e.g. from the console), it'll just get overridden
+// by the next auto-cycle like any other skin would.
 window.setJobySkin = function (skinName) {
   if (PALETTES[skinName]) currentSkin = skinName;
 };
@@ -1082,13 +1095,15 @@ function render() {
     `translate(${px},${ty + bounce}) scale(${scaleX},${scaleY}) translate(${-CX},0)`
   );
 
-  // Invisible click target covering Joby's full local bounding box (hat to feet) —
-  // needed because the visible shapes are thin strokes with fill:none, which only
-  // hit-test on the stroke line itself, not the "empty" space a click would
-  // naturally land on. Recreated every frame along with everything else in jobyG;
-  // the one-time click listener above is on jobyG itself, so it doesn't need
-  // re-attaching to this.
-  const hitArea = el('rect', { x: 0, y: -6, width: 36, height: 42, fill: 'transparent' });
+  // Invisible click target, generously padded well past Joby's actual bounding box
+  // (hat to feet is only 0..36 x -6..36 locally). Needed in the first place because
+  // his visible shapes are thin strokes with fill:none, which only hit-test on the
+  // stroke line itself — but the real reason for the extra padding here is that
+  // he's a small, constantly-walking target; a forgiving hit area costs nothing
+  // since it's invisible either way. Recreated every frame along with everything
+  // else in jobyG; the one-time click listener above is on jobyG itself, so it
+  // doesn't need re-attaching to this.
+  const hitArea = el('rect', { x: -14, y: -20, width: 64, height: 76, fill: 'transparent' });
   jobyG.appendChild(hitArea);
   jobyG.appendChild(frame_g);
 }
@@ -1124,6 +1139,14 @@ function rafLoop(ts) {
   const frameDur = mood === 'worried' ? WORRIED_MS : WALK_FRAME_MS;
   walkFrameAccum += dt;
   if (walkFrameAccum >= frameDur) { walkFrameAccum -= frameDur; walkFrame = (walkFrame + 1) % 6; }
+
+  // ── Skin rotation timer ── (independent of the hat timer below, and of any
+  // manual setJobySkin() call — it just picks up the cycle again from wherever)
+  skinTimer -= dt;
+  if (skinTimer <= 0) {
+    currentSkin = pickNewSkin();
+    scheduleNextSkin();
+  }
 
   // ── Hat rotation timer ──
   hatTimer -= dt;

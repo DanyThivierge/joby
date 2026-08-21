@@ -157,6 +157,26 @@ so `petJoby()` runs once or twice before the spin takes over. Harmless
 `dblclick` handler — otherwise the spin would render pink-tinted for its
 whole duration from the pending pet reaction.
 
+## Addendum: first real user test — click target and skin selection
+
+First hands-on test against a local instance surfaced two things:
+
+- **Clicking Joby "did nothing."** Traced with a synthetic click dispatched
+  at his hit-area's actual `getBoundingClientRect()` center — the mechanism
+  itself worked (bubble text changed correctly). The real issue: he's a
+  small, constantly-walking target, and the hit-area was sized to his
+  visible body (~50×60px on screen) with no forgiveness for imprecise
+  clicking. Enlarged it well beyond his visible bounds (`x:-14,y:-20,
+  width:64,height:76` in local units, vs. the original `0,-6,36,42`) —
+  free to do since it's invisible either way.
+- **Skins**: confirmed working via manual `setJobySkin()` calls, then the
+  ask changed — auto-cycle through all 7 palettes over time instead of
+  requiring a console call (no settings UI planned for this). Implemented
+  with the same timer pattern `hatTimer`/`scheduleNextHat()` already uses:
+  a `skinTimer` that picks a new random skin (never repeating the current
+  one) every 3-7 minutes. `setJobySkin()` still works for forcing one
+  manually; the next auto-cycle just picks up from wherever after that.
+
 ## Testing
 
 No automated test suite for this module (consistent with the rest of the
