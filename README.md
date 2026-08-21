@@ -126,7 +126,7 @@ Connects to your Atlassian instance via a local Python proxy (no API token requi
 - `[~accountid:...]` mention markup resolves to real names for display (classification still uses the raw Jira markup under the hood)
 - An "Open in Jira" link per issue, deep-linked to the specific comment, for replying
 - Auto-refreshes every 20 minutes while the app is open, plus a manual Refresh button. A "Look back" dropdown (day/week/month/3 months/year/forever) bounds the very first sync (default: last month) instead of pulling unlimited history; "Resync" re-checks further back on demand without waiting for a cold start
-- Data is stored outside the browser: `jira-proxy.py` reads/writes `jira-digest.json` on disk inside a Google-Drive-synced folder (`G:\My Drive\Joby\jira-digest` by default, override with the `JOBY_DIGEST_DIR` environment variable) — same pattern as the ARGUS dashboard, no OAuth required. This means digest history survives a browser cache clear and is available from any machine with that Drive folder synced
+- Data is stored outside the browser: `jira-proxy.py` reads/writes `jira-digest.json` on disk inside a Google-Drive-synced folder — it auto-detects wherever Google Drive for Desktop mounted "My Drive" (any drive letter) and uses `<that drive>\My Drive\Joby\jira-digest`, falling back to a local folder next to the script if no Drive is found; override either way with the `JOBY_DIGEST_DIR` environment variable — same pattern as the ARGUS dashboard, no OAuth required. This means digest history survives a browser cache clear and, with Drive installed, is available from any machine with that Drive folder synced
 - Stale items (no mention, and the issue no longer matches your current assignee/watcher list at all) are pruned automatically; mentions are kept regardless, since a mention is a standing fact independent of your current watch state
 - Not available in the GAS (hosted) build or the Home/Personal build, since both need the local proxy
 
@@ -200,8 +200,9 @@ Each person needs their own copy of the cookie (cookies are personal session tok
 **If the tracker is hosted somewhere shared (e.g. a Gizmo deployment):** everyone just opens that URL. Each person only needs `jira-proxy.py` — send them that one file (it has no dependencies beyond a Python 3 install):
 
 1. Save `jira-proxy.py` (and, for convenience, `start-proxy.bat`) anywhere on their machine
-2. Double-click `start-proxy.bat` (or run `python jira-proxy.py` in a terminal) and leave the window open while using the app
-3. Open the hosted tracker URL → Settings → paste their own Jira cookie → **Update Cookie**
+2. Install Google Drive for Desktop if they don't already have it — optional, but needed for Digest status/flags to survive a page refresh (see below)
+3. Double-click `start-proxy.bat` (or run `python jira-proxy.py` in a terminal) and leave the window open while using the app
+4. Open the hosted tracker URL → Settings → paste their own Jira cookie → **Update Cookie**
 
 **If running the tracker locally instead:**
 
@@ -210,7 +211,7 @@ Each person needs their own copy of the cookie (cookies are personal session tok
 3. Open the tracker
 4. Go to Settings → paste their own Jira cookie → **Update Cookie**
 
-The `jira-cookie.txt` file that gets created is personal — do not share it. Digest history saves to `G:\My Drive\Joby\jira-digest` on their own machine by default (override with the `JOBY_DIGEST_DIR` environment variable if that path doesn't exist for them) — it is not shared between users.
+The `jira-cookie.txt` file that gets created is personal — do not share it. Digest history saves to a `Joby\jira-digest` folder on their own machine, private to them — `jira-proxy.py` auto-detects wherever Google Drive for Desktop mounted "My Drive" (any letter, not just `G:`, since that's user-configurable and may already be taken by another mapped drive on a work laptop) and prints the resolved path at startup. If no Google Drive is found at all, it falls back to a local folder next to the script — Digest still persists across refreshes, just isn't synced anywhere else. Override with the `JOBY_DIGEST_DIR` environment variable to force a specific path.
 
 ---
 

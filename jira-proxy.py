@@ -20,7 +20,28 @@ import os
 PORT        = 3333
 JIRA_HOST   = 'https://telushealth.atlassian.net'
 COOKIE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jira-cookie.txt')
-DIGEST_DIR  = os.environ.get('JOBY_DIGEST_DIR', r'G:\My Drive\Joby\jira-digest')
+
+
+def _find_digest_dir():
+    # Explicit override always wins.
+    env = os.environ.get('JOBY_DIGEST_DIR')
+    if env:
+        return env
+    # Google Drive for Desktop lets each user pick their own drive letter at
+    # install time (and on a machine with other network drives already
+    # mapped, a fixed letter may not even be free) — scan for wherever "My
+    # Drive" actually landed instead of assuming G:.
+    for letter in 'GHIJKLMNOPQRSTUVWXYZFEDCBA':
+        candidate = letter + ':\\My Drive'
+        if os.path.isdir(candidate):
+            return os.path.join(candidate, 'Joby', 'jira-digest')
+    # No Google Drive found at all — fall back to a local folder next to this
+    # script so Digest history still persists across refreshes (just not
+    # synced across machines).
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'jira-digest-data')
+
+
+DIGEST_DIR  = _find_digest_dir()
 DIGEST_FILE = os.path.join(DIGEST_DIR, 'jira-digest.json')
 
 
@@ -169,6 +190,7 @@ if __name__ == '__main__':
     cookie = get_cookie()
     print(f'\n  Jira proxy running -> http://localhost:{PORT}')
     print(f'  Forwarding to {JIRA_HOST}')
+    print(f'  Digest history saves to {DIGEST_DIR}')
     if cookie:
         print(f'  Cookie loaded from file ({len(cookie)} chars)')
     else:
