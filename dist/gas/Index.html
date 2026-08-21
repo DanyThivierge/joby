@@ -4893,7 +4893,7 @@ function renderSidebarStats() {
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 // ── Hat config ────────────────────────────────────────────────────────────────
-const ALL_HATS = ['default', 'topHat', 'cowboy', 'crown', 'beanie', 'bald'];
+const ALL_HATS = ['default', 'topHat', 'cowboy', 'crown', 'beanie', 'detective', 'bald'];
 let currentHat     = 'cowboy';
 let hatTimer       = 0;       // ms until next hat change
 let hatChanging    = false;   // true during the brief bald flash transition
@@ -4945,6 +4945,8 @@ const PALETTES = {
   matcha:  { happy: '#A8E6CF', worried: '#E84A5F', sleeping: '#DCEDC1', party: '#A8E6CF', excited: '#FFD3B6', eating: '#FFD3B6', focused: '#88D8B0', hanging: '#A8E6CF', boredom: '#A8E6CF', pet: '#FF8B94' },
   pastel:  { happy: '#FFC6D9', worried: '#F5A3A3', sleeping: '#D6CDEA', party: '#FFE3B3', excited: '#FFF3A0', eating: '#FFF3A0', focused: '#B8E3E9', hanging: '#C7E8F3', boredom: '#D8C7EE', pet: '#FFB8D9' },
   sunset:  { happy: '#FF7B54', worried: '#900C3F', sleeping: '#C70039', party: '#FFB26B', excited: '#FFD93D', eating: '#FFD93D', focused: '#FF7B54', hanging: '#FFB26B', boredom: '#6C5CE7', pet: '#FF7B54' },
+  boba:      { happy: '#D7A87E', worried: '#A0522D', sleeping: '#E6CCB2', party: '#D7A87E', excited: '#FFB703', eating: '#FFB703', focused: '#B08968', hanging: '#EDE0D4', boredom: '#7F5539', pet: '#FFB4A2' },
+  cyberpunk: { happy: '#00F0FF', worried: '#FF0055', sleeping: '#2B0938', party: '#FF007F', excited: '#FFE600', eating: '#FFE600', focused: '#00F0FF', hanging: '#7000FF', boredom: '#FF007F', pet: '#FF007F' },
 };
 
 let currentSkin = 'classic';
@@ -5231,6 +5233,14 @@ function drawHat(name) {
       g.appendChild(circle(CX, topY - 4, 1.5));
       break;
     }
+    case 'detective': {
+      // Deerstalker cap: rounded dome with a front and back visor flap
+      g.appendChild(path(`M ${CX-9},${brimY} Q ${CX},${topY+1} ${CX+9},${brimY}`, 1.6));
+      g.appendChild(path(`M ${CX-12},${brimY} Q ${CX-6},${brimY-2} ${CX},${brimY}`, 1.4));
+      g.appendChild(path(`M ${CX+12},${brimY} Q ${CX+6},${brimY-2} ${CX},${brimY}`, 1.4));
+      g.appendChild(circle(CX, topY + 1, 1.2));
+      break;
+    }
     case 'santa': {
       // Floppy cone leaning right, pom-pom at the tip, band at the base
       g.appendChild(path(`M ${CX-9},${brimY} L ${CX+9},${brimY}`, 1.6));
@@ -5375,6 +5385,69 @@ function drawWorkout(subframe) {
   const lx = CX - 12, rx = CX + 12, wy = HY + 6 - lift;
   g.appendChild(path(`M ${lx-2},${wy-3} L ${lx-2},${wy+3} M ${lx+2},${wy-3} L ${lx+2},${wy+3} M ${lx-2},${wy} L ${lx+2},${wy}`, 1.5));
   g.appendChild(path(`M ${rx-2},${wy-3} L ${rx-2},${wy+3} M ${rx+2},${wy-3} L ${rx+2},${wy+3} M ${rx-2},${wy} L ${rx+2},${wy}`, 1.5));
+  return g;
+}
+
+// Laptop: screen + base, with a floating "</>" every other beat
+function drawLaptop(subframe) {
+  const g = group();
+  const ly = HY + HH - 1;
+  g.appendChild(path(`M ${CX-7},${ly+2} L ${CX+7},${ly+2} L ${CX+6},${ly-5} L ${CX-6},${ly-5} Z`, 1.2));
+  g.appendChild(path(`M ${CX-9},${ly+5} L ${CX+9},${ly+5} L ${CX+7},${ly+2} L ${CX-7},${ly+2} Z`, 1.2));
+  if (subframe % 4 < 2) {
+    const t = el('text', { x: CX - 5, y: ly - 7, 'font-size': '3.5', 'font-family': 'monospace', fill: 'currentColor', opacity: '0.8' });
+    t.textContent = '</>';
+    g.appendChild(t);
+  }
+  return g;
+}
+
+// Sticky note: holds a yellow note, a checkmark appears partway through
+function drawStickyNote(subframe) {
+  const g = group();
+  const ny = HY + 2;
+  g.appendChild(path(`M ${CX-13},${ny} L ${CX-5},${ny} L ${CX-5},${ny+9} L ${CX-13},${ny+9} Z`, 1.2, { fill: '#FFF275' }));
+  g.appendChild(path(`M ${CX+6},${ny+8} L ${CX+10},${ny+2}`, 1.2));
+  if (subframe % 6 >= 2) {
+    g.appendChild(path(`M ${CX-11},${ny+5} L ${CX-9},${ny+7} L ${CX-6},${ny+2}`, 1.4, { stroke: '#2B2D42' }));
+  }
+  return g;
+}
+
+// Magnifying glass held up to one eye — a lens overlay, not a resized eye (drawEyes()
+// already runs independently in composeFrame; changing its size just for this one
+// move isn't worth threading extra state through it)
+function drawMagnifyingGlass() {
+  const g = group();
+  const rx = CX + 3.5, ey = HY + 7;
+  g.appendChild(el('circle', { cx: rx, cy: ey, r: 4.5, fill: 'rgba(255,255,255,0.2)', stroke: 'currentColor', 'stroke-width': '1.2' }));
+  g.appendChild(path(`M ${rx+3},${ey+3} L ${rx+7},${ey+7}`, 1.5));
+  return g;
+}
+
+// Plant watering: a potted succulent gets a drink from a mini watering can
+function drawPlantWatering(subframe) {
+  const g = group();
+  const py = LY + 3;
+  g.appendChild(path(`M ${CX+7},${py} L ${CX+12},${py} L ${CX+11},${py+5} L ${CX+8},${py+5} Z`, 1.2, { fill: '#C86D51' }));
+  g.appendChild(path(`M ${CX+8},${py-2} Q ${CX+9.5},${py-4} ${CX+9.5},${py}`, 1.2, { stroke: '#2A9D8F' }));
+  g.appendChild(path(`M ${CX+11},${py-2} Q ${CX+9.5},${py-4} ${CX+9.5},${py}`, 1.2, { stroke: '#2A9D8F' }));
+  g.appendChild(path(`M ${CX-11},${py-4} L ${CX-5},${py-2} L ${CX-6},${py+2} L ${CX-11},${py+2} Z`, 1.2));
+  g.appendChild(path(`M ${CX-5},${py-2} L ${CX+2},${py-4}`, 1.0));
+  if (subframe % 4 < 2) {
+    g.appendChild(circle(CX + 4, py - 2, 0.6, '#87CEEB'));
+    g.appendChild(circle(CX + 6, py, 0.6, '#87CEEB'));
+  }
+  return g;
+}
+
+// Paper airplane: folds and glides off across the upper body, looping each cycle
+function drawPaperAirplane(subframe) {
+  const g = group();
+  const flight = (subframe % 10) * 2.5;
+  const ax = CX - 12 + flight, ay = HY - 2 - Math.sin(subframe * 0.5) * 3;
+  g.appendChild(path(`M ${ax},${ay} L ${ax+6},${ay-2} L ${ax+2},${ay+3} Z`, 1.0));
+  g.appendChild(path(`M ${ax+2},${ay-0.5} L ${ax+2},${ay+3}`, 0.8));
   return g;
 }
 
@@ -5575,6 +5648,12 @@ function composeFrame(mood, hat, frame, walkPhase, isSprinting, dir) {
                  : boredomMove === 'juggling'      ? 'idle'     // tentacles busy juggling
                  : boredomMove === 'bubbleBlowing' ? 'idle'     // standing still to blow bubbles
                  : boredomMove === 'workout'       ? 'idle'     // tentacles busy with the dumbbells
+                 : boredomMove === 'laptop'          ? 'idle'   // typing, not walking
+                 : boredomMove === 'stickyNote'      ? 'idle'   // holding the note steady
+                 : boredomMove === 'magnifyingGlass' ? 'idle'   // inspecting, not strolling
+                 : boredomMove === 'plantWatering'   ? 'idle'   // tentacles busy with the can
+                 : boredomMove === 'paperAirplane'   ? 'idle'   // watching it glide
+                 : boredomMove === 'spinAround'      ? 'idle'   // the whole body is spinning instead
                  : boredomMove === 'tiptoe'        ? 'walking'
                  : isSprinting               ? 'sprint'
                  : mood === 'worried'         ? 'worried'
@@ -5621,7 +5700,23 @@ function composeFrame(mood, hat, frame, walkPhase, isSprinting, dir) {
   if (boredomMove === 'juggling')      g.appendChild(drawJuggling(sf));
   if (boredomMove === 'bubbleBlowing') g.appendChild(drawBubbleBlowing(sf));
   if (boredomMove === 'workout')       g.appendChild(drawWorkout(sf));
+  if (boredomMove === 'laptop')          g.appendChild(drawLaptop(sf));
+  if (boredomMove === 'stickyNote')      g.appendChild(drawStickyNote(sf));
+  if (boredomMove === 'magnifyingGlass') g.appendChild(drawMagnifyingGlass(sf));
+  if (boredomMove === 'plantWatering')   g.appendChild(drawPlantWatering(sf));
+  if (boredomMove === 'paperAirplane')   g.appendChild(drawPaperAirplane(sf));
   if (isSprinting && currentSpeed >= SPD_SPRINT * 0.8) g.appendChild(drawSpeedLines(dir));
+
+  // Spin: 'spinAround' has been in the idle-move pool since the original build with
+  // no visual of its own — picking it just meant Joby kept walking normally. Give it
+  // one now: rotate the whole composed body around its own center, one full turn
+  // every 12 subframes. Also reachable via a deliberate double-click, not just the
+  // random idle picker (see render()).
+  if (boredomMove === 'spinAround') {
+    const angle = (sf % 12) * 30;
+    const pivotY = (HY + LY + LLEN) / 2;
+    g.setAttribute('transform', `rotate(${angle} ${CX} ${pivotY})`);
+  }
 
   // Hat poof sparkles during the bald flash frame
   if (hatChanging) {
@@ -5684,6 +5779,11 @@ const RARE_MOVES = [
   'juggling',      // juggles three little stars overhead
   'bubbleBlowing', // blows soap bubbles that float up and pop
   'workout',       // lifts two mini dumbbells
+  'laptop',           // clacks away on a tiny laptop, code bits float up
+  'stickyNote',       // holds a sticky note, draws a checkmark on it
+  'magnifyingGlass',  // holds a detective lens up to one eye
+  'plantWatering',    // waters a tiny potted succulent
+  'paperAirplane',    // folds and launches a paper plane that glides off
 ];
 
 // Same pool, just weighted by local time of day — no new poses, just different odds.
@@ -5805,6 +5905,18 @@ function render() {
     jobyG.style.pointerEvents = 'auto';
     jobyG.style.cursor = 'pointer';
     jobyG.addEventListener('click', petJoby);
+    // A real double-click fires click, click, dblclick in that order (DOM spec), so
+    // petJoby() will have already run once or twice by the time this handler does —
+    // harmless (a brief pink flash right before the spin), except for petFrames
+    // itself, which we clear here so the spin doesn't render pink-tinted the whole way.
+    jobyG.addEventListener('dblclick', e => {
+      e.stopPropagation();
+      petFrames = 0;
+      boredomMove = 'spinAround';
+      boredomFrames = 20;
+      boredomWalkFrame = 0;
+      showBubble('Wheeeee! 🌀', 1800);
+    });
     svgEl.appendChild(jobyG);
   }
 

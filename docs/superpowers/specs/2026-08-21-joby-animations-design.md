@@ -129,6 +129,34 @@ as-is:
   small stroked circles that rise and fade on staggered cycles) rather
   than shipping a move with no visual.
 
+## Addendum: office-themed moves, a hat, two skins, and a real spin
+
+A third round: 5 more idle moves (`laptop`, `stickyNote`,
+`magnifyingGlass`, `plantWatering`, `paperAirplane`), a `detective` hat
+(deerstalker), two more skins (`boba`, `cyberpunk`), and a double-click
+"spin" trick. This batch's sample code was clean — correct use of the
+`el()`-with-explicit-stroke pattern for the magnifying glass lens (the
+same class of bug fixed in the petting round didn't recur here) and both
+new palettes came complete with a `pet` entry (unlike `pastel` in the
+first round).
+
+One real gap found and fixed: `spinAround` has been sitting in
+`RARE_MOVES` since the *original* build, before any of this week's
+changes, with no visual of its own — picking it (randomly, or now via
+double-click) just meant Joby kept walking normally for its duration.
+Implemented it as a whole-body `rotate()` transform on `composeFrame()`'s
+returned group (one full turn every 12 subframes), rather than an
+appended shape like the other moves, since it's a transform on everything
+already drawn rather than an addition to it. Fixes the random idle-pick
+path too, not just the new double-click trigger.
+
+The double-click handler needed one addition beyond the sample: a real
+double-click fires `click`, `click`, `dblclick` in that order (DOM spec),
+so `petJoby()` runs once or twice before the spin takes over. Harmless
+(a brief pink flash), except `petFrames` itself needed clearing in the
+`dblclick` handler — otherwise the spin would render pink-tinted for its
+whole duration from the pending pet reaction.
+
 ## Testing
 
 No automated test suite for this module (consistent with the rest of the
