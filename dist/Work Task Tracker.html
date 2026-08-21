@@ -3777,7 +3777,13 @@ async function fetchDigest() {
     const btn = document.getElementById('digest-refresh-btn');
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Loading...'; }
     try {
-        if (!digestHydrated) await loadDigestFromProxy();
+        if (!digestHydrated) {
+            await loadDigestFromProxy();
+            // The live poll below hits Jira once per matching issue, sequentially — it can
+            // take a while. Show last session's saved state right away instead of leaving
+            // the tab badge blank until the whole poll finishes.
+            renderDigest();
+        }
         const accountId = await fetchMyAccountId();
         const since = digestLookbackSince();
         const jql = '(assignee = currentUser() OR watcher = currentUser())'
