@@ -12,7 +12,7 @@ Low-priority ideas and non-bug improvements. Not scheduled, just tracked.
 
 ## Features
 
-*(nothing yet)*
+- **More Joby (octopus mascot) moods and moves** — a teammate noticed Joby and asked if more animations are planned. Shipped 2026-08-21 (see `docs/superpowers/specs/2026-08-21-joby-animations-design.md`): bulk-complete reaction, time-of-day-weighted idle moves, a Santa hat (December) and sun hat (June–August) in the rotation, a streak≥7 bias toward the crown hat, and a Digest-awareness bubble nudge + bigger combined celebration when Tasks and Digest are both clear. Deferred for later: sunglasses (needs a new eye-level render slot, not the existing head-hat anchor), a 30-day streak tier with a sparkle overlay, and a dedicated animated pose for Digest-awareness (currently bubble-only).
 
 ---
 

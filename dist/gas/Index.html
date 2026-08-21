@@ -3205,7 +3205,16 @@ function bulkComplete() {
             count++;
         }
     });
-    if (count) updateStreak();
+    if (count) {
+        updateStreak();
+        if (tasks.filter(t => !t.done).length === 0 && typeof tamaAllDone === 'function') {
+            tamaAllDone();
+        } else if (count === 1 && typeof tamaTaskDone === 'function') {
+            tamaTaskDone(null);
+        } else if (count > 1 && typeof tamaBulkDone === 'function') {
+            tamaBulkDone(count);
+        }
+    }
     exitSelectionMode();
     debouncedSave(); renderTasks(); updateStats();
     toast(tFmt('toastBulkCompleted', count));
@@ -3979,6 +3988,9 @@ function renderDigestTabBadge() {
     if (c.mentioned) parts.push('<span class="digest-reason-badge mentioned">&#64; ' + c.mentioned + '</span>');
     if (c.watching)  parts.push('<span class="digest-reason-badge watching">&#128064; ' + c.watching  + '</span>');
     btn.innerHTML = btn.dataset.label + (parts.length ? '<span class="digest-tab-badges">' + parts.join('') + '</span>' : '');
+    if (typeof window.tamaSetDigestPending === 'function') {
+        window.tamaSetDigestPending(c.assigned + c.mentioned + c.watching);
+    }
 }
 
 function renderDigest() {
@@ -4871,9 +4883,10 @@ function renderSidebarStats() {
 
 /* ── js/tamagoshi_svg.js ── */
 // tamagoshi_svg.js — Joby the octopus, SVG edition
-// Drop-in replacement for tamagoshi.js
-// Public API identical: tamaTaskDone, tamaAllDone, toggleTamagoshi,
-//                       applyTamagoshiSetting, changeJobyHat
+// Started as a drop-in replacement for tamagoshi.js (same original API: tamaTaskDone,
+// tamaAllDone, toggleTamagoshi, applyTamagoshiSetting, changeJobyHat); since extended
+// with tamaBulkDone (bulk-complete reaction) and tamaSetDigestPending (Digest-tab
+// awareness) — tamagoshi.js does not have these.
 
 (function () {
 
@@ -4893,11 +4906,32 @@ function scheduleNextHat() {
 }
 scheduleNextHat();
 
+// Seasonal hats join the rotation pool for their window — they don't replace it.
+// Local time is fine here; this is a whimsy feature, not something that needs to be
+// exact at a midnight boundary.
+function seasonalHats() {
+  const month = new Date().getMonth(); // 0-11
+  const extra = [];
+  if (month === 11)                 extra.push('santa');  // December
+  if (month >= 5 && month <= 7)     extra.push('sunhat');  // June-August
+  return extra;
+}
+
+function currentHatPool() {
+  let pool = ALL_HATS.concat(seasonalHats());
+  // A meaningful streak biases toward the crown (reusing the existing hat, not a new
+  // one) without removing the rest of the rotation — duplicate entries just raise the
+  // odds it comes up.
+  if (typeof streak !== 'undefined' && streak && streak.current >= 7) pool = pool.concat(['crown', 'crown']);
+  return pool;
+}
+
 function pickNewHat() {
   // Always pick a DIFFERENT hat — guaranteed
-  const nonBald = ALL_HATS.filter(h => h !== currentHat && h !== 'bald');
-  const pool    = nonBald.length ? nonBald : ALL_HATS.filter(h => h !== currentHat);
-  const base    = pool[Math.floor(Math.random() * pool.length)];
+  const fullPool = currentHatPool();
+  const nonBald  = fullPool.filter(h => h !== currentHat && h !== 'bald');
+  const pool     = nonBald.length ? nonBald : fullPool.filter(h => h !== currentHat);
+  const base     = pool[Math.floor(Math.random() * pool.length)];
   // 10% chance of briefly going bald
   return Math.random() < 0.1 ? 'bald' : base;
 }
@@ -5188,6 +5222,25 @@ function drawHat(name) {
         `M ${CX-8},${brimY} L ${CX},${topY-3} L ${CX+8},${brimY} Z`,
         1.6));
       g.appendChild(circle(CX, topY - 4, 1.5));
+      break;
+    }
+    case 'santa': {
+      // Floppy cone leaning right, pom-pom at the tip, band at the base
+      g.appendChild(path(`M ${CX-9},${brimY} L ${CX+9},${brimY}`, 1.6));
+      g.appendChild(path(
+        `M ${CX-7},${brimY} Q ${CX-5},${topY-1} ${CX+3},${topY-3} Q ${CX+8},${topY-5} ${CX+7},${topY-7}`,
+        1.6));
+      g.appendChild(circle(CX + 7, topY - 7, 1.8));
+      break;
+    }
+    case 'sunhat': {
+      // Wide floppy brim, low round dome — a beach hat, not a peaked one
+      g.appendChild(path(
+        `M ${CX-6},${brimY} Q ${CX-6},${topY+3} ${CX},${topY+3} Q ${CX+6},${topY+3} ${CX+6},${brimY}`,
+        1.6));
+      g.appendChild(path(
+        `M ${CX-15},${brimY} Q ${CX},${brimY+3} ${CX+15},${brimY}`,
+        1.6));
       break;
     }
   }
@@ -5498,6 +5551,7 @@ let mood = 'happy';
 let excitedFrames = 0, eatingFrames = 0, partyFrames = 0, idleFrames = 0;
 let hangPhase = 0, hangFrames = 0;
 let treatX = -1;
+let digestPending = 0; // open Digest item count, reported by digest.js via tamaSetDigestPending
 let lastActivityTime = Date.now();
 let bubbleTimer = null;
 let hasCelebratedAllClear = false;
@@ -5527,6 +5581,16 @@ const RARE_MOVES = [
   'sneeze',        // body jolts, stars pop
   'tiptoe',        // walks on the very tips of tentacles, slow and sneaky
 ];
+
+// Same pool, just weighted by local time of day — no new poses, just different odds.
+// coffeeBreak reads as a morning thing; stretch reads as a yawn, so weight it later.
+function weightedRareMoves() {
+  const hour = new Date().getHours();
+  let pool = RARE_MOVES;
+  if (hour >= 6 && hour < 11)  pool = pool.concat(['coffeeBreak', 'coffeeBreak']);
+  if (hour >= 16 && hour < 20) pool = pool.concat(['stretch', 'stretch']);
+  return pool;
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function countOverdue() { return window.tasks ? tasks.filter(t => !t.done && isOverdue(t)).length : 0; }
@@ -5601,12 +5665,22 @@ function logicTick() {
         boredomMove   = 'catNap';
         boredomFrames = 50;  // ~10s
       } else {
-        boredomMove = RARE_MOVES[Math.floor(Math.random() * RARE_MOVES.length)];
+        const pool = weightedRareMoves();
+        boredomMove = pool[Math.floor(Math.random() * pool.length)];
         boredomFrames = 25;
       }
       boredomWalkFrame = 0;
       boredomAccum     = 0;
     }
+  }
+
+  // Digest-awareness: a low-frequency nudge, independent of the boredomMove state
+  // machine above (a bubble, not a pose — no new animation asset needed). Only when
+  // Joby isn't already mid-reaction to something else.
+  if (digestPending > 0 && !boredomMove && hangPhase === 0 && treatX < 0 &&
+      (mood === 'happy' || mood === 'focused') &&
+      frame % 150 === 0 && Math.random() < 0.15) {
+    showBubble('🔔 psst, ' + digestPending + ' waiting in your Digest', 3000);
   }
 }
 
@@ -5812,11 +5886,30 @@ window.tamaTaskDone = function (clientX) {
   showBubble('Yummy! ⭐', 2000);
 };
 
+// Bulk-completing 2+ tasks at once used to give Joby no reaction at all — this sits
+// between a single treat (excitedFrames) and the full all-clear party: reuses the
+// existing party-mood sparkle rendering, just for a shorter burst.
+window.tamaBulkDone = function (count) {
+  lastActivityTime = Date.now();
+  boredomMove = null;
+  partyFrames = 30;
+  showBubble('🎉 Nice, ' + count + ' done!', 2500);
+};
+
 window.tamaAllDone = function () {
   lastActivityTime = Date.now();
   boredomMove = null;
-  showBubble('🎉 ALL DONE! Amazing! 🎉', 5000);
-  partyFrames = 60;
+  if (digestPending === 0) {
+    showBubble('🎉🐙 Tasks AND Digest clear! Amazing!', 6000);
+    partyFrames = 90;
+  } else {
+    showBubble('🎉 ALL DONE! Amazing! 🎉', 5000);
+    partyFrames = 60;
+  }
+};
+
+window.tamaSetDigestPending = function (count) {
+  digestPending = count || 0;
 };
 
 window.applyTamagoshiSetting = function () {

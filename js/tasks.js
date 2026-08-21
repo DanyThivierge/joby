@@ -299,7 +299,16 @@ function bulkComplete() {
             count++;
         }
     });
-    if (count) updateStreak();
+    if (count) {
+        updateStreak();
+        if (tasks.filter(t => !t.done).length === 0 && typeof tamaAllDone === 'function') {
+            tamaAllDone();
+        } else if (count === 1 && typeof tamaTaskDone === 'function') {
+            tamaTaskDone(null);
+        } else if (count > 1 && typeof tamaBulkDone === 'function') {
+            tamaBulkDone(count);
+        }
+    }
     exitSelectionMode();
     debouncedSave(); renderTasks(); updateStats();
     toast(tFmt('toastBulkCompleted', count));

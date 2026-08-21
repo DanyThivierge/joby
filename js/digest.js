@@ -385,6 +385,9 @@ function renderDigestTabBadge() {
     if (c.mentioned) parts.push('<span class="digest-reason-badge mentioned">&#64; ' + c.mentioned + '</span>');
     if (c.watching)  parts.push('<span class="digest-reason-badge watching">&#128064; ' + c.watching  + '</span>');
     btn.innerHTML = btn.dataset.label + (parts.length ? '<span class="digest-tab-badges">' + parts.join('') + '</span>' : '');
+    if (typeof window.tamaSetDigestPending === 'function') {
+        window.tamaSetDigestPending(c.assigned + c.mentioned + c.watching);
+    }
 }
 
 function renderDigest() {
