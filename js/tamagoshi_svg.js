@@ -1221,6 +1221,11 @@ function petJoby() {
   lastActivityTime = Date.now();
   boredomMove = null; boredomFrames = 0; boredomWalkFrame = 0;
   hangPhase = 0; hangFrames = 0;
+  // Also force an immediate skin change — unlike the pink pet-tint (which fades
+  // after ~8s), this one persists until the next auto-cycle, so it's a much harder
+  // to miss / easier-to-confirm-later signal that a click actually landed.
+  currentSkin = pickNewSkin();
+  scheduleNextSkin();
   const quips = ['(◕‿◕) ♡', 'Hehe, soft!', 'Blorp! ♡', 'Back to work now!'];
   showBubble(quips[Math.floor(Math.random() * quips.length)], 4000);
 }
