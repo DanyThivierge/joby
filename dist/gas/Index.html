@@ -16,6 +16,9 @@
     --green-dark:    #55AA00;
     --green-light:   #F0FBE6;
     --red:           #D93025;
+    --red-light:     #fbe4e2;
+    --blue:          #2563eb;
+    --blue-light:    #e8f0fe;
     --bg:            #F5F6FA;
     --card:          #FFFFFF;
     --text:          #1D1D1B;
@@ -45,6 +48,9 @@
     --green-dark:    #22c55e;
     --green-light:   #052e16;
     --red:           #f87171;
+    --red-light:     #3a1414;
+    --blue:          #60a5fa;
+    --blue-light:    #16213a;
     --bg:            #0d1117;
     --card:          #161d2e;
     --text:          #e8eaf6;
@@ -950,13 +956,28 @@ select option { background: var(--card); color: var(--text); }
 }
 
 /* ── Jira Digest tab ────────────────────────────────────────────────────────── */
-.digest-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.digest-stats { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
 .digest-stat-pill {
     background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-pill);
     padding: 5px 14px; font-size: 0.8rem; font-weight: 600; color: var(--text-2); cursor: pointer;
 }
 .digest-stat-pill:hover { border-color: var(--purple); color: var(--purple); }
+.digest-stat-pill.active { background: var(--purple); border-color: var(--purple); color: #fff; }
 .digest-stat-flag.active { background: var(--purple); border-color: var(--purple); color: #fff; }
+.digest-stats-divider { width: 1px; align-self: stretch; background: var(--border); margin: 2px 2px; }
+
+/* Tab-bar badge: outline only, transparent center, so the icon/number keep normal
+   contrast against the ordinary tab-bar background instead of a saturated fill. */
+.digest-tab-badges { display: inline-flex; gap: 4px; margin-left: 6px; }
+.digest-reason-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    height: 19px; padding: 0 6px; border-radius: var(--radius-pill);
+    font-size: 0.72rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums;
+    background: transparent; border: 1.4px solid currentColor;
+}
+.digest-reason-badge.assigned  { color: var(--red); }
+.digest-reason-badge.mentioned { color: var(--purple); }
+.digest-reason-badge.watching  { color: var(--blue); }
 .digest-group { margin-bottom: 20px; }
 .digest-group-header {
     font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
@@ -973,9 +994,11 @@ select option { background: var(--card); color: var(--text); }
 .digest-open-jira:hover { text-decoration: underline; }
 .digest-reasons { display: flex; gap: 4px; margin-left: auto; }
 .digest-reason-tag {
-    font-size: 0.65rem; padding: 2px 7px; border-radius: 3px; font-weight: 600;
-    background: var(--purple-light); color: var(--purple); white-space: nowrap;
+    font-size: 0.65rem; padding: 2px 7px; border-radius: 3px; font-weight: 600; white-space: nowrap;
 }
+.digest-reason-tag.assigned  { background: var(--red-light);    color: var(--red); }
+.digest-reason-tag.mentioned { background: var(--purple-light); color: var(--purple); }
+.digest-reason-tag.watching  { background: var(--blue-light);   color: var(--blue); }
 .digest-comment-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
 .digest-comment-row:first-of-type { margin-top: 8px; padding-top: 0; border-top: none; }
 .digest-comment { font-size: 0.85rem; color: var(--text); line-height: 1.5; }
@@ -1841,6 +1864,7 @@ let digestMyAccountId = null; // cached Jira accountId of the current user
 let digestMyDisplayName = null; // cached Jira display name of the current user
 let digestHydrated    = false; // true once digestItems has been loaded from the proxy at least once this session
 let digestFlaggedOnly = false; // UI-only filter: show only items flagged for later
+let digestStatusFilter = 'all'; // UI-only filter: 'all' | 'todo' | 'in_progress' | 'waiting'
 const digestSelectedIds = new Set(); // checkbox selection, for bulk actions
 let digestUserNames   = {};   // accountId -> displayName, for resolving [~accountid:...] mentions in comment text
 
@@ -3862,6 +3886,7 @@ function groupDigestItems() {
     const items = Object.values(digestItems).filter(i =>
         (showDone || i.status !== 'done') &&
         (bucketFilter === 'all' || i.bucket === bucketFilter) &&
+        (digestStatusFilter === 'all' || i.status === digestStatusFilter) &&
         (!digestFlaggedOnly || i.flagged)
     );
     const groups = {};
@@ -3880,22 +3905,37 @@ function renderDigestStats() {
     if (!el) return;
     const open = Object.values(digestItems).filter(i => i.status !== 'done');
     const counts = { review: 0, fix_help: 0, fyi: 0 };
+    const statusCounts = { todo: 0, in_progress: 0, waiting: 0 };
     let flagged = 0;
     for (const i of open) {
         counts[i.bucket] = (counts[i.bucket] || 0) + 1;
+        if (statusCounts[i.status] !== undefined) statusCounts[i.status]++;
         if (i.flagged) flagged++;
     }
+    const statusPill = (status, label) =>
+        '<div class="digest-stat-pill' + (digestStatusFilter === status ? ' active' : '') + '" onclick="setDigestStatusFilter(\'' + status + '\')">'
+        + statusCounts[status] + ' ' + label + '</div>';
     el.innerHTML =
-        '<div class="digest-stat-pill" onclick="setDigestBucketFilter(\'all\')">' + open.length + ' To Do</div>'
+        '<div class="digest-stat-pill" onclick="setDigestBucketFilter(\'all\')">' + open.length + ' Open</div>'
         + '<div class="digest-stat-pill" onclick="setDigestBucketFilter(\'review\')">' + (counts.review || 0) + ' &#128064; Review</div>'
         + '<div class="digest-stat-pill" onclick="setDigestBucketFilter(\'fix_help\')">' + (counts.fix_help || 0) + ' &#128295; Fix/Help</div>'
         + '<div class="digest-stat-pill" onclick="setDigestBucketFilter(\'fyi\')">' + (counts.fyi || 0) + ' &#128172; FYI</div>'
+        + '<div class="digest-stats-divider"></div>'
+        + statusPill('todo', 'To Do')
+        + statusPill('in_progress', 'In Progress')
+        + statusPill('waiting', 'Waiting')
+        + '<div class="digest-stats-divider"></div>'
         + '<div class="digest-stat-pill digest-stat-flag' + (digestFlaggedOnly ? ' active' : '') + '" onclick="toggleDigestFlaggedFilter()">' + flagged + ' &#11088; Flagged</div>';
 }
 
 function setDigestBucketFilter(bucket) {
     const sel = document.getElementById('digest-filter-bucket');
     if (sel) sel.value = bucket;
+    renderDigest();
+}
+
+function setDigestStatusFilter(status) {
+    digestStatusFilter = (digestStatusFilter === status) ? 'all' : status;
     renderDigest();
 }
 
@@ -3910,10 +3950,36 @@ function toggleDigestFlag(commentId) {
     saveDigestToProxy(); renderDigest();
 }
 
+// Only To Do / In Progress feed the tab badge — an item marked "Waiting on someone"
+// is parked on another person, not something pulling on your attention right now.
+function digestBadgeCounts() {
+    const counts = { assigned: 0, mentioned: 0, watching: 0 };
+    for (const item of Object.values(digestItems)) {
+        if (item.status !== 'todo' && item.status !== 'in_progress') continue;
+        if (item.isAssignee) counts.assigned++;
+        if (item.mentionsMe) counts.mentioned++;
+        if (item.isWatching) counts.watching++;
+    }
+    return counts;
+}
+
+function renderDigestTabBadge() {
+    const btn = document.getElementById('digest-tab-btn');
+    if (!btn) return;
+    if (!btn.dataset.label) btn.dataset.label = btn.textContent.trim();
+    const c = digestBadgeCounts();
+    const parts = [];
+    if (c.assigned)  parts.push('<span class="digest-reason-badge assigned">&#128204; '  + c.assigned  + '</span>');
+    if (c.mentioned) parts.push('<span class="digest-reason-badge mentioned">&#64; ' + c.mentioned + '</span>');
+    if (c.watching)  parts.push('<span class="digest-reason-badge watching">&#128064; ' + c.watching  + '</span>');
+    btn.innerHTML = btn.dataset.label + (parts.length ? '<span class="digest-tab-badges">' + parts.join('') + '</span>' : '');
+}
+
 function renderDigest() {
     const cont = document.getElementById('digest-list');
     if (!cont) return;
     renderDigestStats();
+    renderDigestTabBadge();
     updateDigestBulkBar();
     const lastEl = document.getElementById('digest-last-polled');
     if (lastEl) lastEl.textContent = digestLastPolled ? 'Last checked: ' + new Date(digestLastPolled).toLocaleString() : '';
@@ -4027,9 +4093,9 @@ function refreshDigestCommentPreviews() {
 
 function renderDigestReasonTags(item) {
     const tags = [];
-    if (item.mentionsMe) tags.push('<span class="digest-reason-tag">&#64; Mentioned</span>');
-    if (item.isAssignee) tags.push('<span class="digest-reason-tag">&#128204; Assigned</span>');
-    if (item.isWatching) tags.push('<span class="digest-reason-tag">&#128064; Watching</span>');
+    if (item.mentionsMe) tags.push('<span class="digest-reason-tag mentioned">&#64; Mentioned</span>');
+    if (item.isAssignee) tags.push('<span class="digest-reason-tag assigned">&#128204; Assigned</span>');
+    if (item.isWatching) tags.push('<span class="digest-reason-tag watching">&#128064; Watching</span>');
     return tags.length ? '<div class="digest-reasons">' + tags.join('') + '</div>' : '';
 }
 
@@ -5888,14 +5954,18 @@ function closeGhostTask() {
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 renderColorSwatches('add-color-swatches', '');
-initStorage();
-// Digest auto-poll: re-check Jira every 20 minutes while the app is open.
-// Skipped in the GAS build (no proxy access) and the Home build (no Jira integration at all).
-setInterval(() => {
+const storageReady = initStorage();
+// Digest auto-poll: re-check Jira right away at boot (so the tab badge doesn't wait for
+// a tab visit or up to 20 minutes to populate), then every 20 minutes while the app is
+// open. Skipped in the GAS build (no proxy access) and the Home build (no Jira integration
+// at all).
+function pollDigestIfConfigured() {
     const gasMode  = typeof GAS_MODE   !== 'undefined' && GAS_MODE;
     const homeMode = typeof HOME_BUILD !== 'undefined' && HOME_BUILD;
     if (settings.jiraUrl && !gasMode && !homeMode) fetchDigest();
-}, DIGEST_POLL_MS);
+}
+storageReady.then(pollDigestIfConfigured);
+setInterval(pollDigestIfConfigured, DIGEST_POLL_MS);
 // Enable mobile sidebar transition only after first paint to prevent slide-in on load
 requestAnimationFrame(() => requestAnimationFrame(() => {
     document.getElementById('tab-tasks')?.classList.add('sidebar-ready');

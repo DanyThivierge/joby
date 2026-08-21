@@ -67,14 +67,18 @@ function closeGhostTask() {
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 renderColorSwatches('add-color-swatches', '');
-initStorage();
-// Digest auto-poll: re-check Jira every 20 minutes while the app is open.
-// Skipped in the GAS build (no proxy access) and the Home build (no Jira integration at all).
-setInterval(() => {
+const storageReady = initStorage();
+// Digest auto-poll: re-check Jira right away at boot (so the tab badge doesn't wait for
+// a tab visit or up to 20 minutes to populate), then every 20 minutes while the app is
+// open. Skipped in the GAS build (no proxy access) and the Home build (no Jira integration
+// at all).
+function pollDigestIfConfigured() {
     const gasMode  = typeof GAS_MODE   !== 'undefined' && GAS_MODE;
     const homeMode = typeof HOME_BUILD !== 'undefined' && HOME_BUILD;
     if (settings.jiraUrl && !gasMode && !homeMode) fetchDigest();
-}, DIGEST_POLL_MS);
+}
+storageReady.then(pollDigestIfConfigured);
+setInterval(pollDigestIfConfigured, DIGEST_POLL_MS);
 // Enable mobile sidebar transition only after first paint to prevent slide-in on load
 requestAnimationFrame(() => requestAnimationFrame(() => {
     document.getElementById('tab-tasks')?.classList.add('sidebar-ready');

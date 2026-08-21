@@ -292,6 +292,7 @@ function groupDigestItems() {
     const items = Object.values(digestItems).filter(i =>
         (showDone || i.status !== 'done') &&
         (bucketFilter === 'all' || i.bucket === bucketFilter) &&
+        (digestStatusFilter === 'all' || i.status === digestStatusFilter) &&
         (!digestFlaggedOnly || i.flagged)
     );
     const groups = {};
@@ -310,22 +311,37 @@ function renderDigestStats() {
     if (!el) return;
     const open = Object.values(digestItems).filter(i => i.status !== 'done');
     const counts = { review: 0, fix_help: 0, fyi: 0 };
+    const statusCounts = { todo: 0, in_progress: 0, waiting: 0 };
     let flagged = 0;
     for (const i of open) {
         counts[i.bucket] = (counts[i.bucket] || 0) + 1;
+        if (statusCounts[i.status] !== undefined) statusCounts[i.status]++;
         if (i.flagged) flagged++;
     }
+    const statusPill = (status, label) =>
+        '<div class="digest-stat-pill' + (digestStatusFilter === status ? ' active' : '') + '" onclick="setDigestStatusFilter(\'' + status + '\')">'
+        + statusCounts[status] + ' ' + label + '</div>';
     el.innerHTML =
-        '<div class="digest-stat-pill" onclick="setDigestBucketFilter(\'all\')">' + open.length + ' To Do</div>'
+        '<div class="digest-stat-pill" onclick="setDigestBucketFilter(\'all\')">' + open.length + ' Open</div>'
         + '<div class="digest-stat-pill" onclick="setDigestBucketFilter(\'review\')">' + (counts.review || 0) + ' &#128064; Review</div>'
         + '<div class="digest-stat-pill" onclick="setDigestBucketFilter(\'fix_help\')">' + (counts.fix_help || 0) + ' &#128295; Fix/Help</div>'
         + '<div class="digest-stat-pill" onclick="setDigestBucketFilter(\'fyi\')">' + (counts.fyi || 0) + ' &#128172; FYI</div>'
+        + '<div class="digest-stats-divider"></div>'
+        + statusPill('todo', 'To Do')
+        + statusPill('in_progress', 'In Progress')
+        + statusPill('waiting', 'Waiting')
+        + '<div class="digest-stats-divider"></div>'
         + '<div class="digest-stat-pill digest-stat-flag' + (digestFlaggedOnly ? ' active' : '') + '" onclick="toggleDigestFlaggedFilter()">' + flagged + ' &#11088; Flagged</div>';
 }
 
 function setDigestBucketFilter(bucket) {
     const sel = document.getElementById('digest-filter-bucket');
     if (sel) sel.value = bucket;
+    renderDigest();
+}
+
+function setDigestStatusFilter(status) {
+    digestStatusFilter = (digestStatusFilter === status) ? 'all' : status;
     renderDigest();
 }
 
@@ -340,10 +356,36 @@ function toggleDigestFlag(commentId) {
     saveDigestToProxy(); renderDigest();
 }
 
+// Only To Do / In Progress feed the tab badge — an item marked "Waiting on someone"
+// is parked on another person, not something pulling on your attention right now.
+function digestBadgeCounts() {
+    const counts = { assigned: 0, mentioned: 0, watching: 0 };
+    for (const item of Object.values(digestItems)) {
+        if (item.status !== 'todo' && item.status !== 'in_progress') continue;
+        if (item.isAssignee) counts.assigned++;
+        if (item.mentionsMe) counts.mentioned++;
+        if (item.isWatching) counts.watching++;
+    }
+    return counts;
+}
+
+function renderDigestTabBadge() {
+    const btn = document.getElementById('digest-tab-btn');
+    if (!btn) return;
+    if (!btn.dataset.label) btn.dataset.label = btn.textContent.trim();
+    const c = digestBadgeCounts();
+    const parts = [];
+    if (c.assigned)  parts.push('<span class="digest-reason-badge assigned">&#128204; '  + c.assigned  + '</span>');
+    if (c.mentioned) parts.push('<span class="digest-reason-badge mentioned">&#64; ' + c.mentioned + '</span>');
+    if (c.watching)  parts.push('<span class="digest-reason-badge watching">&#128064; ' + c.watching  + '</span>');
+    btn.innerHTML = btn.dataset.label + (parts.length ? '<span class="digest-tab-badges">' + parts.join('') + '</span>' : '');
+}
+
 function renderDigest() {
     const cont = document.getElementById('digest-list');
     if (!cont) return;
     renderDigestStats();
+    renderDigestTabBadge();
     updateDigestBulkBar();
     const lastEl = document.getElementById('digest-last-polled');
     if (lastEl) lastEl.textContent = digestLastPolled ? 'Last checked: ' + new Date(digestLastPolled).toLocaleString() : '';
@@ -457,9 +499,9 @@ function refreshDigestCommentPreviews() {
 
 function renderDigestReasonTags(item) {
     const tags = [];
-    if (item.mentionsMe) tags.push('<span class="digest-reason-tag">&#64; Mentioned</span>');
-    if (item.isAssignee) tags.push('<span class="digest-reason-tag">&#128204; Assigned</span>');
-    if (item.isWatching) tags.push('<span class="digest-reason-tag">&#128064; Watching</span>');
+    if (item.mentionsMe) tags.push('<span class="digest-reason-tag mentioned">&#64; Mentioned</span>');
+    if (item.isAssignee) tags.push('<span class="digest-reason-tag assigned">&#128204; Assigned</span>');
+    if (item.isWatching) tags.push('<span class="digest-reason-tag watching">&#128064; Watching</span>');
     return tags.length ? '<div class="digest-reasons">' + tags.join('') + '</div>' : '';
 }
 
