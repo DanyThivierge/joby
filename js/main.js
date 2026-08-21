@@ -66,6 +66,10 @@ function closeGhostTask() {
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
+// The header's version span used to be a hand-typed literal that silently drifted
+// from APP_VERSION (stuck on an old number for two releases) — drive it from the
+// constant instead so it can't happen again.
+document.getElementById('app-version').textContent = 'v' + APP_VERSION;
 renderColorSwatches('add-color-swatches', '');
 const storageReady = initStorage();
 // Digest auto-poll: re-check Jira right away at boot (so the tab badge doesn't wait for
