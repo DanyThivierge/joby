@@ -4936,18 +4936,25 @@ function pickNewHat() {
   return Math.random() < 0.1 ? 'bald' : base;
 }
 
-// ── Colours per mood ──────────────────────────────────────────────────────────
-const MOOD_COLOR = {
-  happy:    '#F4A7C3',  // softer blush pink
-  worried:  '#DC143C',
-  sleeping: '#D8BFD8',
-  party:    '#F4A7C3',
-  excited:  '#FFD700',
-  eating:   '#FFD700',
-  focused:  '#00ffcc',
-  hanging:  '#87CEEB',
-  boredom:  '#9333ea',
+// ── Colour palettes (skins) per mood ───────────────────────────────────────────
+// 'classic' reproduces the original single MOOD_COLOR map exactly, plus a 'pet' hue
+// for the petting reaction below. window.setJobySkin() switches the active one.
+const PALETTES = {
+  classic: { happy: '#F4A7C3', worried: '#DC143C', sleeping: '#D8BFD8', party: '#F4A7C3', excited: '#FFD700', eating: '#FFD700', focused: '#00ffcc', hanging: '#87CEEB', boredom: '#9333ea', pet: '#FF69B4' },
+  neon:    { happy: '#00FF66', worried: '#FF0055', sleeping: '#7000FF', party: '#00E5FF', excited: '#FFE600', eating: '#FFE600', focused: '#00FF66', hanging: '#00E5FF', boredom: '#FF00AA', pet: '#FF00AA' },
+  matcha:  { happy: '#A8E6CF', worried: '#E84A5F', sleeping: '#DCEDC1', party: '#A8E6CF', excited: '#FFD3B6', eating: '#FFD3B6', focused: '#88D8B0', hanging: '#A8E6CF', boredom: '#A8E6CF', pet: '#FF8B94' },
+  pastel:  { happy: '#FFC6D9', worried: '#F5A3A3', sleeping: '#D6CDEA', party: '#FFE3B3', excited: '#FFF3A0', eating: '#FFF3A0', focused: '#B8E3E9', hanging: '#C7E8F3', boredom: '#D8C7EE', pet: '#FFB8D9' },
+  sunset:  { happy: '#FF7B54', worried: '#900C3F', sleeping: '#C70039', party: '#FFB26B', excited: '#FFD93D', eating: '#FFD93D', focused: '#FF7B54', hanging: '#FFB26B', boredom: '#6C5CE7', pet: '#FF7B54' },
 };
+
+let currentSkin = 'classic';
+window.setJobySkin = function (skinName) {
+  if (PALETTES[skinName]) currentSkin = skinName;
+};
+function getMoodColor(m) {
+  const palette = PALETTES[currentSkin] || PALETTES.classic;
+  return palette[m] || palette.happy;
+}
 
 // ── SVG helpers ───────────────────────────────────────────────────────────────
 function el(tag, attrs) {
@@ -5287,7 +5294,89 @@ function drawSparkles(frame) {
   return g;
 }
 
+// Floating hearts overlay while being petted (drawn in the mood color, always via
+// the 'pet' palette entry regardless of skin, so it stays legible on every skin)
+function drawHearts(frame) {
+  const g = group();
+  const t = Math.floor(frame / 3);
+  [[-10, -8], [10, -10], [0, -16]].forEach(([ox, oy], i) => {
+    const phase = (t + i * 2) % 6;
+    if (phase >= 4) return; // recycles into the next float-up before fully cycling
+    const lift = phase * 1.2;
+    const y = HY + oy - lift;
+    g.appendChild(path(
+      `M ${CX+ox},${y} Q ${CX+ox-2.2},${y-2.5} ${CX+ox-4},${y} Q ${CX+ox-4},${y+2.5} ${CX+ox},${y+5} ` +
+      `Q ${CX+ox+4},${y+2.5} ${CX+ox+4},${y} Q ${CX+ox+2.2},${y-2.5} ${CX+ox},${y}`,
+      1, { fill: getMoodColor('pet'), stroke: 'none', opacity: String(1 - phase * 0.2) }));
+  });
+  return g;
+}
+
 // ── Special state drawings ───────────────────────────────────────────────────
+
+// Coffee break: tiny mug with rising steam, held at Joby's side
+function drawCoffee(subframe) {
+  const g = group();
+  const mx = CX + 10, my = HY + HH - 2;
+  g.appendChild(path(`M ${mx-3},${my} L ${mx+3},${my} L ${mx+2},${my+5} L ${mx-2},${my+5} Z`, 1.2));
+  g.appendChild(path(`M ${mx+2},${my+1} Q ${mx+4.5},${my+2.5} ${mx+2},${my+4}`, 1.0));
+  const steamY = my - 2 - (subframe % 4);
+  g.appendChild(path(`M ${mx-1},${steamY} Q ${mx},${steamY-2} ${mx-1},${steamY-4}`, 0.8, { opacity: 0.6 }));
+  g.appendChild(path(`M ${mx+1},${steamY-1} Q ${mx+2},${steamY-3} ${mx+1},${steamY-5}`, 0.8, { opacity: 0.4 }));
+  return g;
+}
+
+// Reading glasses + an open book held in front. The lenses need an explicit stroke
+// (the circle() helper's fill-only signature can't render an outline-only circle).
+function drawReadBook(subframe) {
+  const g = group();
+  const my = HY + HH - 1;
+  const lens = cx => el('circle', { cx, cy: HY + 7, r: 3.2, fill: 'none', stroke: 'currentColor', 'stroke-width': 1.0 });
+  g.appendChild(lens(CX - 3.5));
+  g.appendChild(lens(CX + 3.5));
+  g.appendChild(path(`M ${CX-0.3},${HY+7} L ${CX+0.3},${HY+7}`, 1.2));
+  g.appendChild(path(
+    `M ${CX-8},${my+4} L ${CX},${my+2} L ${CX+8},${my+4} L ${CX+8},${my+9} L ${CX},${my+7} L ${CX-8},${my+9} Z`,
+    1.2));
+  g.appendChild(path(`M ${CX},${my+2} L ${CX},${my+7}`, 1.0));
+  return g;
+}
+
+// Juggling: three little stars looping above the head
+function drawJuggling(subframe) {
+  const t = subframe * 0.4;
+  const g = group();
+  [0, 2.1, 4.2].forEach(offset => {
+    g.appendChild(circle(CX + Math.cos(t + offset) * 10, HY - 6 + Math.sin(t + offset) * 5, 1.6, '#FFD700'));
+  });
+  return g;
+}
+
+// Blows a few soap bubbles that float up and pop, each on its own staggered cycle
+function drawBubbleBlowing(subframe) {
+  const g = group();
+  const t = subframe % 12;
+  [{ dx: 4, delay: 0 }, { dx: 7, delay: 4 }, { dx: 3, delay: 8 }].forEach(b => {
+    const age = (t - b.delay + 12) % 12;
+    if (age > 8) return; // popped — nothing to draw until this bubble's cycle repeats
+    g.appendChild(el('circle', {
+      cx: CX + b.dx, cy: HY + 3 - age * 1.8, r: 1 + age * 0.15,
+      fill: 'none', stroke: 'currentColor', 'stroke-width': 0.7,
+      opacity: String(Math.max(0, 1 - age / 8)),
+    }));
+  });
+  return g;
+}
+
+// Workout: two mini dumbbells lifted in sync
+function drawWorkout(subframe) {
+  const g = group();
+  const lift = Math.sin(subframe * 0.6) * 4;
+  const lx = CX - 12, rx = CX + 12, wy = HY + 6 - lift;
+  g.appendChild(path(`M ${lx-2},${wy-3} L ${lx-2},${wy+3} M ${lx+2},${wy-3} L ${lx+2},${wy+3} M ${lx-2},${wy} L ${lx+2},${wy}`, 1.5));
+  g.appendChild(path(`M ${rx-2},${wy-3} L ${rx-2},${wy+3} M ${rx+2},${wy-3} L ${rx+2},${wy+3} M ${rx-2},${wy} L ${rx+2},${wy}`, 1.5));
+  return g;
+}
 
 // Wave: one tentacle raised high, wiggling
 function drawWave(subframe) {
@@ -5434,18 +5523,18 @@ function drawBatSleep(subframe) {
 function composeFrame(mood, hat, frame, walkPhase, isSprinting, dir) {
   const g = group();
   const sf = boredomWalkFrame; // subframe shorthand for special states
-  g.setAttribute('color', MOOD_COLOR[mood] || MOOD_COLOR.happy);
+  g.setAttribute('color', petFrames > 0 ? getMoodColor('pet') : getMoodColor(mood));
 
   // ── Cat nap: completely custom layout, body on floor ──────────────────────
   if (boredomMove === 'catNap') {
-    g.setAttribute('color', MOOD_COLOR.sleeping);
+    g.setAttribute('color', getMoodColor('sleeping'));
     g.appendChild(drawCatNap(sf));
     return g;
   }
 
   // ── Bat sleep: upside-down below the line — handled in render() for Y flip ─
   if (boredomMove === 'batSleep') {
-    g.setAttribute('color', MOOD_COLOR.sleeping);
+    g.setAttribute('color', getMoodColor('sleeping'));
     g.appendChild(drawHead());
     g.appendChild(drawEyes('closed'));
     g.appendChild(drawMouth('sleeping'));
@@ -5478,11 +5567,15 @@ function composeFrame(mood, hat, frame, walkPhase, isSprinting, dir) {
                  : boredomMove === 'sneeze'      ? 'closed'
                  : 'open';
 
-  const walkMood = boredomMove === 'shrug'    ? 'idle'     // legs stop during shrug
-                 : boredomMove === 'sneeze'   ? 'idle'     // legs freeze during sneeze
-                 : boredomMove === 'wave'     ? 'idle'     // legs stop while waving
-                 : boredomMove === 'stretch'  ? 'idle'     // legs still during stretch
-                 : boredomMove === 'tiptoe'   ? 'walking'
+  const walkMood = boredomMove === 'shrug'         ? 'idle'     // legs stop during shrug
+                 : boredomMove === 'sneeze'        ? 'idle'     // legs freeze during sneeze
+                 : boredomMove === 'wave'          ? 'idle'     // legs stop while waving
+                 : boredomMove === 'stretch'       ? 'idle'     // legs still during stretch
+                 : boredomMove === 'readBook'      ? 'idle'     // tentacles busy holding the book
+                 : boredomMove === 'juggling'      ? 'idle'     // tentacles busy juggling
+                 : boredomMove === 'bubbleBlowing' ? 'idle'     // standing still to blow bubbles
+                 : boredomMove === 'workout'       ? 'idle'     // tentacles busy with the dumbbells
+                 : boredomMove === 'tiptoe'        ? 'walking'
                  : isSprinting               ? 'sprint'
                  : mood === 'worried'         ? 'worried'
                  : mood === 'party'           ? 'party'
@@ -5518,10 +5611,16 @@ function composeFrame(mood, hat, frame, walkPhase, isSprinting, dir) {
   if (mood === 'hanging')              g.appendChild(drawArms());
   if (mood === 'sleeping')             g.appendChild(drawZzz(frame));
   if (mood === 'party')                g.appendChild(drawSparkles(frame));
+  if (petFrames > 0)                   g.appendChild(drawHearts(frame));
   if (boredomMove === 'wave')          g.appendChild(drawWave(sf));
   if (boredomMove === 'stretch')       g.appendChild(drawStretch(sf));
   if (boredomMove === 'shrug')         g.appendChild(drawShrug(sf));
   if (boredomMove === 'sneeze')        g.appendChild(drawSneeze(sf));
+  if (boredomMove === 'coffeeBreak')   g.appendChild(drawCoffee(sf));
+  if (boredomMove === 'readBook')      g.appendChild(drawReadBook(sf));
+  if (boredomMove === 'juggling')      g.appendChild(drawJuggling(sf));
+  if (boredomMove === 'bubbleBlowing') g.appendChild(drawBubbleBlowing(sf));
+  if (boredomMove === 'workout')       g.appendChild(drawWorkout(sf));
   if (isSprinting && currentSpeed >= SPD_SPRINT * 0.8) g.appendChild(drawSpeedLines(dir));
 
   // Hat poof sparkles during the bald flash frame
@@ -5551,6 +5650,7 @@ let mood = 'happy';
 let excitedFrames = 0, eatingFrames = 0, partyFrames = 0, idleFrames = 0;
 let hangPhase = 0, hangFrames = 0;
 let treatX = -1;
+let petFrames = 0; // counts down while showing the click-to-pet reaction
 let digestPending = 0; // open Digest item count, reported by digest.js via tamaSetDigestPending
 let lastActivityTime = Date.now();
 let bubbleTimer = null;
@@ -5571,7 +5671,7 @@ const SPD_WORRIED = 15;
 const SPD_SPRINT  = 40;
 
 const RARE_MOVES = [
-  'coffeeBreak',   // sips coffee, ☕ floats up
+  'coffeeBreak',   // sips coffee from a tiny steaming mug
   'wave',          // stops and waves a tentacle at you
   'stretch',       // reaches arms up and yawns
   'spinAround',    // does a little 360 spin
@@ -5580,6 +5680,10 @@ const RARE_MOVES = [
   'shrug',         // lifts two tentacles in a shrug ¯\_(ツ)_/¯
   'sneeze',        // body jolts, stars pop
   'tiptoe',        // walks on the very tips of tentacles, slow and sneaky
+  'readBook',      // puts on tiny reading glasses, holds an open book
+  'juggling',      // juggles three little stars overhead
+  'bubbleBlowing', // blows soap bubbles that float up and pop
+  'workout',       // lifts two mini dumbbells
 ];
 
 // Same pool, just weighted by local time of day — no new poses, just different odds.
@@ -5620,7 +5724,8 @@ function logicTick() {
 
   if (pending > 0) hasCelebratedAllClear = false;
 
-  if      (partyFrames   > 0)                 { mood = 'party';   partyFrames--;   }
+  if      (petFrames     > 0)                 { mood = 'happy';   petFrames--;     }
+  else if (partyFrames   > 0)                 { mood = 'party';   partyFrames--;   }
   else if (excitedFrames > 0)                 { mood = 'excited'; excitedFrames--; }
   else if (eatingFrames  > 0)                 { mood = 'eating';  eatingFrames--;  }
   else if (allClear && !hasCelebratedAllClear){ mood = 'party'; partyFrames = 35; hasCelebratedAllClear = true; }
@@ -5694,6 +5799,12 @@ function render() {
   if (!jobyG) {
     jobyG = document.createElementNS(SVG_NS, 'g');
     jobyG.setAttribute('id', 'joby-g');
+    // svgEl itself is pointer-events:none (full-width overlay — header/tab clicks
+    // must pass through it everywhere else); Joby opts back in just for himself so
+    // clicking him doesn't also require poking a hole in the header's own click targets.
+    jobyG.style.pointerEvents = 'auto';
+    jobyG.style.cursor = 'pointer';
+    jobyG.addEventListener('click', petJoby);
     svgEl.appendChild(jobyG);
   }
 
@@ -5743,6 +5854,14 @@ function render() {
     `translate(${px},${ty + bounce}) scale(${scaleX},${scaleY}) translate(${-CX},0)`
   );
 
+  // Invisible click target covering Joby's full local bounding box (hat to feet) —
+  // needed because the visible shapes are thin strokes with fill:none, which only
+  // hit-test on the stroke line itself, not the "empty" space a click would
+  // naturally land on. Recreated every frame along with everything else in jobyG;
+  // the one-time click listener above is on jobyG itself, so it doesn't need
+  // re-attaching to this.
+  const hitArea = el('rect', { x: 0, y: -6, width: 36, height: 42, fill: 'transparent' });
+  jobyG.appendChild(hitArea);
   jobyG.appendChild(frame_g);
 }
 
@@ -5837,6 +5956,19 @@ function eatTreat() {
   if (treatsEl) treatsEl.innerHTML = '';
   currentSpeed = 0;  // stop sprint lines immediately
   eatingFrames = 12; excitedFrames = 8;
+}
+
+// ── Petting ────────────────────────────────────────────────────────────────────
+// Click/tap on Joby himself (wired up in render(), see the jobyG hit-area below) —
+// not a fixed pixel radius from his center, so it tracks his hat/legs bounding box
+// exactly as he walks around, without needing to hit-test against every rAF frame.
+function petJoby() {
+  petFrames = 18; // ~3.6s at 200ms logic ticks
+  lastActivityTime = Date.now();
+  boredomMove = null; boredomFrames = 0; boredomWalkFrame = 0;
+  hangPhase = 0; hangFrames = 0;
+  const quips = ['(◕‿◕) ♡', 'Hehe, soft!', 'Blorp! ♡', 'Back to work now!'];
+  showBubble(quips[Math.floor(Math.random() * quips.length)], 2000);
 }
 
 // ── Speech bubble ──────────────────────────────────────────────────────────────

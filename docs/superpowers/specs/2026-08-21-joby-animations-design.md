@@ -92,6 +92,43 @@ without a new body-pose asset.
   how many were completed — the difference isn't perceptible in practice).
 - A 30-day streak tier beyond the crown-bias.
 
+## Addendum: follow-up round from detailed teammate feedback
+
+Same day, a much more specific round of feedback came back (with sample
+code) asking for: click-to-pet (heart-eyes, wiggle, floating hearts),
+swappable color skins (`window.setJobySkin('neon' | 'matcha' | 'pastel' |
+'sunset' | 'classic')`), and 4 more idle moves (`readBook`, `juggling`,
+`bubbleBlowing`, `workout` — `coffeeBreak` already existed as a named
+state from the original build but had never had a visual; it gets one now
+too). All shipped, following the same "reuse existing mechanisms" approach
+as the rest of this spec — `MOOD_COLOR` became a per-skin `PALETTES` map
+behind a `getMoodColor()` lookup (the `classic` skin reproduces the
+original colors exactly), and the four new moves are drawn with the same
+`path()`/`circle()`/`group()` helpers every existing move already uses.
+
+The sample code had two bugs, fixed during integration rather than shipped
+as-is:
+- The petting click handler set `pointerEvents: 'none'` on the *same*
+  element it then attached a `click` listener to — `pointer-events: none`
+  means an element is excluded from hit-testing entirely, so that handler
+  could never have fired. Fixed by leaving the outer full-width SVG
+  overlay's existing `pointer-events: none` alone (it needs that so
+  header/tab clicks pass through it everywhere else) and opting the
+  persistent `jobyG` container back in to `pointer-events: auto` — plus a
+  transparent hit-rect sized to Joby's actual bounding box each frame,
+  since his visible shapes are unfilled strokes that only hit-test on the
+  line itself, not the space a click would naturally land on.
+- The reading-glasses lenses were built from the file's `circle()` helper
+  passed `fill: 'none'` — that helper only ever sets `fill`, never
+  `stroke`, so a `fill:none` circle from it renders as nothing at all.
+  Fixed by building the lenses directly with `el('circle', ...)` and an
+  explicit stroke, the same way the existing beanie hat's pom-pom already
+  does for the identical reason.
+- `bubbleBlowing` was named in the feature list and added to the move
+  pool, but no drawing function came with it — authored fresh (three
+  small stroked circles that rise and fade on staggered cycles) rather
+  than shipping a move with no visual.
+
 ## Testing
 
 No automated test suite for this module (consistent with the rest of the
