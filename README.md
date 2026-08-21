@@ -342,6 +342,13 @@ Tasks and settings are stored in OPFS — `work-tasks.json` for Work mode and `p
 
 ## Changelog
 
+### v2.4 (2026-08-21)
+
+- **Color-coded Digest reason badges** — the Digest tab button now shows an outline-style count badge per reason (📌 Assigned / @ Mentioned / 👀 Watching) so new activity is visible without opening the tab. Only To Do and In Progress items count — something marked Waiting is parked on someone else, not pulling on your attention. Card-level reason tags recolored to match.
+- **Status filters in the stats bar** — To Do / In Progress / Waiting are now clickable filter pills alongside the existing bucket/flagged filters; the old ambiguous "N To Do" total pill is now "N Open".
+- Digest now polls once at boot (in addition to the existing 20-minute auto-poll), so the tab badge doesn't wait for a tab visit to populate.
+- The header version number had drifted — it was still showing v2.1 despite the v2.2/v2.3 work below already having shipped. Fixed.
+
 ### v2.3 (2026-08-13)
 
 - **Removed the old Jira tab and its JQL Filter Builder** — Digest fully replaced it. Losing: promote-issue-to-My-Tasks (no Digest equivalent). The Settings → Jira panel now only holds the cookie/URL/Test Proxy fields Digest still needs; the visual JQL builder and custom JQL override are gone. Renamed the remaining tab and settings label to "Jira Digest" for clarity.
