@@ -6097,12 +6097,15 @@ function eatTreat() {
 // not a fixed pixel radius from his center, so it tracks his hat/legs bounding box
 // exactly as he walks around, without needing to hit-test against every rAF frame.
 function petJoby() {
-  petFrames = 18; // ~3.6s at 200ms logic ticks
+  // Long enough to be unmistakable on a small, constantly-moving character — the
+  // original 3.6s/2s was easy to miss entirely if you weren't looking at the exact
+  // right moment.
+  petFrames = 40; // ~8s at 200ms logic ticks
   lastActivityTime = Date.now();
   boredomMove = null; boredomFrames = 0; boredomWalkFrame = 0;
   hangPhase = 0; hangFrames = 0;
   const quips = ['(◕‿◕) ♡', 'Hehe, soft!', 'Blorp! ♡', 'Back to work now!'];
-  showBubble(quips[Math.floor(Math.random() * quips.length)], 2000);
+  showBubble(quips[Math.floor(Math.random() * quips.length)], 4000);
 }
 
 // ── Speech bubble ──────────────────────────────────────────────────────────────
