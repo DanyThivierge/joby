@@ -1112,6 +1112,25 @@ select option { background: var(--card); color: var(--text); }
 .digest-comment-row:first-of-type { margin-top: 8px; padding-top: 0; border-top: none; }
 .digest-comment { font-size: 0.85rem; color: var(--text); line-height: 1.5; }
 .digest-comment-time { font-size: 0.76rem; color: var(--purple); font-weight: 700; }
+/* Rendered Jira wiki-markup (renderJiraWikiMarkup in digest.js) — comments come back as
+   plain <p>/<ul>/<ol>/<blockquote>/<code> tags with no wrapper class, so style them
+   generically wherever a rendered comment body can appear. Browser UA defaults for these
+   tags are too spacious for the compact comment cards, hence the tight margins. */
+.digest-comment p, .digest-thread-comment p { margin: 6px 0 0; }
+.digest-comment p:first-child, .digest-thread-comment p:first-child { margin-top: 0; }
+.digest-comment ul, .digest-comment ol, .digest-thread-comment ul, .digest-thread-comment ol {
+    margin: 6px 0 0; padding-left: 22px;
+}
+.digest-comment li, .digest-thread-comment li { margin-top: 2px; }
+.digest-comment blockquote, .digest-thread-comment blockquote {
+    margin: 6px 0 0; padding: 4px 10px; border-left: 3px solid var(--border);
+    color: var(--text-2); font-style: italic;
+}
+.digest-comment code, .digest-thread-comment code {
+    background: var(--bg-2, rgba(127,127,127,0.15)); padding: 1px 5px; border-radius: 4px;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.92em;
+}
+.digest-wiki-heading { margin: 8px 0 0; font-size: 0.95em; font-weight: 700; }
 .digest-select-checkbox { float: left; margin: 3px 8px 0 0; width: 16px; height: 16px; cursor: pointer; accent-color: var(--purple); }
 .digest-context-toggle {
     font-size: 0.72rem; color: var(--text-3); cursor: pointer; margin: 8px 0 0; user-select: none;

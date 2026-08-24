@@ -180,6 +180,110 @@ function formatDigestTimestamp(iso) {
     return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
 }
 
+// Jira's REST API returns comment bodies as wiki markup (*bold*, {{mono}}, "* " bullets,
+// "# " numbered lists, "h1."-style headings, {quote}...{quote}), not HTML — rendered raw
+// they show up as a flat wall of text with literal asterisks. This renders the common
+// subset into real HTML, following escHtml()/linkify()'s existing safety pattern: escape
+// the whole string first (wiki markup's *_{}#  delimiters aren't touched by escHtml, so
+// they're still there to match afterwards), then only ever inject hardcoded-safe tags via
+// regex substitution over the now-escaped text. Tables and rarer constructs are skipped —
+// not seen enough in practice to justify the parsing complexity.
+function renderJiraWikiMarkup(text) {
+    if (!text) return '';
+    const lines = escHtml(text).split(/\r\n|\r|\n/);
+    const blocks = [];
+    let list = null;      // { tag: 'ul'|'ol', items: [] }
+    let quoteLines = null; // array while inside {quote}...{quote}
+    let paraLines = [];
+
+    function flushPara() { if (paraLines.length) { blocks.push('<p>' + paraLines.join('<br>') + '</p>'); paraLines = []; } }
+    function flushList() {
+        if (list) { blocks.push('<' + list.tag + '>' + list.items.map(i => '<li>' + i + '</li>').join('') + '</' + list.tag + '>'); list = null; }
+    }
+
+    for (const rawLine of lines) {
+        const trimmed = rawLine.trim();
+
+        if (/^\{quote\}$/.test(trimmed)) {
+            flushPara(); flushList();
+            if (quoteLines === null) quoteLines = [];
+            else { blocks.push('<blockquote>' + quoteLines.join('<br>') + '</blockquote>'); quoteLines = null; }
+            continue;
+        }
+        if (quoteLines !== null) { quoteLines.push(applyWikiInline(rawLine)); continue; }
+
+        if (trimmed === '') { flushPara(); flushList(); continue; }
+
+        const heading = trimmed.match(/^h([1-6])\.\s*(.*)$/);
+        if (heading) {
+            flushPara(); flushList();
+            blocks.push('<h' + heading[1] + ' class="digest-wiki-heading">' + applyWikiInline(heading[2]) + '</h' + heading[1] + '>');
+            continue;
+        }
+
+        // Bullet/numbered markers need a space right after the marker char(s) — that's
+        // what distinguishes a "* " list item from a "*bold*" span starting the line.
+        // "**"/"##" (nested markers) are flattened to a single level rather than building
+        // real nested lists — not worth the extra parser complexity for a corner case.
+        const bullet = trimmed.match(/^\*{1,2}\s+(.*)$/);
+        const numbered = trimmed.match(/^#{1,2}\s+(.*)$/);
+        if (bullet) {
+            flushPara();
+            if (!list || list.tag !== 'ul') { flushList(); list = { tag: 'ul', items: [] }; }
+            list.items.push(applyWikiInline(bullet[1]));
+            continue;
+        }
+        if (numbered) {
+            flushPara();
+            if (!list || list.tag !== 'ol') { flushList(); list = { tag: 'ol', items: [] }; }
+            list.items.push(applyWikiInline(numbered[1]));
+            continue;
+        }
+
+        flushList();
+        paraLines.push(applyWikiInline(rawLine));
+    }
+    flushPara(); flushList();
+    if (quoteLines !== null) blocks.push('<blockquote>' + quoteLines.join('<br>') + '</blockquote>');
+
+    return blocks.join('');
+}
+
+// Matches, in priority order: [Label|https://url] named links, bare [https://url]
+// bracket links, then plain bare URLs — all forms Jira actually emits (real comments
+// mix named links for people/team pickers with bare URLs in the same body).
+const WIKI_LINK_RX = /\[([^\[\]|]+)\|(https?:\/\/[^\[\]\s]+)\]|\[(https?:\/\/[^\[\]\s]+)\]|(https?:\/\/[^\s<>"\]]+)/g;
+
+// Inline formatting + auto-linking, applied to an already-escHtml()'d line/segment.
+// Links are extracted first and stashed behind  N  placeholders, then
+// restored after the bold/italic/monospace passes run — otherwise a URL containing a
+// literal "_" (common in query strings/paths) could get mistaken for italic markers by
+// the passes below, or, if links were built last, the bold/italic regexes could reach
+// into an already-built <a href="..."> and mangle its attribute text. Strikethrough
+// (-text-) is deliberately not supported: real comments are full of hyphenated dates
+// and ranges (e.g. "2026-08-19") that would false-positive-match as struck-through
+// text, which would be a regression, not an improvement.
+function applyWikiInline(s) {
+    const links = [];
+    s = s.replace(WIKI_LINK_RX, (m, namedText, namedUrl, bareBracketUrl, bareUrl) => {
+        const url = namedUrl || bareBracketUrl || bareUrl;
+        try { new URL(url); } catch { return m; }
+        const label = namedText || (url.length > 60 ? url.slice(0, 57) + '...' : url);
+        links.push('<a href="' + escAttr(url) + '" target="_blank" rel="noopener noreferrer" class="task-link" onclick="event.stopPropagation()">' + label + '</a>');
+        // An HTML-comment-shaped token is a safer placeholder than a raw control
+        // character here: `s` at this point is already escHtml()'d, so a literal "<" can
+        // never occur except one this function itself inserts — no risk of colliding
+        // with real comment text, and no fragile control bytes sitting in source/output.
+        return '<!--wikilink:' + (links.length - 1) + '-->';
+    });
+
+    s = s.replace(/\{\{([^{}\n]+)\}\}/g, '<code>$1</code>');
+    s = s.replace(/\*([^\s*][^*\n]*?)\*/g, '<strong>$1</strong>');
+    s = s.replace(/_([^\s_][^_\n]*?)_/g, '<em>$1</em>');
+
+    return s.replace(/<!--wikilink:(\d+)-->/g, (m, i) => links[Number(i)]);
+}
+
 // Runs `worker` over `items` with at most `limit` in flight at once — a middle
 // ground between fully sequential (slow: one Jira round trip after another,
 // ~45s+ for a full month's worth of issues) and fully parallel (risky: firing every
@@ -546,7 +650,7 @@ function renderDigestIssueCluster(cluster) {
 
 function renderDigestContextComment(item) {
     return '<div class="digest-comment-row digest-context-comment" data-comment-id="' + item.commentId + '">'
-        + '<div class="digest-comment"><strong>' + escHtml(item.author) + '</strong> <span class="digest-comment-time">' + formatDigestTimestamp(item.created) + '</span>: ' + linkify(resolveMentionsForDisplay(item.body)) + '</div>'
+        + '<div class="digest-comment"><strong>' + escHtml(item.author) + '</strong> <span class="digest-comment-time">' + formatDigestTimestamp(item.created) + '</span>: ' + renderJiraWikiMarkup(resolveMentionsForDisplay(item.body)) + '</div>'
         + renderDigestAttachments(item.attachments)
         + '</div>';
 }
@@ -574,7 +678,7 @@ function refreshDigestCommentPreviews() {
         const item = digestItems[el.dataset.commentId];
         const commentEl = el.querySelector('.digest-comment');
         if (item && commentEl) {
-            commentEl.innerHTML = '<strong>' + escHtml(item.author) + '</strong> <span class="digest-comment-time">' + formatDigestTimestamp(item.created) + '</span>: ' + linkify(resolveMentionsForDisplay(item.body));
+            commentEl.innerHTML = '<strong>' + escHtml(item.author) + '</strong> <span class="digest-comment-time">' + formatDigestTimestamp(item.created) + '</span>: ' + renderJiraWikiMarkup(resolveMentionsForDisplay(item.body));
         }
     });
 }
@@ -603,7 +707,7 @@ function renderDigestComment(item) {
         + (digestSelectedIds.has(item.commentId) ? ' checked' : '') + '>';
     return '<div class="digest-comment-row" data-comment-id="' + item.commentId + '">'
         + selectCheckbox
-        + '<div class="digest-comment"><strong>' + escHtml(item.author) + '</strong> <span class="digest-comment-time">' + formatDigestTimestamp(item.created) + '</span>: ' + linkify(resolveMentionsForDisplay(item.body)) + '</div>'
+        + '<div class="digest-comment"><strong>' + escHtml(item.author) + '</strong> <span class="digest-comment-time">' + formatDigestTimestamp(item.created) + '</span>: ' + renderJiraWikiMarkup(resolveMentionsForDisplay(item.body)) + '</div>'
         + renderDigestAttachments(item.attachments)
         + '<div class="digest-controls">'
         + '<div class="digest-buckets">' + bucketPills + '</div>'
@@ -736,7 +840,7 @@ async function toggleDigestThread(commentId) {
         el.innerHTML = comments.map(c =>
             '<div class="digest-thread-comment"><strong>' + escHtml((c.author && c.author.displayName) || 'Unknown') + '</strong>'
             + ' &middot; <span class="digest-thread-date">' + formatDue((c.created || '').slice(0, 10)) + '</span>'
-            + '<div>' + linkify(resolveMentionsForDisplay(c.body || '')) + '</div></div>'
+            + '<div>' + renderJiraWikiMarkup(resolveMentionsForDisplay(c.body || '')) + '</div></div>'
         ).join('');
     } catch (e) {
         el.innerHTML = '<div class="digest-thread-loading">Failed to load thread: ' + escHtml(e.message) + '</div>';
