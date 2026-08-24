@@ -1002,7 +1002,7 @@ select option { background: var(--card); color: var(--text); }
 .digest-comment-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
 .digest-comment-row:first-of-type { margin-top: 8px; padding-top: 0; border-top: none; }
 .digest-comment { font-size: 0.85rem; color: var(--text); line-height: 1.5; }
-.digest-comment-time { font-size: 0.76rem; color: var(--text-3); font-weight: 400; }
+.digest-comment-time { font-size: 0.76rem; color: var(--purple); font-weight: 700; }
 .digest-select-checkbox { float: left; margin: 3px 8px 0 0; width: 16px; height: 16px; cursor: pointer; accent-color: var(--purple); }
 .digest-context-toggle {
     font-size: 0.72rem; color: var(--text-3); cursor: pointer; margin: 8px 0 0; user-select: none;
