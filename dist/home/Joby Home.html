@@ -974,17 +974,30 @@ select option { background: var(--card); color: var(--text); }
 .digest-body-row { display: flex; gap: 16px; align-items: flex-start; }
 .digest-main-col { flex: 1; min-width: 0; }
 
+/* The slot is the actual flex child and always reserves the full 260px, whether
+   the panel inside it is expanded or collapsed — collapsing shrinks the panel
+   box itself (leaving blank space in the slot beside it), it never changes what
+   digest-main-col is laid out against. Without this, collapsing the sidebar was
+   growing/reflowing the ticket list to fill the freed space, which looked like
+   the whole tab was moving just from toggling an unrelated panel. */
+.lean-panel-slot { width: 260px; flex-shrink: 0; }
+
 .lean-panel {
-    width: 260px; flex-shrink: 0;
+    width: 100%;
     background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card);
     box-shadow: var(--shadow-sm); overflow: hidden;
 }
 .lean-panel-collapsed-strip { display: none; }
-.lean-panel.collapsed { width: 32px; }
+.lean-panel.collapsed { width: 32px; background: var(--green-light); }
 .lean-panel.collapsed .lean-panel-expanded { display: none; }
 .lean-panel.collapsed .lean-panel-collapsed-strip {
-    display: flex; align-items: center; justify-content: center;
-    width: 32px; min-height: 220px; cursor: pointer; font-size: 1.15rem; color: var(--green-dark);
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    width: 32px; padding: 14px 0; cursor: pointer; color: var(--green-dark);
+}
+.lean-collapsed-icon { font-size: 1.15rem; }
+.lean-collapsed-label {
+    writing-mode: vertical-rl; transform: rotate(180deg); font-size: 0.72rem; font-weight: 700;
+    letter-spacing: .4px; white-space: nowrap;
 }
 
 .lean-panel-expanded { padding: 14px; }
@@ -1336,8 +1349,12 @@ select option { background: var(--card); color: var(--text); }
             &#9888;&#65039; Can't reach the proxy or your Google Drive folder right now — marking things done or changing status <strong>isn't being saved</strong>. Check that <code>jira-proxy.py</code> is still running and your Drive connection is up, then hit Refresh.
         </div>
         <div class="digest-body-row">
+            <div class="lean-panel-slot">
             <aside class="lean-panel" id="lean-panel">
-                <div class="lean-panel-collapsed-strip" id="lean-panel-collapsed-strip" onclick="setLeanPanelCollapsed(false)" title="Show Lean reminders">&#127793;</div>
+                <div class="lean-panel-collapsed-strip" id="lean-panel-collapsed-strip" onclick="setLeanPanelCollapsed(false)" title="Show Lean reminders">
+                    <span class="lean-collapsed-icon">&#127793;</span>
+                    <span class="lean-collapsed-label">Lean Knowledge</span>
+                </div>
                 <div class="lean-panel-expanded" id="lean-panel-expanded">
                     <div class="lean-panel-header">
                         <span>&#127793; Lean Knowledge</span>
@@ -1368,6 +1385,7 @@ select option { background: var(--card); color: var(--text); }
                     <button class="lean-glossary-btn" onclick="openLeanGlossary()">&#128218; Term glossary</button>
                 </div>
             </aside>
+            </div>
             <div class="digest-main-col">
                 <div class="digest-stats" id="digest-stats"></div>
                 <div class="jira-toolbar">

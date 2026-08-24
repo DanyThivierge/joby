@@ -200,8 +200,12 @@
             &#9888;&#65039; Can't reach the proxy or your Google Drive folder right now — marking things done or changing status <strong>isn't being saved</strong>. Check that <code>jira-proxy.py</code> is still running and your Drive connection is up, then hit Refresh.
         </div>
         <div class="digest-body-row">
+            <div class="lean-panel-slot">
             <aside class="lean-panel" id="lean-panel">
-                <div class="lean-panel-collapsed-strip" id="lean-panel-collapsed-strip" onclick="setLeanPanelCollapsed(false)" title="Show Lean reminders">&#127793;</div>
+                <div class="lean-panel-collapsed-strip" id="lean-panel-collapsed-strip" onclick="setLeanPanelCollapsed(false)" title="Show Lean reminders">
+                    <span class="lean-collapsed-icon">&#127793;</span>
+                    <span class="lean-collapsed-label">Lean Knowledge</span>
+                </div>
                 <div class="lean-panel-expanded" id="lean-panel-expanded">
                     <div class="lean-panel-header">
                         <span>&#127793; Lean Knowledge</span>
@@ -232,6 +236,7 @@
                     <button class="lean-glossary-btn" onclick="openLeanGlossary()">&#128218; Term glossary</button>
                 </div>
             </aside>
+            </div>
             <div class="digest-main-col">
                 <div class="digest-stats" id="digest-stats"></div>
                 <div class="jira-toolbar">

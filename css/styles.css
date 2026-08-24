@@ -966,17 +966,30 @@ select option { background: var(--card); color: var(--text); }
 .digest-body-row { display: flex; gap: 16px; align-items: flex-start; }
 .digest-main-col { flex: 1; min-width: 0; }
 
+/* The slot is the actual flex child and always reserves the full 260px, whether
+   the panel inside it is expanded or collapsed — collapsing shrinks the panel
+   box itself (leaving blank space in the slot beside it), it never changes what
+   digest-main-col is laid out against. Without this, collapsing the sidebar was
+   growing/reflowing the ticket list to fill the freed space, which looked like
+   the whole tab was moving just from toggling an unrelated panel. */
+.lean-panel-slot { width: 260px; flex-shrink: 0; }
+
 .lean-panel {
-    width: 260px; flex-shrink: 0;
+    width: 100%;
     background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card);
     box-shadow: var(--shadow-sm); overflow: hidden;
 }
 .lean-panel-collapsed-strip { display: none; }
-.lean-panel.collapsed { width: 32px; }
+.lean-panel.collapsed { width: 32px; background: var(--green-light); }
 .lean-panel.collapsed .lean-panel-expanded { display: none; }
 .lean-panel.collapsed .lean-panel-collapsed-strip {
-    display: flex; align-items: center; justify-content: center;
-    width: 32px; min-height: 220px; cursor: pointer; font-size: 1.15rem; color: var(--green-dark);
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    width: 32px; padding: 14px 0; cursor: pointer; color: var(--green-dark);
+}
+.lean-collapsed-icon { font-size: 1.15rem; }
+.lean-collapsed-label {
+    writing-mode: vertical-rl; transform: rotate(180deg); font-size: 0.72rem; font-weight: 700;
+    letter-spacing: .4px; white-space: nowrap;
 }
 
 .lean-panel-expanded { padding: 14px; }
