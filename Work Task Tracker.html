@@ -199,34 +199,50 @@
         <div class="digest-save-warning" id="digest-save-warning" style="display:none">
             &#9888;&#65039; Can't reach the proxy or your Google Drive folder right now — marking things done or changing status <strong>isn't being saved</strong>. Check that <code>jira-proxy.py</code> is still running and your Drive connection is up, then hit Refresh.
         </div>
-        <div class="digest-stats" id="digest-stats"></div>
-        <div class="jira-toolbar">
-            <button class="jira-refresh-btn" id="digest-refresh-btn" onclick="fetchDigest()">&#128260; Refresh</button>
-            <select id="digest-lookback" title="How far back Refresh checks">
-                <option value="1">Last day</option>
-                <option value="7">Last week</option>
-                <option value="30" selected>Last month</option>
-                <option value="90">Last 3 months</option>
-                <option value="365">Last year</option>
-                <option value="forever">Forever</option>
-            </select>
-            <select id="digest-filter-bucket" onchange="renderDigest()">
-                <option value="all">All</option>
-                <option value="review">&#128064; Review</option>
-                <option value="fix_help">&#128295; Fix/Help</option>
-                <option value="fyi">&#128172; FYI</option>
-            </select>
-            <button class="btn btn-outline" onclick="selectAllVisibleDigest()">&#9745; Select all shown</button>
-            <label class="jql-check" style="margin-left:8px"><input type="checkbox" id="digest-show-done" onchange="renderDigest()"> Show done</label>
-            <span class="jira-count" id="digest-last-polled"></span>
+        <div class="digest-body-row">
+            <aside class="lean-panel" id="lean-panel">
+                <div class="lean-panel-collapsed-strip" id="lean-panel-collapsed-strip" onclick="setLeanPanelCollapsed(false)" title="Show Lean reminders">&#127793;</div>
+                <div class="lean-panel-expanded" id="lean-panel-expanded">
+                    <div class="lean-panel-header">
+                        <span>&#127793; Lean Knowledge</span>
+                        <button class="lean-panel-collapse-btn" onclick="setLeanPanelCollapsed(true)" title="Collapse">&#8250;</button>
+                    </div>
+                    <div class="lean-core-principles" id="lean-core-principles"></div>
+                    <div class="lean-rotating" id="lean-rotating"></div>
+                    <button class="lean-next-btn" onclick="leanPanelNext()">Next &#8250;</button>
+                </div>
+            </aside>
+            <div class="digest-main-col">
+                <div class="digest-stats" id="digest-stats"></div>
+                <div class="jira-toolbar">
+                    <button class="jira-refresh-btn" id="digest-refresh-btn" onclick="fetchDigest()">&#128260; Refresh</button>
+                    <select id="digest-lookback" title="How far back Refresh checks">
+                        <option value="1">Last day</option>
+                        <option value="7">Last week</option>
+                        <option value="30" selected>Last month</option>
+                        <option value="90">Last 3 months</option>
+                        <option value="365">Last year</option>
+                        <option value="forever">Forever</option>
+                    </select>
+                    <select id="digest-filter-bucket" onchange="renderDigest()">
+                        <option value="all">All</option>
+                        <option value="review">&#128064; Review</option>
+                        <option value="fix_help">&#128295; Fix/Help</option>
+                        <option value="fyi">&#128172; FYI</option>
+                    </select>
+                    <button class="btn btn-outline" onclick="selectAllVisibleDigest()">&#9745; Select all shown</button>
+                    <label class="jql-check" style="margin-left:8px"><input type="checkbox" id="digest-show-done" onchange="renderDigest()"> Show done</label>
+                    <span class="jira-count" id="digest-last-polled"></span>
+                </div>
+                <div id="digest-bulk-action-bar" class="bulk-action-bar" style="display:none">
+                    <span class="bulk-count" id="digest-bulk-count"></span>
+                    <button class="btn btn-outline" onclick="markSelectedDigestDone()">&#10003; Mark Done</button>
+                    <button class="btn btn-outline" onclick="markSelectedDigestTodo()">&#8617; Mark To Do</button>
+                    <button class="btn btn-outline" onclick="clearDigestSelection()">&#10005; Clear selection</button>
+                </div>
+                <div class="task-list" id="digest-list"></div>
+            </div>
         </div>
-        <div id="digest-bulk-action-bar" class="bulk-action-bar" style="display:none">
-            <span class="bulk-count" id="digest-bulk-count"></span>
-            <button class="btn btn-outline" onclick="markSelectedDigestDone()">&#10003; Mark Done</button>
-            <button class="btn btn-outline" onclick="markSelectedDigestTodo()">&#8617; Mark To Do</button>
-            <button class="btn btn-outline" onclick="clearDigestSelection()">&#10005; Clear selection</button>
-        </div>
-        <div class="task-list" id="digest-list"></div>
     </div>
 </div>
 
@@ -295,6 +311,14 @@
                             <input type="checkbox" id="s-tamagoshi-enabled" onchange="toggleTamagoshi(this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:var(--purple)">
                         </label>
                         <p style="font-size:0.75rem;color:var(--text-3);margin-top:6px">An animated octopus that walks, hangs, and reacts to your tasks. Off by default.</p>
+                    </div>
+                    <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);">
+                        <div style="font-weight:700;font-size:0.85rem;color:var(--text-1);margin-bottom:12px;letter-spacing:.5px">&#127793; Lean Reminders</div>
+                        <label style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:12px">
+                            <span style="font-size:0.88rem;color:var(--text-2)">Show Lean reminders panel (Jira Digest tab)</span>
+                            <input type="checkbox" id="s-lean-panel-enabled" onchange="toggleLeanPanelVisibility(this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:var(--purple)">
+                        </label>
+                        <p style="font-size:0.75rem;color:var(--text-3);margin-top:6px">A short Lean vocabulary/prompt panel next to the ticket list. On by default; collapse it inline any time, or hide it here.</p>
                     </div>
                 </div>
 
@@ -440,6 +464,7 @@
 <script src="js/drag.js"></script>
 <script src="js/jira.js"></script>
 <script src="js/digest.js"></script>
+<script src="js/lean-panel.js"></script>
 <script src="js/inbox.js"></script>
 <script src="js/drive.js"></script>
 <script src="js/stats.js"></script>

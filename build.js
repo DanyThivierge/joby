@@ -30,6 +30,7 @@ const JS_ORDER = [
     'js/drag.js',
     'js/jira.js',
     'js/digest.js',
+    'js/lean-panel.js',
     'js/inbox.js',
     'js/drive.js',
     'js/stats.js',

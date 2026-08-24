@@ -72,6 +72,7 @@ function closeGhostTask() {
 document.getElementById('app-version').textContent = 'v' + APP_VERSION;
 renderColorSwatches('add-color-swatches', '');
 const storageReady = initStorage();
+if (typeof initLeanPanel === 'function') initLeanPanel();
 // Digest auto-poll: re-check Jira right away at boot (so the tab badge doesn't wait for
 // a tab visit or up to 20 minutes to populate), then every 20 minutes while the app is
 // open. Skipped in the GAS build (no proxy access) and the Home build (no Jira integration

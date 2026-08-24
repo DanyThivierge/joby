@@ -118,6 +118,9 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 
 /* ── Main content ───────────────────────────────────────────────────────── */
 .main { padding: 20px 24px; max-width: 1100px; margin: 0 auto; }
+/* Digest gets extra width for the Lean panel sidebar, so the ticket list itself
+   doesn't shrink to make room for it — Tasks stays at the default 1100px. */
+#tab-digest.main { max-width: 1400px; }
 
 /* ── Tasks 2-column layout ──────────────────────────────────────────────── */
 .tasks-layout {
@@ -956,6 +959,51 @@ select option { background: var(--card); color: var(--text); }
 .digest-save-warning code { background: rgba(0,0,0,0.08); border-radius: 3px; padding: 1px 5px; }
 [data-theme="dark"] .digest-save-warning { background: #2D1E00; border-color: #F59E0B; color: #FCD34D; }
 [data-theme="dark"] .digest-save-warning code { background: rgba(255,255,255,0.1); }
+
+/* ── Lean Reminders panel — left sidebar on the Digest tab, desktop only ────── */
+.digest-body-row { display: flex; gap: 16px; align-items: flex-start; }
+.digest-main-col { flex: 1; min-width: 0; }
+
+.lean-panel {
+    width: 260px; flex-shrink: 0;
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-card);
+    box-shadow: var(--shadow-sm); overflow: hidden;
+}
+.lean-panel-collapsed-strip { display: none; }
+.lean-panel.collapsed { width: 32px; }
+.lean-panel.collapsed .lean-panel-expanded { display: none; }
+.lean-panel.collapsed .lean-panel-collapsed-strip {
+    display: flex; align-items: center; justify-content: center;
+    width: 32px; min-height: 220px; cursor: pointer; font-size: 1.15rem; color: var(--green-dark);
+}
+
+.lean-panel-expanded { padding: 14px; }
+.lean-panel-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    font-weight: 700; font-size: 0.85rem; color: var(--green-dark);
+    padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--border);
+}
+.lean-panel-collapse-btn {
+    background: none; border: none; cursor: pointer; font-size: 1.1rem; color: var(--text-3); line-height: 1; padding: 2px 4px;
+}
+.lean-panel-collapse-btn:hover { color: var(--purple); }
+
+.lean-core-principles { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dashed var(--border); }
+.lean-principle-row { font-size: 0.76rem; color: var(--text-2); line-height: 1.5; margin-bottom: 5px; }
+.lean-principle-row strong { color: var(--text); }
+
+.lean-rotating { min-height: 70px; margin-bottom: 10px; }
+.lean-ci-title { font-size: 0.82rem; font-weight: 700; color: var(--text); margin-bottom: 5px; line-height: 1.4; }
+.lean-ci-body { font-size: 0.78rem; color: var(--text-2); line-height: 1.5; }
+.lean-prompt-text { font-size: 0.82rem; font-weight: 600; color: var(--text); line-height: 1.45; font-style: italic; }
+.lean-prompt-tag { font-size: 0.7rem; color: var(--text-3); margin-top: 6px; text-transform: uppercase; letter-spacing: .4px; }
+
+.lean-next-btn {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-pill);
+    padding: 4px 12px; font-size: 0.76rem; font-weight: 600; color: var(--text-2); cursor: pointer; width: 100%;
+}
+.lean-next-btn:hover { border-color: var(--green-dark); color: var(--green-dark); }
+
 .digest-stats { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
 .digest-stat-pill {
     background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-pill);
