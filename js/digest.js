@@ -28,32 +28,52 @@ async function loadDigestFromProxy() {
         const r = await fetch(PROXY_ORIGIN + '/digest/data');
         if (!r.ok) {
             console.warn('Failed to load digest state from proxy: HTTP ' + r.status);
+            digestSaveOk = false;
+            renderDigestSaveWarning();
             return;
         }
         const data = await r.json();
         digestItems      = data.items      || {};
         digestLastPolled = data.lastPolled || null;
         digestHydrated   = true;
+        digestSaveOk = true;
+        renderDigestSaveWarning();
     } catch (e) {
         console.warn('Failed to load digest state from proxy:', e);
+        digestSaveOk = false;
+        renderDigestSaveWarning();
     }
 }
 
+// Neither the proxy being down nor the Drive-synced folder being unreachable throws
+// a distinct error here — both just fail this fetch the same way — so the warning
+// this drives can't tell the user which one it is, only that saves aren't landing.
 async function saveDigestToProxy() {
     try {
-        await fetch(PROXY_ORIGIN + '/digest/data', {
+        const r = await fetch(PROXY_ORIGIN + '/digest/data', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ lastPolled: digestLastPolled, items: digestItems })
         });
+        digestSaveOk = r.ok;
+        if (!r.ok) console.warn('Failed to save digest state to proxy: HTTP ' + r.status);
     } catch (e) {
-        // Best effort: a failed write here means this poll's changes (including any
-        // manual bucket/status overrides) aren't on disk yet. This does NOT get retried
-        // with the same time window — digestLastPolled has already advanced by the time
-        // this runs — so log it as the one place a user's triage state could silently
-        // go missing if the proxy write keeps failing.
+        // A failed write here means this poll's changes (including any manual
+        // bucket/status overrides) aren't on disk yet. This does NOT get retried with
+        // the same time window — digestLastPolled has already advanced by the time
+        // this runs — so this is the one place a user's triage state could silently go
+        // missing if the proxy write keeps failing. renderDigestSaveWarning() below is
+        // what makes it not silent.
+        digestSaveOk = false;
         console.warn('Failed to save digest state to proxy:', e);
     }
+    renderDigestSaveWarning();
+}
+
+function renderDigestSaveWarning() {
+    const el = document.getElementById('digest-save-warning');
+    if (el) el.style.display = digestSaveOk ? 'none' : 'block';
+    if (typeof window.tamaSetDigestSaveOk === 'function') window.tamaSetDigestSaveOk(digestSaveOk);
 }
 
 function digestProxyUrl(jiraAbsoluteUrl) {
@@ -122,6 +142,17 @@ async function resolveUnknownMentions(bodyTexts) {
 function formatJqlDateTime(d) {
     const pad = n => String(n).padStart(2, '0');
     return d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+// Display format for "when was this posted" next to a comment's author — local time,
+// dd/mm/yyyy to match formatDue()'s date convention elsewhere in the app, extended
+// with HH:MM since a bare date isn't enough to tell same-day comments apart.
+function formatDigestTimestamp(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const pad = n => String(n).padStart(2, '0');
+    return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
 }
 
 async function fetchMyAccountId() {
@@ -395,6 +426,7 @@ function renderDigest() {
     if (!cont) return;
     renderDigestStats();
     renderDigestTabBadge();
+    renderDigestSaveWarning();
     updateDigestBulkBar();
     const lastEl = document.getElementById('digest-last-polled');
     if (lastEl) lastEl.textContent = digestLastPolled ? 'Last checked: ' + new Date(digestLastPolled).toLocaleString() : '';
@@ -473,7 +505,7 @@ function renderDigestIssueCluster(cluster) {
 
 function renderDigestContextComment(item) {
     return '<div class="digest-comment-row digest-context-comment" data-comment-id="' + item.commentId + '">'
-        + '<div class="digest-comment"><strong>' + escHtml(item.author) + ':</strong> ' + linkify(resolveMentionsForDisplay(item.body)) + '</div>'
+        + '<div class="digest-comment"><strong>' + escHtml(item.author) + '</strong> <span class="digest-comment-time">' + formatDigestTimestamp(item.created) + '</span>: ' + linkify(resolveMentionsForDisplay(item.body)) + '</div>'
         + renderDigestAttachments(item.attachments)
         + '</div>';
 }
@@ -501,7 +533,7 @@ function refreshDigestCommentPreviews() {
         const item = digestItems[el.dataset.commentId];
         const commentEl = el.querySelector('.digest-comment');
         if (item && commentEl) {
-            commentEl.innerHTML = '<strong>' + escHtml(item.author) + ':</strong> ' + linkify(resolveMentionsForDisplay(item.body));
+            commentEl.innerHTML = '<strong>' + escHtml(item.author) + '</strong> <span class="digest-comment-time">' + formatDigestTimestamp(item.created) + '</span>: ' + linkify(resolveMentionsForDisplay(item.body));
         }
     });
 }
@@ -530,7 +562,7 @@ function renderDigestComment(item) {
         + (digestSelectedIds.has(item.commentId) ? ' checked' : '') + '>';
     return '<div class="digest-comment-row" data-comment-id="' + item.commentId + '">'
         + selectCheckbox
-        + '<div class="digest-comment"><strong>' + escHtml(item.author) + ':</strong> ' + linkify(resolveMentionsForDisplay(item.body)) + '</div>'
+        + '<div class="digest-comment"><strong>' + escHtml(item.author) + '</strong> <span class="digest-comment-time">' + formatDigestTimestamp(item.created) + '</span>: ' + linkify(resolveMentionsForDisplay(item.body)) + '</div>'
         + renderDigestAttachments(item.attachments)
         + '<div class="digest-controls">'
         + '<div class="digest-buckets">' + bucketPills + '</div>'

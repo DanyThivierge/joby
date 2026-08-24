@@ -196,6 +196,9 @@
         <button class="btn btn-purple" onclick="openSettings()">Open Settings</button>
     </div>
     <div id="digest-content" style="display:none">
+        <div class="digest-save-warning" id="digest-save-warning" style="display:none">
+            &#9888;&#65039; Can't reach the proxy or your Google Drive folder right now — marking things done or changing status <strong>isn't being saved</strong>. Check that <code>jira-proxy.py</code> is still running and your Drive connection is up, then hit Refresh.
+        </div>
         <div class="digest-stats" id="digest-stats"></div>
         <div class="jira-toolbar">
             <button class="jira-refresh-btn" id="digest-refresh-btn" onclick="fetchDigest()">&#128260; Refresh</button>

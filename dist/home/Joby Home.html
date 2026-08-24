@@ -956,6 +956,14 @@ select option { background: var(--card); color: var(--text); }
 }
 
 /* ── Jira Digest tab ────────────────────────────────────────────────────────── */
+.digest-save-warning {
+    background: #FEF3C7; border: 1px solid #F59E0B; color: #92400E;
+    border-radius: var(--radius-card); padding: 10px 14px; font-size: 0.85rem;
+    line-height: 1.5; margin-bottom: 12px;
+}
+.digest-save-warning code { background: rgba(0,0,0,0.08); border-radius: 3px; padding: 1px 5px; }
+[data-theme="dark"] .digest-save-warning { background: #2D1E00; border-color: #F59E0B; color: #FCD34D; }
+[data-theme="dark"] .digest-save-warning code { background: rgba(255,255,255,0.1); }
 .digest-stats { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
 .digest-stat-pill {
     background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-pill);
@@ -1002,6 +1010,7 @@ select option { background: var(--card); color: var(--text); }
 .digest-comment-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
 .digest-comment-row:first-of-type { margin-top: 8px; padding-top: 0; border-top: none; }
 .digest-comment { font-size: 0.85rem; color: var(--text); line-height: 1.5; }
+.digest-comment-time { font-size: 0.76rem; color: var(--text-3); font-weight: 400; }
 .digest-select-checkbox { float: left; margin: 3px 8px 0 0; width: 16px; height: 16px; cursor: pointer; accent-color: var(--purple); }
 .digest-context-toggle {
     font-size: 0.72rem; color: var(--text-3); cursor: pointer; margin: 8px 0 0; user-select: none;
@@ -1227,6 +1236,9 @@ select option { background: var(--card); color: var(--text); }
         <button class="btn btn-purple" onclick="openSettings()">Open Settings</button>
     </div>
     <div id="digest-content" style="display:none">
+        <div class="digest-save-warning" id="digest-save-warning" style="display:none">
+            &#9888;&#65039; Can't reach the proxy or your Google Drive folder right now — marking things done or changing status <strong>isn't being saved</strong>. Check that <code>jira-proxy.py</code> is still running and your Drive connection is up, then hit Refresh.
+        </div>
         <div class="digest-stats" id="digest-stats"></div>
         <div class="jira-toolbar">
             <button class="jira-refresh-btn" id="digest-refresh-btn" onclick="fetchDigest()">&#128260; Refresh</button>
@@ -1862,6 +1874,7 @@ let digestIsLoading   = false;
 let digestMyAccountId = null; // cached Jira accountId of the current user
 let digestMyDisplayName = null; // cached Jira display name of the current user
 let digestHydrated    = false; // true once digestItems has been loaded from the proxy at least once this session
+let digestSaveOk      = true; // false when the last load/save round-trip to /digest/data failed — drives the save-warning banner
 let digestFlaggedOnly = false; // UI-only filter: show only items flagged for later
 let digestStatusFilter = 'all'; // UI-only filter: 'all' | 'todo' | 'in_progress' | 'waiting'
 const digestSelectedIds = new Set(); // checkbox selection, for bulk actions
@@ -3630,32 +3643,52 @@ async function loadDigestFromProxy() {
         const r = await fetch(PROXY_ORIGIN + '/digest/data');
         if (!r.ok) {
             console.warn('Failed to load digest state from proxy: HTTP ' + r.status);
+            digestSaveOk = false;
+            renderDigestSaveWarning();
             return;
         }
         const data = await r.json();
         digestItems      = data.items      || {};
         digestLastPolled = data.lastPolled || null;
         digestHydrated   = true;
+        digestSaveOk = true;
+        renderDigestSaveWarning();
     } catch (e) {
         console.warn('Failed to load digest state from proxy:', e);
+        digestSaveOk = false;
+        renderDigestSaveWarning();
     }
 }
 
+// Neither the proxy being down nor the Drive-synced folder being unreachable throws
+// a distinct error here — both just fail this fetch the same way — so the warning
+// this drives can't tell the user which one it is, only that saves aren't landing.
 async function saveDigestToProxy() {
     try {
-        await fetch(PROXY_ORIGIN + '/digest/data', {
+        const r = await fetch(PROXY_ORIGIN + '/digest/data', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ lastPolled: digestLastPolled, items: digestItems })
         });
+        digestSaveOk = r.ok;
+        if (!r.ok) console.warn('Failed to save digest state to proxy: HTTP ' + r.status);
     } catch (e) {
-        // Best effort: a failed write here means this poll's changes (including any
-        // manual bucket/status overrides) aren't on disk yet. This does NOT get retried
-        // with the same time window — digestLastPolled has already advanced by the time
-        // this runs — so log it as the one place a user's triage state could silently
-        // go missing if the proxy write keeps failing.
+        // A failed write here means this poll's changes (including any manual
+        // bucket/status overrides) aren't on disk yet. This does NOT get retried with
+        // the same time window — digestLastPolled has already advanced by the time
+        // this runs — so this is the one place a user's triage state could silently go
+        // missing if the proxy write keeps failing. renderDigestSaveWarning() below is
+        // what makes it not silent.
+        digestSaveOk = false;
         console.warn('Failed to save digest state to proxy:', e);
     }
+    renderDigestSaveWarning();
+}
+
+function renderDigestSaveWarning() {
+    const el = document.getElementById('digest-save-warning');
+    if (el) el.style.display = digestSaveOk ? 'none' : 'block';
+    if (typeof window.tamaSetDigestSaveOk === 'function') window.tamaSetDigestSaveOk(digestSaveOk);
 }
 
 function digestProxyUrl(jiraAbsoluteUrl) {
@@ -3724,6 +3757,17 @@ async function resolveUnknownMentions(bodyTexts) {
 function formatJqlDateTime(d) {
     const pad = n => String(n).padStart(2, '0');
     return d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+// Display format for "when was this posted" next to a comment's author — local time,
+// dd/mm/yyyy to match formatDue()'s date convention elsewhere in the app, extended
+// with HH:MM since a bare date isn't enough to tell same-day comments apart.
+function formatDigestTimestamp(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const pad = n => String(n).padStart(2, '0');
+    return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
 }
 
 async function fetchMyAccountId() {
@@ -3997,6 +4041,7 @@ function renderDigest() {
     if (!cont) return;
     renderDigestStats();
     renderDigestTabBadge();
+    renderDigestSaveWarning();
     updateDigestBulkBar();
     const lastEl = document.getElementById('digest-last-polled');
     if (lastEl) lastEl.textContent = digestLastPolled ? 'Last checked: ' + new Date(digestLastPolled).toLocaleString() : '';
@@ -4075,7 +4120,7 @@ function renderDigestIssueCluster(cluster) {
 
 function renderDigestContextComment(item) {
     return '<div class="digest-comment-row digest-context-comment" data-comment-id="' + item.commentId + '">'
-        + '<div class="digest-comment"><strong>' + escHtml(item.author) + ':</strong> ' + linkify(resolveMentionsForDisplay(item.body)) + '</div>'
+        + '<div class="digest-comment"><strong>' + escHtml(item.author) + '</strong> <span class="digest-comment-time">' + formatDigestTimestamp(item.created) + '</span>: ' + linkify(resolveMentionsForDisplay(item.body)) + '</div>'
         + renderDigestAttachments(item.attachments)
         + '</div>';
 }
@@ -4103,7 +4148,7 @@ function refreshDigestCommentPreviews() {
         const item = digestItems[el.dataset.commentId];
         const commentEl = el.querySelector('.digest-comment');
         if (item && commentEl) {
-            commentEl.innerHTML = '<strong>' + escHtml(item.author) + ':</strong> ' + linkify(resolveMentionsForDisplay(item.body));
+            commentEl.innerHTML = '<strong>' + escHtml(item.author) + '</strong> <span class="digest-comment-time">' + formatDigestTimestamp(item.created) + '</span>: ' + linkify(resolveMentionsForDisplay(item.body));
         }
     });
 }
@@ -4132,7 +4177,7 @@ function renderDigestComment(item) {
         + (digestSelectedIds.has(item.commentId) ? ' checked' : '') + '>';
     return '<div class="digest-comment-row" data-comment-id="' + item.commentId + '">'
         + selectCheckbox
-        + '<div class="digest-comment"><strong>' + escHtml(item.author) + ':</strong> ' + linkify(resolveMentionsForDisplay(item.body)) + '</div>'
+        + '<div class="digest-comment"><strong>' + escHtml(item.author) + '</strong> <span class="digest-comment-time">' + formatDigestTimestamp(item.created) + '</span>: ' + linkify(resolveMentionsForDisplay(item.body)) + '</div>'
         + renderDigestAttachments(item.attachments)
         + '<div class="digest-controls">'
         + '<div class="digest-buckets">' + bucketPills + '</div>'
@@ -5760,6 +5805,7 @@ let hangPhase = 0, hangFrames = 0;
 let treatX = -1;
 let petFrames = 0; // counts down while showing the click-to-pet reaction
 let digestPending = 0; // open Digest item count, reported by digest.js via tamaSetDigestPending
+let digestSaveHealthy = true; // whether the last Digest save/load round-trip succeeded, via tamaSetDigestSaveOk
 let lastActivityTime = Date.now();
 let bubbleTimer = null;
 let hasCelebratedAllClear = false;
@@ -6176,6 +6222,16 @@ window.tamaAllDone = function () {
 
 window.tamaSetDigestPending = function (count) {
   digestPending = count || 0;
+};
+
+// Edge-triggered (only on the healthy->unhealthy transition), not a recurring nudge —
+// this is a real "your changes aren't being saved" problem, not idle chatter, but
+// nagging about it every render would be worse than saying it once from wherever
+// Joby happens to be (any tab, not just Digest).
+window.tamaSetDigestSaveOk = function (ok) {
+  if (ok === digestSaveHealthy) return;
+  digestSaveHealthy = ok;
+  if (!ok) showBubble("😟 Digest isn't saving — check proxy/Drive", 4000);
 };
 
 window.applyTamagoshiSetting = function () {

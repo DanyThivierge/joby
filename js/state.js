@@ -49,6 +49,7 @@ let digestIsLoading   = false;
 let digestMyAccountId = null; // cached Jira accountId of the current user
 let digestMyDisplayName = null; // cached Jira display name of the current user
 let digestHydrated    = false; // true once digestItems has been loaded from the proxy at least once this session
+let digestSaveOk      = true; // false when the last load/save round-trip to /digest/data failed — drives the save-warning banner
 let digestFlaggedOnly = false; // UI-only filter: show only items flagged for later
 let digestStatusFilter = 'all'; // UI-only filter: 'all' | 'todo' | 'in_progress' | 'waiting'
 const digestSelectedIds = new Set(); // checkbox selection, for bulk actions

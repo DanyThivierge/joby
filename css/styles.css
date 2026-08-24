@@ -948,6 +948,14 @@ select option { background: var(--card); color: var(--text); }
 }
 
 /* ── Jira Digest tab ────────────────────────────────────────────────────────── */
+.digest-save-warning {
+    background: #FEF3C7; border: 1px solid #F59E0B; color: #92400E;
+    border-radius: var(--radius-card); padding: 10px 14px; font-size: 0.85rem;
+    line-height: 1.5; margin-bottom: 12px;
+}
+.digest-save-warning code { background: rgba(0,0,0,0.08); border-radius: 3px; padding: 1px 5px; }
+[data-theme="dark"] .digest-save-warning { background: #2D1E00; border-color: #F59E0B; color: #FCD34D; }
+[data-theme="dark"] .digest-save-warning code { background: rgba(255,255,255,0.1); }
 .digest-stats { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
 .digest-stat-pill {
     background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-pill);
@@ -994,6 +1002,7 @@ select option { background: var(--card); color: var(--text); }
 .digest-comment-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
 .digest-comment-row:first-of-type { margin-top: 8px; padding-top: 0; border-top: none; }
 .digest-comment { font-size: 0.85rem; color: var(--text); line-height: 1.5; }
+.digest-comment-time { font-size: 0.76rem; color: var(--text-3); font-weight: 400; }
 .digest-select-checkbox { float: left; margin: 3px 8px 0 0; width: 16px; height: 16px; cursor: pointer; accent-color: var(--purple); }
 .digest-context-toggle {
     font-size: 0.72rem; color: var(--text-3); cursor: pointer; margin: 8px 0 0; user-select: none;

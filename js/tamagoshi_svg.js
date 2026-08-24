@@ -877,6 +877,7 @@ let hangPhase = 0, hangFrames = 0;
 let treatX = -1;
 let petFrames = 0; // counts down while showing the click-to-pet reaction
 let digestPending = 0; // open Digest item count, reported by digest.js via tamaSetDigestPending
+let digestSaveHealthy = true; // whether the last Digest save/load round-trip succeeded, via tamaSetDigestSaveOk
 let lastActivityTime = Date.now();
 let bubbleTimer = null;
 let hasCelebratedAllClear = false;
@@ -1293,6 +1294,16 @@ window.tamaAllDone = function () {
 
 window.tamaSetDigestPending = function (count) {
   digestPending = count || 0;
+};
+
+// Edge-triggered (only on the healthy->unhealthy transition), not a recurring nudge —
+// this is a real "your changes aren't being saved" problem, not idle chatter, but
+// nagging about it every render would be worse than saying it once from wherever
+// Joby happens to be (any tab, not just Digest).
+window.tamaSetDigestSaveOk = function (ok) {
+  if (ok === digestSaveHealthy) return;
+  digestSaveHealthy = ok;
+  if (!ok) showBubble("😟 Digest isn't saving — check proxy/Drive", 4000);
 };
 
 window.applyTamagoshiSetting = function () {
