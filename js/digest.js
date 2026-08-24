@@ -48,7 +48,32 @@ async function loadDigestFromProxy() {
 // Neither the proxy being down nor the Drive-synced folder being unreachable throws
 // a distinct error here — both just fail this fetch the same way — so the warning
 // this drives can't tell the user which one it is, only that saves aren't landing.
+//
+// Every status/bucket/flag change calls this independently and doesn't await it, so
+// marking several items in quick succession fires several overlapping POSTs. Each
+// POST's body already contains every prior change (digestItems is mutated in place
+// before the fetch is dispatched), but the proxy does a plain overwrite — if an
+// earlier-dispatched request's write happens to land AFTER a later one's (no
+// ordering guarantee across concurrent requests to a threaded server), the earlier,
+// less-complete snapshot clobbers the later, more-complete one on disk. This
+// serializes saves — only one in flight at a time — so that can't happen: a second
+// call while one is in flight doesn't fire its own request, it just marks
+// digestSavePending so the in-flight save's completion triggers exactly one more
+// save with whatever digestItems looks like *then* (not the stale snapshot from
+// when the second call happened).
+let digestSaveInFlight = null;
+let digestSavePending  = false;
 async function saveDigestToProxy() {
+    if (digestSaveInFlight) { digestSavePending = true; return digestSaveInFlight; }
+    digestSaveInFlight = doSaveDigestToProxy();
+    await digestSaveInFlight;
+    digestSaveInFlight = null;
+    if (digestSavePending) {
+        digestSavePending = false;
+        await saveDigestToProxy();
+    }
+}
+async function doSaveDigestToProxy() {
     try {
         const r = await fetch(PROXY_ORIGIN + '/digest/data', {
             method: 'POST',
