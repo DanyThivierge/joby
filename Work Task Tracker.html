@@ -207,9 +207,27 @@
                         <span>&#127793; Lean Knowledge</span>
                         <button class="lean-panel-collapse-btn" onclick="setLeanPanelCollapsed(true)" title="Collapse">&#8250;</button>
                     </div>
-                    <div class="lean-core-principles" id="lean-core-principles"></div>
-                    <div class="lean-ci-focus" id="lean-ci-focus"></div>
-                    <div class="lean-prompts" id="lean-prompts"></div>
+                    <div class="lean-subsection">
+                        <div class="lean-subsection-header" onclick="toggleLeanSubsection('principles')">
+                            <span>&#128203; Core Principles</span>
+                            <span class="lean-chevron" id="lean-chevron-principles">&#9660;</span>
+                        </div>
+                        <div class="lean-core-principles" id="lean-core-principles"></div>
+                    </div>
+                    <div class="lean-subsection">
+                        <div class="lean-subsection-header" onclick="toggleLeanSubsection('ci')">
+                            <span>&#128260; Continuous Improvement Focus</span>
+                            <span class="lean-chevron" id="lean-chevron-ci">&#9660;</span>
+                        </div>
+                        <div class="lean-ci-focus" id="lean-ci-focus"></div>
+                    </div>
+                    <div class="lean-subsection">
+                        <div class="lean-subsection-header" onclick="toggleLeanSubsection('prompts')">
+                            <span>&#128173; Quick question to ask yourself</span>
+                            <span class="lean-chevron" id="lean-chevron-prompts">&#9660;</span>
+                        </div>
+                        <div class="lean-prompts" id="lean-prompts"></div>
+                    </div>
                     <button class="lean-next-btn" onclick="leanPanelNext()">Next &#8250;</button>
                     <button class="lean-glossary-btn" onclick="openLeanGlossary()">&#128218; Term glossary</button>
                 </div>

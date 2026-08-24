@@ -990,19 +990,27 @@ select option { background: var(--card); color: var(--text); }
 }
 .lean-panel-collapse-btn:hover { color: var(--purple); }
 
-.lean-core-principles { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dashed var(--border); }
+/* Each of the three stacked sections gets its own collapsible header — the
+   divider lives on the wrapper (not the body) so it still shows separating
+   sections even when a section's body is collapsed. */
+.lean-subsection { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dashed var(--border); }
+.lean-subsection:last-of-type { border-bottom: none; margin-bottom: 10px; padding-bottom: 0; }
+.lean-subsection-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    cursor: pointer; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .4px; color: var(--text-3); margin-bottom: 8px;
+}
+.lean-subsection-header:hover { color: var(--purple); }
+.lean-chevron { font-size: 0.6rem; flex-shrink: 0; }
+
+.lean-core-principles {}
 .lean-principle-row { font-size: 0.76rem; color: var(--text-2); line-height: 1.5; margin-bottom: 5px; }
 .lean-principle-row strong { color: var(--text); }
 
-.lean-section-title {
-    font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
-    color: var(--text-3); margin-bottom: 8px;
-}
-.lean-ci-focus { min-height: 60px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dashed var(--border); }
+.lean-ci-focus { min-height: 60px; }
 .lean-ci-title { font-size: 0.82rem; font-weight: 700; color: var(--text); margin-bottom: 5px; line-height: 1.4; }
 .lean-ci-body { font-size: 0.78rem; color: var(--text-2); line-height: 1.5; }
 
-.lean-prompts { margin-bottom: 10px; }
 .lean-prompt-row { margin-bottom: 10px; }
 .lean-prompt-row:last-child { margin-bottom: 0; }
 .lean-prompt-text { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text); line-height: 1.4; font-style: italic; margin-bottom: 5px; }
@@ -1016,6 +1024,7 @@ select option { background: var(--card); color: var(--text); }
 .lean-tag.waste     { background: var(--red-light);    color: var(--red); }
 .lean-tag.principle { background: var(--purple-light); color: var(--purple); }
 .lean-tag.flow      { background: var(--green-light);  color: var(--green-dark); }
+.lean-tag.tool      { background: var(--blue-light);   color: var(--blue); }
 
 .lean-next-btn {
     background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-pill);
