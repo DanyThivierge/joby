@@ -3796,6 +3796,23 @@ function formatDigestTimestamp(iso) {
     return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
 }
 
+// Runs `worker` over `items` with at most `limit` in flight at once — a middle
+// ground between fully sequential (slow: one Jira round trip after another,
+// ~45s+ for a full month's worth of issues) and fully parallel (risky: firing every
+// request in one instant burst is exactly the pattern most likely to trip Jira
+// Cloud's rate limiting). `limit` workers each pull from a shared queue until it's
+// empty, so at most `limit` requests are ever in flight at the same time.
+async function runWithConcurrency(items, limit, worker) {
+    const queue = items.slice();
+    async function runNext() {
+        while (queue.length) {
+            const item = queue.shift();
+            await worker(item);
+        }
+    }
+    await Promise.all(Array.from({ length: Math.min(limit, items.length) }, runNext));
+}
+
 async function fetchMyAccountId() {
     if (digestMyAccountId) return digestMyAccountId;
     const r = await fetch(PROXY_ORIGIN + '/rest/api/3/myself', { headers: { Accept: 'application/json' } });
@@ -3880,9 +3897,8 @@ async function fetchDigest() {
             throw new Error((e.errorMessages || []).join(', ') || 'HTTP ' + searchResp.status);
         }
         const searchData = await searchResp.json();
-        for (const issue of (searchData.issues || [])) {
-            await mergeIssueComments(issue.key, accountId, since);
-        }
+        // 6 in flight at a time — see runWithConcurrency's comment for why not more.
+        await runWithConcurrency(searchData.issues || [], 6, issue => mergeIssueComments(issue.key, accountId, since));
         purgeOwnDigestComments(accountId);
         await pruneStaleDigestItems();
         await resolveUnknownMentions(Object.values(digestItems).map(i => i.body));
