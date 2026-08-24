@@ -211,6 +211,7 @@
                     <div class="lean-ci-focus" id="lean-ci-focus"></div>
                     <div class="lean-prompts" id="lean-prompts"></div>
                     <button class="lean-next-btn" onclick="leanPanelNext()">Next &#8250;</button>
+                    <button class="lean-glossary-btn" onclick="openLeanGlossary()">&#128218; Term glossary</button>
                 </div>
             </aside>
             <div class="digest-main-col">
@@ -242,6 +243,19 @@
                     <button class="btn btn-outline" onclick="clearDigestSelection()">&#10005; Clear selection</button>
                 </div>
                 <div class="task-list" id="digest-list"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ─── LEAN GLOSSARY MODAL ───────────────────────────────────────────────────── -->
+<div id="lean-glossary-modal" style="display:none">
+    <div class="overlay" onclick="if(event.target===this)closeLeanGlossary()">
+        <div class="modal" style="max-width:520px;max-height:80vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
+            <div class="modal-header">&#128218; Lean Term Glossary</div>
+            <div class="modal-body" id="lean-glossary-body" style="overflow-y:auto;flex:1;padding:14px 20px;"></div>
+            <div class="modal-actions" style="margin:0;padding:12px 20px;">
+                <button class="btn btn-outline" onclick="closeLeanGlossary()">Close</button>
             </div>
         </div>
     </div>

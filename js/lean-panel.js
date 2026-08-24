@@ -8,11 +8,12 @@
 // that comes back, not before.
 
 const LEAN_CORE_PRINCIPLES = [
-    { term: 'Value',                          text: "what the customer/requester actually needs, not what's convenient to produce." },
-    { term: 'Waste',                          text: "anything that doesn't add value: waiting, extra handoffs, rework, overproduction, unused skills, excess motion, over-processing." },
-    { term: 'Flow',                           text: 'work moving steadily through the process instead of sitting in queues.' },
-    { term: 'Pull',                           text: "starting work because there's real demand for it, not because capacity happens to be free." },
-    { term: 'Continuous Improvement (Kaizen)', text: 'small, frequent improvements driven by the people doing the work, rather than big, rare overhauls.' },
+    { term: 'Value',                     text: 'What the requester actually needs (not convenience).' },
+    { term: 'Waste',                     text: 'Non-value effort: waiting, handoffs, rework.' },
+    { term: 'Flow',                      text: 'Work moving steadily, not sitting in queues.' },
+    { term: 'Pull',                      text: 'Starting work on real demand, not free capacity.' },
+    { term: 'Respect',                   text: 'Removing friction for the people doing the work.' },
+    { term: 'Kaizen (Continuous Improvement)', text: 'Small, frequent fixes driven by the team.' },
 ];
 
 const LEAN_CI_FOCUS = [
@@ -26,22 +27,58 @@ const LEAN_CI_FOCUS = [
     { title: "Ask 'why' more than once.", body: 'The first explanation for a recurring problem is rarely the real one. A couple of follow-up "why"s usually gets closer to the actual root cause than stopping at the first answer.' },
 ];
 
+// category drives the pill color (see .lean-tag.* in css/styles.css) — reuses the
+// app's existing red/purple/green tokens, same "color carries meaning, no text
+// prefix needed" pattern as the Digest reason badges.
+//   waste     -> red    (something to watch for / eliminate)
+//   principle -> purple (a core Lean concept or practice)
+//   flow      -> green  (things moving/visible the way they should)
 const LEAN_QUICK_PROMPTS = [
-    { text: 'Does this step add value the requester actually asked for?', tag: 'overproduction' },
-    { text: 'Is this ticket waiting on someone, or actually moving?', tag: 'waiting/delay' },
-    { text: 'Could this handoff be skipped or combined with the next step?', tag: 'handoffs' },
-    { text: "Is this the second (or third) time we're fixing the same thing?", tag: 'rework/defects' },
-    { text: 'Would the person closest to this work know the fix faster than the process does?', tag: 'underused skills / Gemba' },
-    { text: "Is there a documented 'best way' to do this yet, or is everyone improvising?", tag: 'standardization' },
-    { text: 'How many approvals does this actually need before it can move?', tag: 'over-processing' },
-    { text: 'Are we building this because someone asked for it, or because it seemed useful?', tag: 'overproduction / pull' },
-    { text: 'Could this update be batched with something else instead of a one-off interruption?', tag: 'motion / context-switching' },
-    { text: 'If this ticket sat untouched for a week, would anyone notice?', tag: 'flow / visibility' },
-    { text: 'Can the person waiting on this see where it stands, or are they guessing?', tag: 'flow / communication' },
-    { text: 'Are we fixing the root cause here, or patching the same symptom again?', tag: 'rework / root cause' },
-    { text: 'Would explaining this process to someone new take one sentence or ten?', tag: 'standardization' },
-    { text: "Is this moving because it's the next most valuable thing, or just the oldest thing in the queue?", tag: 'pull vs. push' },
+    { text: 'Does this step add value the requester actually asked for?', category: 'waste', label: 'Overproduction' },
+    { text: 'Is this ticket waiting on someone, or actually moving?', category: 'waste', label: 'Waiting' },
+    { text: 'Could this handoff be skipped or combined with the next step?', category: 'waste', label: 'Handoffs' },
+    { text: "Is this the second (or third) time we're fixing the same thing?", category: 'waste', label: 'Rework' },
+    { text: 'Would the person closest to this work know the fix faster than the process does?', category: 'waste', label: 'Underused Skills' },
+    { text: "Is there a documented 'best way' to do this yet, or is everyone improvising?", category: 'principle', label: 'Standardization' },
+    { text: 'How many approvals does this actually need before it can move?', category: 'waste', label: 'Over-processing' },
+    { text: 'Are we building this because someone asked for it, or because it seemed useful?', category: 'principle', label: 'Pull' },
+    { text: 'Could this update be batched with something else instead of a one-off interruption?', category: 'waste', label: 'Motion' },
+    { text: 'If this ticket sat untouched for a week, would anyone notice?', category: 'flow', label: 'Visibility' },
+    { text: 'Can the person waiting on this see where it stands, or are they guessing?', category: 'flow', label: 'Communication' },
+    { text: 'Are we fixing the root cause here, or patching the same symptom again?', category: 'principle', label: 'Root Cause' },
+    { text: 'Would explaining this process to someone new take one sentence or ten?', category: 'principle', label: 'Standardization' },
+    { text: "Is this moving because it's the next most valuable thing, or just the oldest thing in the queue?", category: 'principle', label: 'Pull' },
+    // Context-aware — reference the actual filters/statuses sitting right next to
+    // this panel, without any live logic reading real ticket data (just wording).
+    { text: 'Look at your Waiting items — is one stuck on a handoff, or missing clear info?', category: 'waste', label: 'Waiting' },
+    { text: 'Are any tickets In Progress just sitting there to keep capacity looking busy?', category: 'principle', label: 'Pull' },
+    { text: 'Can the person waiting on your comment see status clearly, or are they guessing?', category: 'flow', label: 'Visual Management' },
+    { text: 'Did this ticket require extra approvals that add no quality?', category: 'waste', label: 'Over-processing' },
 ];
+
+// Every distinct pill label used across LEAN_QUICK_PROMPTS, with a one-line
+// definition — the "why is Rework the same red as Underused Skills" question a
+// pill alone can't answer. Kept as its own explicit list rather than
+// auto-derived from the prompts above, since a definition has to be hand-written
+// regardless; deliberately not auto-deduped from that array so a forgotten
+// definition fails loudly (missing from the modal) rather than silently.
+const LEAN_GLOSSARY = [
+    { category: 'waste', label: 'Overproduction', def: 'Building or doing more than what was actually asked for.' },
+    { category: 'waste', label: 'Waiting', def: "Work sitting idle because it's stuck on someone or something else." },
+    { category: 'waste', label: 'Handoffs', def: 'Extra transfers between people or teams that add delay without adding value.' },
+    { category: 'waste', label: 'Rework', def: 'Fixing the same problem more than once instead of solving it right the first time.' },
+    { category: 'waste', label: 'Underused Skills', def: 'Not using the person best placed to solve something quickly.' },
+    { category: 'waste', label: 'Over-processing', def: "Extra steps, reviews, or approvals that don't add real value." },
+    { category: 'waste', label: 'Motion', def: 'Unnecessary switching, searching, or shuffling between tasks.' },
+    { category: 'principle', label: 'Standardization', def: 'Writing down the current best-known way of doing something as a baseline to improve from.' },
+    { category: 'principle', label: 'Pull', def: "Starting work because there's real demand for it, not just because capacity is free." },
+    { category: 'principle', label: 'Root Cause', def: 'Fixing what actually caused a problem, not just the symptom in front of you.' },
+    { category: 'flow', label: 'Visibility', def: 'Work status is easy to see without having to ask.' },
+    { category: 'flow', label: 'Communication', def: 'The people waiting on you can tell where things stand.' },
+    { category: 'flow', label: 'Visual Management', def: "Status and progress are visible at a glance, not hidden in someone's head." },
+];
+
+const LEAN_GLOSSARY_CATEGORY_LABEL = { waste: 'Waste', principle: 'Principle', flow: 'Flow' };
 
 const LEAN_COLLAPSED_LS_KEY = 'joby-lean-collapsed';
 const LEAN_HIDDEN_LS_KEY    = 'joby-lean-hidden';
@@ -79,7 +116,7 @@ function renderLeanPrompts() {
     el.innerHTML = '<div class="lean-section-title">&#128173; Quick question to ask yourself</div>'
         + shown.map(p =>
             '<div class="lean-prompt-row"><span class="lean-prompt-text">' + escHtml(p.text) + '</span>'
-            + '<span class="lean-prompt-tag">' + escHtml(p.tag) + '</span></div>'
+            + '<span class="lean-tag ' + p.category + '">' + escHtml(p.label) + '</span></div>'
         ).join('');
 }
 
@@ -147,4 +184,35 @@ function initLeanPanel() {
     // Desktop-only feature; the Digest tab itself is already unreachable in the
     // GAS/Home builds, so no extra build-mode guard needed here.
     if (!leanRotateTimer) leanRotateTimer = setInterval(leanPanelShowRandom, LEAN_ROTATE_MS);
+}
+
+// Full-list, on-demand reference for every pill label shown anywhere in the
+// panel — grouped by the same category that drives the pill color, so the
+// grouping itself doubles as an explanation of why two different labels share
+// a color.
+function renderLeanGlossary() {
+    const el = document.getElementById('lean-glossary-body');
+    if (!el) return;
+    el.innerHTML = Object.keys(LEAN_GLOSSARY_CATEGORY_LABEL).map(cat => {
+        const entries = LEAN_GLOSSARY.filter(g => g.category === cat);
+        return '<div class="lean-glossary-group">'
+            + '<div class="lean-glossary-group-title">' + LEAN_GLOSSARY_CATEGORY_LABEL[cat] + '</div>'
+            + entries.map(g =>
+                '<div class="lean-glossary-row">'
+                + '<span class="lean-tag ' + g.category + '">' + escHtml(g.label) + '</span>'
+                + '<span class="lean-glossary-def">' + escHtml(g.def) + '</span>'
+                + '</div>'
+            ).join('')
+            + '</div>';
+    }).join('');
+}
+
+function openLeanGlossary() {
+    renderLeanGlossary();
+    const modal = document.getElementById('lean-glossary-modal');
+    if (modal) modal.style.display = 'block';
+}
+function closeLeanGlossary() {
+    const modal = document.getElementById('lean-glossary-modal');
+    if (modal) modal.style.display = 'none';
 }

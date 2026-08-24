@@ -1005,14 +1005,43 @@ select option { background: var(--card); color: var(--text); }
 .lean-prompts { margin-bottom: 10px; }
 .lean-prompt-row { margin-bottom: 10px; }
 .lean-prompt-row:last-child { margin-bottom: 0; }
-.lean-prompt-text { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text); line-height: 1.4; font-style: italic; }
-.lean-prompt-tag { display: block; font-size: 0.68rem; color: var(--text-3); margin-top: 3px; text-transform: uppercase; letter-spacing: .4px; }
+.lean-prompt-text { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text); line-height: 1.4; font-style: italic; margin-bottom: 5px; }
+/* Category pills — same visual language as the Digest reason badges (color
+   carries the category, no text prefix needed). Reuses existing tokens: no new
+   hues introduced. */
+.lean-tag {
+    display: inline-block; font-size: 0.65rem; font-weight: 700; padding: 2px 8px;
+    border-radius: 3px; text-transform: uppercase; letter-spacing: .3px;
+}
+.lean-tag.waste     { background: var(--red-light);    color: var(--red); }
+.lean-tag.principle { background: var(--purple-light); color: var(--purple); }
+.lean-tag.flow      { background: var(--green-light);  color: var(--green-dark); }
 
 .lean-next-btn {
     background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-pill);
     padding: 4px 12px; font-size: 0.76rem; font-weight: 600; color: var(--text-2); cursor: pointer; width: 100%;
 }
 .lean-next-btn:hover { border-color: var(--green-dark); color: var(--green-dark); }
+
+.lean-glossary-btn {
+    background: none; border: none; cursor: pointer; width: 100%; text-align: center;
+    padding: 8px 0 0; font-size: 0.74rem; font-weight: 600; color: var(--text-3);
+}
+.lean-glossary-btn:hover { color: var(--purple); text-decoration: underline; }
+
+.lean-glossary-group { margin-bottom: 16px; }
+.lean-glossary-group:last-child { margin-bottom: 0; }
+.lean-glossary-group-title {
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--text-3); padding-bottom: 6px; margin-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+/* Grid, not flex — a fixed label column means every pill lines up regardless of
+   how long its text is, and every definition starts at the same x. Flex +
+   min-width alone let long labels (Over-processing, Visual Management) push
+   their own definition further right than short ones (Pull, Motion) did. */
+.lean-glossary-row { display: grid; grid-template-columns: 138px 1fr; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.lean-glossary-row .lean-tag { justify-self: start; }
+.lean-glossary-def { font-size: 0.82rem; color: var(--text-2); line-height: 1.4; }
 
 .digest-stats { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
 .digest-stat-pill {
