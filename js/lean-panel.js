@@ -47,50 +47,54 @@ const LEAN_COLLAPSED_LS_KEY = 'joby-lean-collapsed';
 const LEAN_HIDDEN_LS_KEY    = 'joby-lean-hidden';
 const LEAN_ROTATE_MS        = 18 * 60 * 1000; // within the design doc's 15-20 min range
 
-let leanRotationIndex = 0; // position in the "Next" button's sequential walk
 let leanRotateTimer   = null;
 
 // The auto/random pick draws from a pool where Continuous-Improvement entries
 // appear ~2x as often as Quick Prompts (duplicate-entries-in-the-pool trick,
 // same technique already used for Joby's hat/move rotation odds in
 // js/tamagoshi_svg.js) — CI is where leadership's attention currently is.
-function leanWeightedPool() {
-    return LEAN_CI_FOCUS.concat(LEAN_CI_FOCUS).map(entry => ({ kind: 'ci', entry }))
-        .concat(LEAN_QUICK_PROMPTS.map(entry => ({ kind: 'prompt', entry })));
+//
+// Two independent rotating sections rather than one shared pool: Continuous
+// Improvement entries are 2-4 sentences, so only one is shown at a time; Quick
+// Prompts are one-liners, so three fit comfortably together under their own
+// heading. leanPanelNext() advances both at once; the auto-timer re-randomizes
+// both at once.
+let leanCiIndex     = 0;
+let leanPromptStart = 0;
+
+function renderLeanCiFocus() {
+    const el = document.getElementById('lean-ci-focus');
+    if (!el) return;
+    const entry = LEAN_CI_FOCUS[leanCiIndex % LEAN_CI_FOCUS.length];
+    el.innerHTML = '<div class="lean-section-title">&#128260; Continuous Improvement Focus</div>'
+        + '<div class="lean-ci-title">' + escHtml(entry.title) + '</div>'
+        + '<div class="lean-ci-body">' + escHtml(entry.body) + '</div>';
 }
 
-// The combined, unweighted sequence the "Next" button walks through on demand —
-// every CI entry, then every Quick Prompt, in a fixed order — for skimming the
-// whole set without waiting on the timer.
-function leanSequentialPool() {
-    return LEAN_CI_FOCUS.map(entry => ({ kind: 'ci', entry }))
-        .concat(LEAN_QUICK_PROMPTS.map(entry => ({ kind: 'prompt', entry })));
-}
-
-function renderLeanRotatingItem(item) {
-    const el = document.getElementById('lean-rotating');
-    if (!el || !item) return;
-    el.innerHTML = item.kind === 'ci'
-        ? '<div class="lean-ci-title">' + escHtml(item.entry.title) + '</div>'
-          + '<div class="lean-ci-body">' + escHtml(item.entry.body) + '</div>'
-        : '<div class="lean-prompt-text">' + escHtml(item.entry.text) + '</div>'
-          + '<div class="lean-prompt-tag">' + escHtml(item.entry.tag) + '</div>';
+function renderLeanPrompts() {
+    const el = document.getElementById('lean-prompts');
+    if (!el) return;
+    const n = LEAN_QUICK_PROMPTS.length;
+    const shown = [0, 1, 2].map(i => LEAN_QUICK_PROMPTS[(leanPromptStart + i) % n]);
+    el.innerHTML = '<div class="lean-section-title">&#128173; Quick question to ask yourself</div>'
+        + shown.map(p =>
+            '<div class="lean-prompt-row"><span class="lean-prompt-text">' + escHtml(p.text) + '</span>'
+            + '<span class="lean-prompt-tag">' + escHtml(p.tag) + '</span></div>'
+        ).join('');
 }
 
 function leanPanelShowRandom() {
-    const pool = leanWeightedPool();
-    const picked = pool[Math.floor(Math.random() * pool.length)];
-    // Keeps "Next" continuing on from wherever the timer/page-load pick landed,
-    // rather than jumping to an unrelated spot in the sequence on first click.
-    const seqIdx = leanSequentialPool().findIndex(i => i.entry === picked.entry);
-    leanRotationIndex = seqIdx >= 0 ? seqIdx : 0;
-    renderLeanRotatingItem(picked);
+    leanCiIndex     = Math.floor(Math.random() * LEAN_CI_FOCUS.length);
+    leanPromptStart = Math.floor(Math.random() * LEAN_QUICK_PROMPTS.length);
+    renderLeanCiFocus();
+    renderLeanPrompts();
 }
 
 function leanPanelNext() {
-    const seq = leanSequentialPool();
-    leanRotationIndex = (leanRotationIndex + 1) % seq.length;
-    renderLeanRotatingItem(seq[leanRotationIndex]);
+    leanCiIndex     = (leanCiIndex + 1) % LEAN_CI_FOCUS.length;
+    leanPromptStart = (leanPromptStart + 3) % LEAN_QUICK_PROMPTS.length;
+    renderLeanCiFocus();
+    renderLeanPrompts();
 }
 
 function renderLeanCorePrinciples() {

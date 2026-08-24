@@ -127,8 +127,10 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
 /* ── Main content ───────────────────────────────────────────────────────── */
 .main { padding: 20px 24px; max-width: 1100px; margin: 0 auto; }
 /* Digest gets extra width for the Lean panel sidebar, so the ticket list itself
-   doesn't shrink to make room for it — Tasks stays at the default 1100px. */
-#tab-digest.main { max-width: 1400px; }
+   doesn't shrink to make room for it — Tasks stays at the default 1100px. Left-
+   aligned rather than centered (overriding .main's margin:0 auto) — the sidebar
+   should hug the actual left edge, not float in the middle of a wide screen. */
+#tab-digest.main { max-width: 1400px; margin: 0; }
 
 /* ── Tasks 2-column layout ──────────────────────────────────────────────── */
 .tasks-layout {
@@ -1000,11 +1002,19 @@ select option { background: var(--card); color: var(--text); }
 .lean-principle-row { font-size: 0.76rem; color: var(--text-2); line-height: 1.5; margin-bottom: 5px; }
 .lean-principle-row strong { color: var(--text); }
 
-.lean-rotating { min-height: 70px; margin-bottom: 10px; }
+.lean-section-title {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+    color: var(--text-3); margin-bottom: 8px;
+}
+.lean-ci-focus { min-height: 60px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px dashed var(--border); }
 .lean-ci-title { font-size: 0.82rem; font-weight: 700; color: var(--text); margin-bottom: 5px; line-height: 1.4; }
 .lean-ci-body { font-size: 0.78rem; color: var(--text-2); line-height: 1.5; }
-.lean-prompt-text { font-size: 0.82rem; font-weight: 600; color: var(--text); line-height: 1.45; font-style: italic; }
-.lean-prompt-tag { font-size: 0.7rem; color: var(--text-3); margin-top: 6px; text-transform: uppercase; letter-spacing: .4px; }
+
+.lean-prompts { margin-bottom: 10px; }
+.lean-prompt-row { margin-bottom: 10px; }
+.lean-prompt-row:last-child { margin-bottom: 0; }
+.lean-prompt-text { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text); line-height: 1.4; font-style: italic; }
+.lean-prompt-tag { display: block; font-size: 0.68rem; color: var(--text-3); margin-top: 3px; text-transform: uppercase; letter-spacing: .4px; }
 
 .lean-next-btn {
     background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-pill);
@@ -1288,7 +1298,8 @@ select option { background: var(--card); color: var(--text); }
                         <button class="lean-panel-collapse-btn" onclick="setLeanPanelCollapsed(true)" title="Collapse">&#8250;</button>
                     </div>
                     <div class="lean-core-principles" id="lean-core-principles"></div>
-                    <div class="lean-rotating" id="lean-rotating"></div>
+                    <div class="lean-ci-focus" id="lean-ci-focus"></div>
+                    <div class="lean-prompts" id="lean-prompts"></div>
                     <button class="lean-next-btn" onclick="leanPanelNext()">Next &#8250;</button>
                 </div>
             </aside>
@@ -4480,50 +4491,54 @@ const LEAN_COLLAPSED_LS_KEY = 'joby-lean-collapsed';
 const LEAN_HIDDEN_LS_KEY    = 'joby-lean-hidden';
 const LEAN_ROTATE_MS        = 18 * 60 * 1000; // within the design doc's 15-20 min range
 
-let leanRotationIndex = 0; // position in the "Next" button's sequential walk
 let leanRotateTimer   = null;
 
 // The auto/random pick draws from a pool where Continuous-Improvement entries
 // appear ~2x as often as Quick Prompts (duplicate-entries-in-the-pool trick,
 // same technique already used for Joby's hat/move rotation odds in
 // js/tamagoshi_svg.js) — CI is where leadership's attention currently is.
-function leanWeightedPool() {
-    return LEAN_CI_FOCUS.concat(LEAN_CI_FOCUS).map(entry => ({ kind: 'ci', entry }))
-        .concat(LEAN_QUICK_PROMPTS.map(entry => ({ kind: 'prompt', entry })));
+//
+// Two independent rotating sections rather than one shared pool: Continuous
+// Improvement entries are 2-4 sentences, so only one is shown at a time; Quick
+// Prompts are one-liners, so three fit comfortably together under their own
+// heading. leanPanelNext() advances both at once; the auto-timer re-randomizes
+// both at once.
+let leanCiIndex     = 0;
+let leanPromptStart = 0;
+
+function renderLeanCiFocus() {
+    const el = document.getElementById('lean-ci-focus');
+    if (!el) return;
+    const entry = LEAN_CI_FOCUS[leanCiIndex % LEAN_CI_FOCUS.length];
+    el.innerHTML = '<div class="lean-section-title">&#128260; Continuous Improvement Focus</div>'
+        + '<div class="lean-ci-title">' + escHtml(entry.title) + '</div>'
+        + '<div class="lean-ci-body">' + escHtml(entry.body) + '</div>';
 }
 
-// The combined, unweighted sequence the "Next" button walks through on demand —
-// every CI entry, then every Quick Prompt, in a fixed order — for skimming the
-// whole set without waiting on the timer.
-function leanSequentialPool() {
-    return LEAN_CI_FOCUS.map(entry => ({ kind: 'ci', entry }))
-        .concat(LEAN_QUICK_PROMPTS.map(entry => ({ kind: 'prompt', entry })));
-}
-
-function renderLeanRotatingItem(item) {
-    const el = document.getElementById('lean-rotating');
-    if (!el || !item) return;
-    el.innerHTML = item.kind === 'ci'
-        ? '<div class="lean-ci-title">' + escHtml(item.entry.title) + '</div>'
-          + '<div class="lean-ci-body">' + escHtml(item.entry.body) + '</div>'
-        : '<div class="lean-prompt-text">' + escHtml(item.entry.text) + '</div>'
-          + '<div class="lean-prompt-tag">' + escHtml(item.entry.tag) + '</div>';
+function renderLeanPrompts() {
+    const el = document.getElementById('lean-prompts');
+    if (!el) return;
+    const n = LEAN_QUICK_PROMPTS.length;
+    const shown = [0, 1, 2].map(i => LEAN_QUICK_PROMPTS[(leanPromptStart + i) % n]);
+    el.innerHTML = '<div class="lean-section-title">&#128173; Quick question to ask yourself</div>'
+        + shown.map(p =>
+            '<div class="lean-prompt-row"><span class="lean-prompt-text">' + escHtml(p.text) + '</span>'
+            + '<span class="lean-prompt-tag">' + escHtml(p.tag) + '</span></div>'
+        ).join('');
 }
 
 function leanPanelShowRandom() {
-    const pool = leanWeightedPool();
-    const picked = pool[Math.floor(Math.random() * pool.length)];
-    // Keeps "Next" continuing on from wherever the timer/page-load pick landed,
-    // rather than jumping to an unrelated spot in the sequence on first click.
-    const seqIdx = leanSequentialPool().findIndex(i => i.entry === picked.entry);
-    leanRotationIndex = seqIdx >= 0 ? seqIdx : 0;
-    renderLeanRotatingItem(picked);
+    leanCiIndex     = Math.floor(Math.random() * LEAN_CI_FOCUS.length);
+    leanPromptStart = Math.floor(Math.random() * LEAN_QUICK_PROMPTS.length);
+    renderLeanCiFocus();
+    renderLeanPrompts();
 }
 
 function leanPanelNext() {
-    const seq = leanSequentialPool();
-    leanRotationIndex = (leanRotationIndex + 1) % seq.length;
-    renderLeanRotatingItem(seq[leanRotationIndex]);
+    leanCiIndex     = (leanCiIndex + 1) % LEAN_CI_FOCUS.length;
+    leanPromptStart = (leanPromptStart + 3) % LEAN_QUICK_PROMPTS.length;
+    renderLeanCiFocus();
+    renderLeanPrompts();
 }
 
 function renderLeanCorePrinciples() {
