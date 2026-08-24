@@ -188,7 +188,7 @@ function formatDigestTimestamp(iso) {
 // they're still there to match afterwards), then only ever inject hardcoded-safe tags via
 // regex substitution over the now-escaped text. Tables and rarer constructs are skipped —
 // not seen enough in practice to justify the parsing complexity.
-function renderJiraWikiMarkup(text) {
+function renderJiraWikiMarkup(text, attachments) {
     if (!text) return '';
     const lines = escHtml(text).split(/\r\n|\r|\n/);
     const blocks = [];
@@ -210,14 +210,14 @@ function renderJiraWikiMarkup(text) {
             else { blocks.push('<blockquote>' + quoteLines.join('<br>') + '</blockquote>'); quoteLines = null; }
             continue;
         }
-        if (quoteLines !== null) { quoteLines.push(applyWikiInline(rawLine)); continue; }
+        if (quoteLines !== null) { quoteLines.push(applyWikiInline(rawLine, attachments)); continue; }
 
         if (trimmed === '') { flushPara(); flushList(); continue; }
 
         const heading = trimmed.match(/^h([1-6])\.\s*(.*)$/);
         if (heading) {
             flushPara(); flushList();
-            blocks.push('<h' + heading[1] + ' class="digest-wiki-heading">' + applyWikiInline(heading[2]) + '</h' + heading[1] + '>');
+            blocks.push('<h' + heading[1] + ' class="digest-wiki-heading">' + applyWikiInline(heading[2], attachments) + '</h' + heading[1] + '>');
             continue;
         }
 
@@ -230,18 +230,18 @@ function renderJiraWikiMarkup(text) {
         if (bullet) {
             flushPara();
             if (!list || list.tag !== 'ul') { flushList(); list = { tag: 'ul', items: [] }; }
-            list.items.push(applyWikiInline(bullet[1]));
+            list.items.push(applyWikiInline(bullet[1], attachments));
             continue;
         }
         if (numbered) {
             flushPara();
             if (!list || list.tag !== 'ol') { flushList(); list = { tag: 'ol', items: [] }; }
-            list.items.push(applyWikiInline(numbered[1]));
+            list.items.push(applyWikiInline(numbered[1], attachments));
             continue;
         }
 
         flushList();
-        paraLines.push(applyWikiInline(rawLine));
+        paraLines.push(applyWikiInline(rawLine, attachments));
     }
     flushPara(); flushList();
     if (quoteLines !== null) blocks.push('<blockquote>' + quoteLines.join('<br>') + '</blockquote>');
@@ -254,34 +254,82 @@ function renderJiraWikiMarkup(text) {
 // mix named links for people/team pickers with bare URLs in the same body).
 const WIKI_LINK_RX = /\[([^\[\]|]+)\|(https?:\/\/[^\[\]\s]+)\]|\[(https?:\/\/[^\[\]\s]+)\]|(https?:\/\/[^\s<>"\]]+)/g;
 
+// Jira's inline image markup: !filename.png! or !filename.png|width=1034,alt="..."!.
+// Matched against this comment's already-correlated attachments (relatedAttachments in
+// mergeIssueComments, matched to the comment by upload-time proximity) so the image
+// shows inline exactly where the author placed it, the way Jira's own view does —
+// rather than leaving the raw "!image-xxx.png|width=1034!" text as clutter, or losing
+// the placement by only showing images in the separate attachments strip below.
+const WIKI_IMAGE_RX = /!([\w.\-]+\.(?:png|jpe?g|gif|svg|webp))(?:\|[^!\n]*)?!/gi;
+
+// Jira's inline text-color macro: {color:#97A0AF}[ NEW ]{color}. The hex is captured
+// strictly via a hex-digit character class, so it can never contain a quote or other
+// character that could break out of the style="" attribute it gets placed into below —
+// no separate escaping needed, the regex itself bounds what can appear there.
+const WIKI_COLOR_RX = /\{color:(#[0-9a-fA-F]{3,8})\}([\s\S]*?)\{color\}/g;
+
+function hexToRgba(hex, alpha) {
+    let h = hex.slice(1);
+    if (h.length === 3) h = h.split('').map(c => c + c).join('');
+    if (!/^[0-9a-fA-F]{6}$/.test(h)) return null;
+    const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+}
+
+// Bold/italic/underline/monospace only — no links/images/color, so it's safe to also run
+// on a {color}-macro's captured inner text without re-triggering that outer extraction.
+function formatWikiInlineBasic(s) {
+    s = s.replace(/\{\{([^{}\n]+)\}\}/g, '<code>$1</code>');
+    s = s.replace(/\*([^\s*][^*\n]*?)\*/g, '<strong>$1</strong>');
+    s = s.replace(/\+([^\s+][^+\n]*?)\+/g, '<u>$1</u>');
+    s = s.replace(/_([^\s_][^_\n]*?)_/g, '<em>$1</em>');
+    return s;
+}
+
 // Inline formatting + auto-linking, applied to an already-escHtml()'d line/segment.
-// Links are extracted first and stashed behind  N  placeholders, then
-// restored after the bold/italic/monospace passes run — otherwise a URL containing a
-// literal "_" (common in query strings/paths) could get mistaken for italic markers by
-// the passes below, or, if links were built last, the bold/italic regexes could reach
-// into an already-built <a href="..."> and mangle its attribute text. Strikethrough
-// (-text-) is deliberately not supported: real comments are full of hyphenated dates
-// and ranges (e.g. "2026-08-19") that would false-positive-match as struck-through
-// text, which would be a regression, not an improvement.
-function applyWikiInline(s) {
-    const links = [];
+// Images, links, and color spans are extracted first and stashed behind placeholders,
+// then restored after the bold/italic/underline/monospace passes run — otherwise a URL
+// containing a literal "_" (common in query strings/paths) could get mistaken for italic
+// markers by the passes below, or, if they were built last, those passes could reach
+// into an already-built <a>/<img>/<span> tag and mangle its attribute text. Strikethrough
+// (-text-) is deliberately not supported: real comments are full of hyphenated dates and
+// ranges (e.g. "2026-08-19") that would false-positive-match as struck-through text,
+// which would be a regression, not an improvement.
+function applyWikiInline(s, attachments) {
+    const inserts = [];
+    // An HTML-comment-shaped placeholder is safe here: `s` at this point is already
+    // escHtml()'d, so a literal "<" can never occur except one this function itself
+    // inserts — no risk of colliding with real comment text, and no fragile control
+    // bytes sitting in source/output.
+    const stash = html => { inserts.push(html); return '<!--wikilink:' + (inserts.length - 1) + '-->'; };
+
+    s = s.replace(WIKI_IMAGE_RX, (m, filename) => {
+        const att = (attachments || []).find(a => a.filename === filename);
+        if (!att) return m; // no matching attachment (correlation window missed it, or this is an older thread comment) — leave the raw text rather than guess
+        return stash('<img class="digest-inline-image" src="' + escAttr(att.url) + '" alt="' + escAttr(filename) + '" onclick="window.open(this.src,\'_blank\')">');
+    });
+
     s = s.replace(WIKI_LINK_RX, (m, namedText, namedUrl, bareBracketUrl, bareUrl) => {
         const url = namedUrl || bareBracketUrl || bareUrl;
         try { new URL(url); } catch { return m; }
         const label = namedText || (url.length > 60 ? url.slice(0, 57) + '...' : url);
-        links.push('<a href="' + escAttr(url) + '" target="_blank" rel="noopener noreferrer" class="task-link" onclick="event.stopPropagation()">' + label + '</a>');
-        // An HTML-comment-shaped token is a safer placeholder than a raw control
-        // character here: `s` at this point is already escHtml()'d, so a literal "<" can
-        // never occur except one this function itself inserts — no risk of colliding
-        // with real comment text, and no fragile control bytes sitting in source/output.
-        return '<!--wikilink:' + (links.length - 1) + '-->';
+        return stash('<a href="' + escAttr(url) + '" target="_blank" rel="noopener noreferrer" class="task-link" onclick="event.stopPropagation()">' + label + '</a>');
     });
 
-    s = s.replace(/\{\{([^{}\n]+)\}\}/g, '<code>$1</code>');
-    s = s.replace(/\*([^\s*][^*\n]*?)\*/g, '<strong>$1</strong>');
-    s = s.replace(/_([^\s_][^_\n]*?)_/g, '<em>$1</em>');
+    // A colored span whose entire content is a single "[ WORD(S) ]" label (the common
+    // case for status-style call-outs like "[ NEW ]"/"[ IN PROGRESS ]") gets an extra
+    // tinted-background pill treatment so it reads like a status badge instead of plain
+    // colored text, closer to how these look in Jira's own view.
+    s = s.replace(WIKI_COLOR_RX, (m, hex, inner) => {
+        const isPill = /^\[[^{}[\]]*\]$/.test(inner.trim());
+        const bg = isPill ? hexToRgba(hex, 0.15) : null;
+        const style = 'color:' + hex + (bg ? '; background:' + bg + '; padding:1px 8px; border-radius:10px; font-weight:600; display:inline-block; font-size:0.85em; line-height:1.4;' : '');
+        return stash('<span style="' + style + '">' + formatWikiInlineBasic(inner) + '</span>');
+    });
 
-    return s.replace(/<!--wikilink:(\d+)-->/g, (m, i) => links[Number(i)]);
+    s = formatWikiInlineBasic(s);
+
+    return s.replace(/<!--wikilink:(\d+)-->/g, (m, i) => inserts[Number(i)]);
 }
 
 // Runs `worker` over `items` with at most `limit` in flight at once — a middle
@@ -650,7 +698,7 @@ function renderDigestIssueCluster(cluster) {
 
 function renderDigestContextComment(item) {
     return '<div class="digest-comment-row digest-context-comment" data-comment-id="' + item.commentId + '">'
-        + '<div class="digest-comment"><strong>' + escHtml(item.author) + '</strong> <span class="digest-comment-time">' + formatDigestTimestamp(item.created) + '</span>: ' + renderJiraWikiMarkup(resolveMentionsForDisplay(item.body)) + '</div>'
+        + '<div class="digest-comment"><strong>' + escHtml(item.author) + '</strong> <span class="digest-comment-time">' + formatDigestTimestamp(item.created) + '</span>: ' + renderJiraWikiMarkup(resolveMentionsForDisplay(item.body), item.attachments) + '</div>'
         + renderDigestAttachments(item.attachments)
         + '</div>';
 }
@@ -678,7 +726,7 @@ function refreshDigestCommentPreviews() {
         const item = digestItems[el.dataset.commentId];
         const commentEl = el.querySelector('.digest-comment');
         if (item && commentEl) {
-            commentEl.innerHTML = '<strong>' + escHtml(item.author) + '</strong> <span class="digest-comment-time">' + formatDigestTimestamp(item.created) + '</span>: ' + renderJiraWikiMarkup(resolveMentionsForDisplay(item.body));
+            commentEl.innerHTML = '<strong>' + escHtml(item.author) + '</strong> <span class="digest-comment-time">' + formatDigestTimestamp(item.created) + '</span>: ' + renderJiraWikiMarkup(resolveMentionsForDisplay(item.body), item.attachments);
         }
     });
 }
@@ -707,7 +755,7 @@ function renderDigestComment(item) {
         + (digestSelectedIds.has(item.commentId) ? ' checked' : '') + '>';
     return '<div class="digest-comment-row" data-comment-id="' + item.commentId + '">'
         + selectCheckbox
-        + '<div class="digest-comment"><strong>' + escHtml(item.author) + '</strong> <span class="digest-comment-time">' + formatDigestTimestamp(item.created) + '</span>: ' + renderJiraWikiMarkup(resolveMentionsForDisplay(item.body)) + '</div>'
+        + '<div class="digest-comment"><strong>' + escHtml(item.author) + '</strong> <span class="digest-comment-time">' + formatDigestTimestamp(item.created) + '</span>: ' + renderJiraWikiMarkup(resolveMentionsForDisplay(item.body), item.attachments) + '</div>'
         + renderDigestAttachments(item.attachments)
         + '<div class="digest-controls">'
         + '<div class="digest-buckets">' + bucketPills + '</div>'
@@ -840,7 +888,11 @@ async function toggleDigestThread(commentId) {
         el.innerHTML = comments.map(c =>
             '<div class="digest-thread-comment"><strong>' + escHtml((c.author && c.author.displayName) || 'Unknown') + '</strong>'
             + ' &middot; <span class="digest-thread-date">' + formatDue((c.created || '').slice(0, 10)) + '</span>'
-            + '<div>' + renderJiraWikiMarkup(resolveMentionsForDisplay(c.body || '')) + '</div></div>'
+            // Only comments already tracked as digest items have correlated attachments
+            // (relatedAttachments in mergeIssueComments) — an older thread comment that
+            // never matched the assignee/watcher/mention criteria has none available
+            // here, so its inline image markup (if any) just falls back to raw text.
+            + '<div>' + renderJiraWikiMarkup(resolveMentionsForDisplay(c.body || ''), (digestItems[c.id] || {}).attachments) + '</div></div>'
         ).join('');
     } catch (e) {
         el.innerHTML = '<div class="digest-thread-loading">Failed to load thread: ' + escHtml(e.message) + '</div>';
