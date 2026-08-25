@@ -111,6 +111,16 @@ The left sidebar shows everything at a glance without switching tabs:
 - **Confetti** — 28 coloured particles burst from the checkbox when you mark a task done
 - **Context-aware taglines** — the header tagline prioritises streak milestones, active streaks, strong performance, and inbox items before falling back to static lines
 
+### Joby (the mascot)
+
+An SVG-drawn octopus that lives in the corner of the app — the character the whole app is named after.
+
+- Click to pet him; double-click to make him spin
+- Reacts to what you do: a bigger celebration when a bulk-complete clears the list, a bubble nudge when the Jira Digest tab needs attention, and a visible "not saving" cue if Digest saves stop landing
+- Idle animation pool of 15+ moves (reading, juggling, workout, plant-watering, paper-airplane, and more), weighted by time of day
+- Hat rotates on its own — cowboy, top hat, crown, beanie, detective, and seasonal hats (Santa in December, sun hat in summer); a 7+ day streak biases toward the crown
+- Swappable color skins via `window.setJobySkin()`: classic / neon / matcha / pastel / sunset / boba / cyberpunk
+
 ### Jira Digest
 
 Connects to your Atlassian instance via a local Python proxy (no API token required, bypasses corporate CORS/SSO restrictions) and turns Jira comment/mention/watch activity into a triaged inbox instead of scattered notifications. This replaced an earlier Jira tab that just listed assigned issues — Digest is the one Jira surface in Joby now.
@@ -124,7 +134,9 @@ Connects to your Atlassian instance via a local Python proxy (no API token requi
 - ⭐ Flag any item to mark it "come back to this later," independent of bucket/status
 - A stats bar at the top (To Do / Review / Fix-Help / FYI / Flagged counts) doubles as one-click filters; combine with the bucket filter and "Show done"
 - `[~accountid:...]` mention markup resolves to real names for display (classification still uses the raw Jira markup under the hood)
+- Comment bodies render as real formatted text instead of raw Jira wiki markup — bold, italics, underline, monospace, bullet/numbered lists, headings, blockquotes, inline images (matched to the comment's own attachments and shown where the author placed them), the `{color}` macro (including status-style pill badges like "In Progress"), and both of Jira's link syntaxes
 - An "Open in Jira" link per issue, deep-linked to the specific comment, for replying
+- **Lean Reminders Panel** — an optional collapsible left sidebar (toggle in Settings → General) teaching Lean/Kaizen vocabulary alongside your ticket triage: pinned Core Principles, a rotating Continuous Improvement Focus entry, rotating "quick questions to ask yourself" prompts with color-coded category pills (waste / principle / flow / tool), and an expandable Term Glossary. Desktop-only; collapses to a slim labeled strip without resizing the ticket list
 - Auto-refreshes every 20 minutes while the app is open, plus a manual Refresh button. A "Look back" dropdown (day/week/month/3 months/year/forever) bounds the very first sync (default: last month) instead of pulling unlimited history; "Resync" re-checks further back on demand without waiting for a cold start
 - Data is stored outside the browser: `jira-proxy.py` reads/writes `jira-digest.json` on disk inside a Google-Drive-synced folder — it auto-detects wherever Google Drive for Desktop mounted "My Drive" (any drive letter) and uses `<that drive>\My Drive\Joby\jira-digest`, falling back to a local folder next to the script if no Drive is found; override either way with the `JOBY_DIGEST_DIR` environment variable — same pattern as the ARGUS dashboard, no OAuth required. This means digest history survives a browser cache clear and, with Drive installed, is available from any machine with that Drive folder synced
 - Stale items (no mention, and the issue no longer matches your current assignee/watcher list at all) are pruned automatically; mentions are kept regardless, since a mention is a standing fact independent of your current watch state
@@ -233,10 +245,13 @@ Task Organizer/
 │   ├── render.js            # Task list rendering, tabs, stats bar, compact view, CSV export
 │   ├── drag.js              # Drag-and-drop reorder + indent detection
 │   ├── jira.js              # Settings modal + Jira proxy connection (cookie, Test Proxy)
-│   ├── digest.js            # Jira Digest tab: comment/mention triage, grouping, status tracking
+│   ├── digest.js            # Jira Digest tab: comment/mention triage, grouping, status tracking,
+│   │                        # wiki-markup-to-HTML comment rendering
+│   ├── lean-panel.js        # Lean Reminders Panel: principles, prompts, glossary content/logic
 │   ├── inbox.js             # Brain Dump capture modal and inbox panel
 │   ├── drive.js             # Google Drive family sync (home build only)
 │   ├── stats.js             # Heatmap, sidebar stats cards, motivational taglines
+│   ├── tamagoshi_svg.js     # Joby the mascot: SVG rendering, moods, hats, idle animations
 │   └── main.js              # Keyboard shortcuts + app boot
 ├── dist/
 │   ├── Work Task Tracker.html  # Standard build (run: node build.js)
@@ -246,6 +261,9 @@ Task Organizer/
 │   └── home/
 │       └── Joby Home.html      # Personal-only build — no Work mode, no Jira
 ├── build.js                 # Bundle script — inlines CSS + JS, outputs to dist/
+├── scripts/
+│   └── deploy.js            # One-step deploy: bumps build number, rebuilds, pushes to Gizmos
+├── .build-info.json         # Deploy build counter (git-tracked) — see scripts/deploy.js
 ├── jira-proxy.py            # Local proxy for Jira API access
 ├── start-proxy.bat          # Double-click launcher for jira-proxy.py (Windows)
 ├── jira-cookie.txt          # Your personal session cookie (auto-created, do not share)
@@ -342,12 +360,23 @@ Tasks and settings are stored in OPFS — `work-tasks.json` for Work mode and `p
 
 ## Changelog
 
-### v2.4 (2026-08-21)
+### v2.5 (2026-08-25)
+
+- **Fixed a real data-loss bug**: if the Digest tab's saved-state read from the local proxy failed for any reason (e.g. right after a page refresh, before the proxy/Drive connection had settled), the app carried on with an empty in-memory state, merged fresh Jira comments into it, and saved that emptied-out result back to disk — silently reverting every already-Done item still inside the lookback window back to To Do. Now aborts with a visible "Failed to load" error instead of saving over good data.
+- **Auto-numbered deploys** — the header now shows a build-number suffix (`v2.5-001`, `v2.5-002`, ...) that bumps automatically on every deploy, so a bug report can be checked against whether the reporter has actually refreshed to pick up the fix. Resets to `-000` whenever the version number itself changes. Deploying is now one command (`node scripts/deploy.js`) instead of a manual multi-step process.
+
+### v2.4 (2026-08-21 – 2026-08-24)
 
 - **Color-coded Digest reason badges** — the Digest tab button now shows an outline-style count badge per reason (📌 Assigned / @ Mentioned / 👀 Watching) so new activity is visible without opening the tab. Only To Do and In Progress items count — something marked Waiting is parked on someone else, not pulling on your attention. Card-level reason tags recolored to match.
 - **Status filters in the stats bar** — To Do / In Progress / Waiting are now clickable filter pills alongside the existing bucket/flagged filters; the old ambiguous "N To Do" total pill is now "N Open".
-- Digest now polls once at boot (in addition to the existing 20-minute auto-poll), so the tab badge doesn't wait for a tab visit to populate.
-- The header version number had drifted — it was still showing v2.1 despite the v2.2/v2.3 work below already having shipped. Fixed.
+- Digest now polls once at boot (in addition to the existing 20-minute auto-poll), so the tab badge doesn't wait for a tab visit to populate; the Digest tab also now shows last session's saved state immediately instead of a blank screen while that poll runs
+- The header version number had drifted — it was still showing v2.1 despite the v2.2/v2.3 work below already having shipped. Fixed (and this whole v2.4 entry existing is the reason — see the auto-numbered-deploys fix in v2.5 above).
+- **Joby got a real personality** — idle animation pool grew to 15+ moves (reading, juggling, workout, plant-watering, paper-airplane, and more) weighted by time of day; hats now rotate on their own (cowboy/top hat/crown/beanie/detective + seasonal Santa/sun hats, with a streak≥7 bias toward the crown); click-to-pet and double-click-to-spin; 7 swappable color skins; reacts to a bulk-complete and to the Jira Digest tab needing attention or failing to save
+- A clear on-screen warning when Digest saves aren't reaching Google Drive, plus the comment's post date/time shown on every card
+- Fixed a save race where marking several items done in quick succession could clobber each other and silently revert to open — saves are now serialized
+- Refresh sped up from ~45s to ~7s via bounded-concurrency issue fetching (deliberately capped at 6 in flight, not fully parallel, to avoid Jira Cloud rate limits)
+- **Lean Reminders Panel** — new collapsible left sidebar on the Digest tab teaching Lean/Kaizen vocabulary (see Features above for what's in it)
+- **Jira comments render as real formatted text** instead of raw wiki markup — bold, bullet/numbered lists, headings, blockquotes, underline, inline images, and the `{color}` macro (see Features above)
 
 ### v2.3 (2026-08-13)
 
