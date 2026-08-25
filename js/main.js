@@ -69,7 +69,7 @@ function closeGhostTask() {
 // The header's version span used to be a hand-typed literal that silently drifted
 // from APP_VERSION (stuck on an old number for two releases) — drive it from the
 // constant instead so it can't happen again.
-document.getElementById('app-version').textContent = 'v' + APP_VERSION;
+document.getElementById('app-version').textContent = 'v' + APP_VERSION + (BUILD_NUMBER ? '-' + BUILD_NUMBER : '');
 renderColorSwatches('add-color-swatches', '');
 const storageReady = initStorage();
 if (typeof initLeanPanel === 'function') initLeanPanel();

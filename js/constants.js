@@ -1,6 +1,13 @@
 // constants.js — App-wide configuration values and magic strings/numbers.
 
 const APP_VERSION         = '2.5';
+// Deploy build-number suffix (v2.5-001) — cosmetic UI text only (see main.js's version
+// display), bumped automatically by scripts/deploy.js on every deploy. Never touches
+// APP_VERSION itself, which is the saved-task-data format marker (storage.js/drive.js) —
+// changing it would look like a data-format bump to every existing save. '000' here is
+// just the fallback for local builds run outside scripts/deploy.js; build.js overwrites
+// it from .build-info.json when that file is present.
+const BUILD_NUMBER        = '000';
 const OPFS_FILENAME       = 'work-tasks.json';
 const LS_KEY              = 'work_tasks';
 const LS_THEME_KEY        = 'wtt-theme';

@@ -82,6 +82,18 @@ function buildHtml(gasMode, homeMode) {
     html = html.replace(/<script src="js\/[^"]+"><\/script>\n?/g, '');
     html = html.replace('</body>', '<script>\n' + jsBundle + '\n</script>\n</body>');
 
+    // Deploy build-number suffix — scripts/deploy.js bumps .build-info.json once per
+    // deploy and this just reads it in; build.js itself never increments anything, since
+    // it runs many times during local iteration for every one real deploy.
+    const buildInfoPath = path.join(ROOT, '.build-info.json');
+    if (fs.existsSync(buildInfoPath)) {
+        try {
+            const info = JSON.parse(fs.readFileSync(buildInfoPath, 'utf8'));
+            const buildStr = String(info.build).padStart(3, '0');
+            html = html.replace("const BUILD_NUMBER        = '000';", "const BUILD_NUMBER        = '" + buildStr + "';");
+        } catch { /* corrupt/missing build info — falls back to the '000' embedded in constants.js */ }
+    }
+
     // Home build: lock to personal mode and neutralise the mode switcher.
     // Must happen AFTER bundle injection so the source strings are present.
     if (homeMode) {
