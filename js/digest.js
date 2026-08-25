@@ -417,6 +417,15 @@ async function fetchDigest() {
             // take a while. Show last session's saved state right away instead of leaving
             // the tab badge blank until the whole poll finishes.
             renderDigest();
+            // If the proxy GET above failed (proxy not up yet, Drive briefly unreachable,
+            // a transient network hiccup — anything that leaves digestHydrated false),
+            // digestItems is still empty. Continuing on would merge fresh Jira comments
+            // into that empty dict with no "existing" entry to preserve, so every
+            // previously-done/flagged/bucketed item still inside the lookback window
+            // would come back as a brand-new 'todo' — and the save at the end of this
+            // function would then persist that data loss back to disk. Bail out instead
+            // and let the catch block below surface it as a normal failed-refresh error.
+            if (!digestHydrated) throw new Error('Could not load saved Digest state from the proxy — refresh aborted so your saved statuses are not overwritten. Check the Google Drive/proxy connection and try again.');
         }
         const accountId = await fetchMyAccountId();
         const since = digestLookbackSince();
