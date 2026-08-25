@@ -1679,6 +1679,13 @@ select option { background: var(--card); color: var(--text); }
 // constants.js — App-wide configuration values and magic strings/numbers.
 
 const APP_VERSION         = '2.5';
+// Deploy build-number suffix (v2.5-001) — cosmetic UI text only (see main.js's version
+// display), bumped automatically by scripts/deploy.js on every deploy. Never touches
+// APP_VERSION itself, which is the saved-task-data format marker (storage.js/drive.js) —
+// changing it would look like a data-format bump to every existing save. '000' here is
+// just the fallback for local builds run outside scripts/deploy.js; build.js overwrites
+// it from .build-info.json when that file is present.
+const BUILD_NUMBER        = '000';
 const OPFS_FILENAME       = 'work-tasks.json';
 const LS_KEY              = 'work_tasks';
 const LS_THEME_KEY        = 'wtt-theme';
@@ -7098,7 +7105,7 @@ function closeGhostTask() {
 // The header's version span used to be a hand-typed literal that silently drifted
 // from APP_VERSION (stuck on an old number for two releases) — drive it from the
 // constant instead so it can't happen again.
-document.getElementById('app-version').textContent = 'v' + APP_VERSION;
+document.getElementById('app-version').textContent = 'v' + APP_VERSION + (BUILD_NUMBER ? '-' + BUILD_NUMBER : '');
 renderColorSwatches('add-color-swatches', '');
 const storageReady = initStorage();
 if (typeof initLeanPanel === 'function') initLeanPanel();
