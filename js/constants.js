@@ -1,6 +1,6 @@
 // constants.js — App-wide configuration values and magic strings/numbers.
 
-const APP_VERSION         = '2.4';
+const APP_VERSION         = '2.5';
 const OPFS_FILENAME       = 'work-tasks.json';
 const LS_KEY              = 'work_tasks';
 const LS_THEME_KEY        = 'wtt-theme';
